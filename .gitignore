@@ -27,4 +27,25 @@
 *~
 .env
 .env.*
-/config/local.env
+# Public templates must contain only empty values or placeholders
+!.env.example
+local.ini
+secrets.ini
+private.json
+credentials.json
+/config/local.*
+/config/private.*
+
+# Runtime SQLite databases and journal/WAL sidecar files
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
