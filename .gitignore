@@ -1,0 +1,30 @@
+# Out-of-source CMake builds and generated output
+/build*/
+/cmake-build*/
+/CMakeFiles/
+/CMakeCache.txt
+/Testing/
+/CMakeUserPresets.json
+/compile_commands.json
+/cmake_install.cmake
+/CTestTestfile.cmake
+/build.ninja
+/.ninja_*
+*.exe
+*.dll
+*.o
+*.obj
+*_autogen/
+
+# Qt Creator user-local settings
+*.user
+*.user.*
+/.qtcreator/
+
+# Temporary files and private local configuration
+*.tmp
+*.log
+*~
+.env
+.env.*
+/config/local.env
