@@ -10,7 +10,8 @@ class MainWindow final : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget* parent = nullptr,
+    // Takes ownership of the supplied project page through QStackedWidget.
+    explicit MainWindow(QWidget* projectPage, QWidget* parent = nullptr,
                         const QString& initialPage = QStringLiteral("overview"));
     QString currentPageId() const;
     bool selectPage(const QString& pageId);

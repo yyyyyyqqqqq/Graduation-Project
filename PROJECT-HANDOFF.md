@@ -4,7 +4,7 @@
 
 本文是项目唯一的长期动态交接文档。每个阶段结束后，更新当前状态、代码结构、Git、测试、人工验收、技术决策和下一步，避免另建多套状态文件。
 
-依据：项目历史资料、已通过的理解与交接审查、`04.md` 开发任务、`05.md` 封版授权及人工验收结果、`06.md` 长期规则增强要求、`07.md` 文档提交授权、`08.md` Phase 01 开发要求、`09.md` 人工验收结果及最终封版授权，以及正式工程构建、测试、Git 和 GitHub 实查。历史环境审计与本项目各阶段验证分别记录。
+依据：项目历史资料、已通过的理解与交接审查、`04.md` 开发任务、`05.md` 封版授权及人工验收结果、`06.md` 长期规则增强要求、`07.md` 文档提交授权、`08.md` Phase 01 开发要求、`09.md` Phase 01 封版授权、`10.md` Phase 02 开发要求、`11.md` 人工验收结果及最终封版授权，以及正式工程构建、测试、Git 和 GitHub 实查。历史环境审计与本项目各阶段验证分别记录。
 
 **真实性优先级：实际运行结果 > 当前真实代码 > 当前 Git 状态 > 当前 GitHub 状态 > 已验证环境审计 > 历史项目资料 > 推测。** 当前阶段授权以用户最新具体指令为准。
 
@@ -18,45 +18,45 @@
 
 # 2. 当前一句话状态
 
-Phase 01 已完成应用基础框架开发、自动测试和用户 Debug GUI 人工验收，并完成 Git 封版；当前准备进入 Phase 02。
+Phase 02 已完成项目管理、schema v1 → v2 迁移、自动测试和用户 Debug GUI 人工验收，并完成 Git 封版；当前准备进入 Phase 03。
 
 # 3. 当前阶段
 
-**CURRENT PHASE：PHASE 01 COMPLETE。**
+**CURRENT PHASE：PHASE 02 COMPLETE。**
 
-**NEXT PHASE：Phase 02 —— 项目管理。**
+**NEXT PHASE：Phase 03 —— CycloneDX SBOM 导入。**
 
-Phase 02 尚未开始，等待用户下一阶段具体指令。
+Phase 03 尚未开始，等待用户下一阶段具体指令。
 
 # 4. 正式项目目录
 
 唯一正式根目录：`D:\codex\Graduation Project\project`。
 
-后续源码、CMake、测试、项目文档和 Git 均围绕此目录组织。不维护多个正式工程副本；父目录的 `01.md` 至 `09.md` 是准备、开发、封版与文档维护任务的输入资料。
+后续源码、CMake、测试、项目文档和 Git 均围绕此目录组织。不维护多个正式工程副本；父目录的 `01.md` 至 `11.md` 是准备、开发、封版与文档维护任务的输入资料。
 
 `D:\codex\SupplyChainRiskAssessment` 是历史环境验证目录，不是正式项目；本轮未检查或修改其内容。
 
 # 5. Git / GitHub 当前状态
 
-以下记录 **2026-09-16 Phase 01 封版基线**，后续接手仍需重新核对真实 Git 状态：
+以下记录 **2026-09-16 Phase 02 封版基线**，后续接手仍需重新核对真实 Git 状态：
 
 | 项目 | 当前值 |
 | --- | --- |
 | 当前分支 | `main`；HEAD 指向 `refs/heads/main` |
-| commit | main 已包含独立完成提交：`feat: complete phase 01 application foundation` |
+| commit | main 已包含独立完成提交：`feat: complete phase 02 project management` |
 | origin（fetch / push） | `https://github.com/yyyyyyqqqqq/Graduation-Project.git` |
 | upstream | `origin/main` |
 | 同步状态 | main 已推送，origin/main 已同步 |
 | ahead / behind | `0 / 0` |
-| tag | annotated tag：`phase-01-complete`，指向 Phase 01 completion commit，已创建并推送远程 |
-| tag message | `Phase 01 complete: application foundation` |
+| tag | annotated tag：`phase-02-complete`，指向 Phase 02 completion commit，已创建并推送远程 |
+| tag message | `Phase 02 complete: project management` |
 | 工作区 | clean；staged / modified / untracked 均为 0（不计 ignored 产物） |
 
 提交使用仓库级身份 `yyyyyyqqqqq` / `104704290+yyyyyyqqqqq@users.noreply.github.com`。首次提交仅含 `.gitignore`、CMakeLists.txt、本文、三个 src 文件和一个 tests 文件。
 
-`phase-00-complete` 保持指向 Phase 00 初始化代码封版 `765bfaeb69bab26de80ff0bf3b24358688d89bca`，未移动。Phase 01 开发前 main 基线为 `8ee61ed9d45e4bbd46c946afc055f4d75c118ea5`（长期维护规则文档提交）。本次 completion commit 的精确 hash 由 Git 查询并在封版回复中报告，不写入提交自身。
+`phase-00-complete` 保持指向 `765bfaeb69bab26de80ff0bf3b24358688d89bca`；`phase-01-complete` 保持指向 `64292ab39bc9ffbf13c36058e47b055c812a6344`，两者均未移动。Phase 02 开发前 main 基线为后者。本次 completion commit 的精确 hash 由 Git 查询并在封版回复中报告，不写入提交自身。
 
-同步核验使用 `git status`、`git branch -vv`、`git log`、`git rev-list --left-right --count main...origin/main` 及 `git ls-remote origin`。远程 main 应与本地 main 一致；Phase 00 tag 单独核对上述固定基线，不要求随 main 移动。
+同步核验使用 `git status`、`git branch -vv`、`git log`、`git rev-list --left-right --count main...origin/main` 及 `git ls-remote origin`。远程 main 应与本地 main 一致；Phase 00 / 01 tags 单独核对上述固定基线，不要求随 main 移动。
 
 远程是重新创建后的同名仓库，不继承旧仓库历史。今后操作前仍需读取真实状态。
 
@@ -92,7 +92,7 @@ Graphviz C:\Program Files\Graphviz\bin\dot.exe
 
 历史最终结论：**FULLY READY**。审计曾真实验证编译链、C++20 / Qt、SQLite、HTTPS / JSON / NVD / EPSS / KEV、Qt Concurrent、Graphviz / SVG、Qt Test / CTest、Debug / Release、windeployqt、独立运行及端到端集成。
 
-历史结论证明当时工具链集成可用。正式工程的 Phase 00 原位最小复验现已通过，CMakeCache、编译命令及运行结果均确认 Qt 6.11.2，未混入 6.11.1；没有重装或替换工具链。正式业务功能尚未开始。
+历史结论证明当时工具链集成可用。正式工程的 Phase 00 原位最小复验已通过，后续 Phase 01 / 02 延续同一冻结工具链；CMakeCache、编译命令及运行结果均确认 Qt 6.11.2，未混入 6.11.1，没有重装或替换工具链。
 
 # 7. 环境已知提醒
 
@@ -126,11 +126,11 @@ Graphviz C:\Program Files\Graphviz\bin\dot.exe
 
 # 10. 核心模块
 
-**全部为规划，当前未实现：**
+**项目管理已实现当前阶段范围；其余模块仍为规划：**
 
 | 模块 | 主要职责 |
 | --- | --- |
-| 项目管理 | 创建、查看、维护、删除项目，组织扫描记录 |
+| 项目管理 | 已实现创建、列表、详情、删除和持久化；扫描记录尚未实现 |
 | SBOM / 质量诊断 | 优先 CycloneDX JSON；解析元信息、组件、PURL、bom-ref、依赖，检查缺失字段、重复组件与无效引用 |
 | 组件 / 身份 | 管理名称、版本、类型和标识，提供搜索、详情与可靠匹配身份 |
 | 依赖 / Graphviz | 分析直接和间接依赖、深度、路径与上下游，展示依赖图 |
@@ -140,7 +140,7 @@ Graphviz C:\Program Files\Graphviz\bin\dot.exe
 | Dashboard | 展示风险分布、高风险项、统计和趋势 |
 | 扫描 / 比较 / 报告 | 保存分析结果，比较组件、漏洞及风险变化，生成评估报告 |
 
-主要业务概念预计包括 Project、Scan、Component、Dependency、Vulnerability、Finding 和 RiskResult；具体类与数据库结构待对应阶段确定，不提前建空架构。
+Project 已实现最小数据结构及 projects 表。Scan、Component、Dependency、Vulnerability、Finding 和 RiskResult 仍为规划；具体类与数据库结构待对应阶段确定，不提前建空架构。
 
 # 11. 漏洞数据源定位
 
@@ -166,7 +166,7 @@ Graphviz C:\Program Files\Graphviz\bin\dot.exe
 | --- | --- | --- |
 | 00 | 工程初始化：最小 Qt/C++20 构建、运行与测试基线 | COMPLETE |
 | 01 | 应用基础框架：导航、页面、日志、配置、基础数据库访问 | COMPLETE |
-| 02 | 项目管理 | 未开始 |
+| 02 | 项目管理 | COMPLETE |
 | 03 | CycloneDX SBOM 导入 | 未开始 |
 | 04 | SBOM 质量诊断 | 未开始 |
 | 05 | 组件管理与持久化 | 未开始 |
@@ -203,6 +203,15 @@ Graphviz C:\Program Files\Graphviz\bin\dot.exe
 - 用户 Debug GUI 人工验收 PASS；Release 自动 Build / Test PASS，本阶段未要求 Release 人工验收。
 - 最终维护性检查 PASS；独立 completion commit、main 推送及 `phase-01-complete` annotated tag 封版。
 
+**Phase 02 —— COMPLETE。**
+
+- Project 最小模型、projects 第一张正式业务表；schema_version 从 1 升至 2。
+- 全新数据库初始化 schema 2；已有 v1 使用事务迁移，具备失败回滚、冲突表保护和未知版本拒绝，重复打开保持数据。
+- ProjectRepository 统一创建、列表、按 ID 查询和真实删除；ProjectPage 提供空状态、创建输入、列表选择、详情和删除确认，项目创建与删除结果在重启后保持。
+- Debug / Release Build PASS；CTest 均 22/22 PASS，其中 Phase 00 3/3、Phase 01 7/7、Phase 02 12/12。
+- 用户 Debug GUI 人工验收 PASS，包含创建、详情、持久化、排序、删除取消 / 确认和最后项目空状态；Release 为 AUTOMATED ONLY。
+- 最终维护性检查 PASS；独立 completion commit、main 推送及 `phase-02-complete` annotated tag 封版。
+
 # 15. 当前真实工程结构
 
 正式源码结构：
@@ -218,39 +227,59 @@ D:\codex\Graduation Project\project\
 │  ├─ AppPaths.h / .cpp
 │  ├─ AppLogger.h / .cpp
 │  ├─ AppSettings.h / .cpp
-│  └─ AppDatabase.h / .cpp
+│  ├─ AppDatabase.h / .cpp
+│  ├─ Project.h
+│  ├─ ProjectRepository.h / .cpp
+│  └─ ProjectPage.h / .cpp
 └─ tests\
    ├─ Phase00SmokeTest.cpp
-   └─ Phase01Test.cpp
+   ├─ Phase01Test.cpp
+   └─ Phase02Test.cpp
 ```
 
-`.git` 为版本元数据；本地 `build-debug/`、`build-release/`、Qt Creator 的 `build/` 和 `.qtcreator/` 均被忽略，不进入正式提交。运行时数据库、日志和配置位于应用数据目录，不属于正式源码；没有业务表或业务模块。
+`.git` 为版本元数据；本地 `build-debug/`、`build-release/`、Qt Creator 的 `build/` 和 `.qtcreator/` 均被忽略，不进入正式提交。运行时数据库、日志和配置位于应用数据目录，不属于正式源码；测试数据库位于临时目录，截图和构建日志留在被忽略的构建目录。
 
 临时理解报告已按封版授权删除，未进入任何正式提交；唯一长期动态交接文档为本文。
 
 # 16. 当前已经实现的功能
 
-当前已经建立 **Phase 00 工程基础 + Phase 01 应用基础框架**：CMake / C++20 / Qt Widgets Application Shell、基础导航和页面切换、运行时路径、本地日志、基础设置、SQLite 应用级连接及 schema metadata；保留 Qt / SQLite / Graphviz 基础回归测试。
+当前已经建立 **Phase 00 工程基础 + Phase 01 Application Foundation + Phase 02 Project Management**：CMake / C++20 / Qt Widgets Application Shell、基础导航和页面切换、运行时路径、本地日志、基础设置、SQLite 应用级连接及 schema metadata；项目支持 create、list、findById、delete 和 persistence。
 
 默认运行目录为 `QStandardPaths::AppDataLocation`（当前 Windows 用户下为 `C:/Users/HP/AppData/Roaming/GraduationProject/SupplyChainRiskAssessment`）：数据库 `data/supply_chain_risk.db`、日志 `logs/application.log`、配置 `settings.ini`。日志记录启动、目录准备、数据库结果、重要异常和关闭；日志失败提示用户并回退标准错误输出。配置仅保存 `ui/lastNavigationPage`，切换时保存，重启时恢复，未知页面回退概览。
 
-SQLite 仅有 `app_meta(key, value)` 和 `schema_version = 1`；未知版本拒绝打开，不自动迁移。测试使用 QTemporaryDir，真实程序冒烟通过 `--data-dir` 使用临时根目录，不污染真实数据。**正式业务功能尚未开始**，项目页仅为 Phase 02 占位，没有 Project CRUD、SBOM 解析、漏洞分析或风险计算。
+Project 仅包含 `id`、`name`、`description`、`createdAt`：应用生成无花括号 UUID；名称 trim 后必填、1—100 个 Unicode 码点，允许重名；描述 trim 后可空、最多 500 个码点；创建时间为 UTC Unix 毫秒，界面显示本地时间。列表按 `created_at DESC, id DESC` 排序。创建后自动选中；选择项目显示详情；删除需二次确认，取消不写数据库，删除最后一项恢复空状态。
+
+**当前数据库：schema_version = 2；仅有 app_meta 和 projects。**
+
+```sql
+projects (
+    id          TEXT PRIMARY KEY NOT NULL,
+    name        TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    created_at  INTEGER NOT NULL
+)
+```
+
+AppDatabase 在同一事务中完成全新 schema 初始化或 v1 → v2：先建 projects，再更新版本，成功后一并提交；失败回滚，冲突表保留原数据并拒绝迁移，未知版本拒绝打开，不自动降级或重建用户数据。测试使用 QTemporaryDir，真实程序冒烟通过 `--data-dir` 使用临时根目录，不污染真实数据。
+
+**正式 SBOM 业务尚未开始**；没有 Scan / Component / Vulnerability 等业务表，没有 SBOM 导入、漏洞分析或风险计算。
 
 # 17. 当前自动测试状态
 
-**Phase 00 Regression：PASS。Phase 01 Automated Acceptance：PASS。**
+**Phase 00 / 01 Regression：PASS。Phase 02 Automated Acceptance：PASS。**
 
 | 正式工程验证 | 结果 |
 | --- | --- |
-| Debug / Release Build | 均 PASS（Phase 01 开发轮） |
-| Debug CTest | 10/10 PASS（本次封版回归） |
-| Release CTest | 10/10 PASS（本次封版回归） |
+| Debug / Release Build | 均 PASS（Phase 02 开发轮） |
+| Debug CTest | 22/22 PASS（本次封版回归） |
+| Release CTest | 22/22 PASS（本次封版回归） |
 | Phase 00 Regression：Qt / C++20、SQLite、Graphviz SVG | Debug / Release 均 3/3 PASS |
 | Phase 01：路径、配置、数据库、未知 schema、日志、导航、真实程序启动关闭 | Debug / Release 均 7/7 PASS |
-| GUI smoke | PASS；真实程序隔离启动和正常关闭，正常 / 最小窗口尺寸显示检查通过 |
+| Phase 02：schema 初始化 / 迁移 / 回滚 / 冲突保护、项目读写 / 校验 / 排序 / 持久化、UI 和错误处理 | Debug / Release 均 12/12 PASS |
+| GUI smoke | PASS；真实程序隔离启动和关闭，项目创建 / 选择 / 删除 / 空态 / 导航及正常 / 最小尺寸 / 长文本检查通过 |
 | 最终维护性检查、git diff --check | PASS |
 
-测试源码为 `tests/Phase00SmokeTest.cpp`（未修改或弱化）和 `tests/Phase01Test.cpp`。CTest 保留 3 个 Phase00 项目，新增 7 个 Phase01 项目。上述为正式工程自己的结果，区别于历史环境审计。
+测试源码为 `tests/Phase00SmokeTest.cpp`、`tests/Phase01Test.cpp`、`tests/Phase02Test.cpp`。CTest 保留 Phase00 的 3 项和 Phase01 的 7 项，新增 Phase02 的 12 项；旧测试仅适配页面注入及 schema 2 / 未知版本预期，未删除原有断言或削弱回归。上述为正式工程自己的结果，区别于历史环境审计。
 
 回归命令：`ctest --test-dir build-debug --output-on-failure` 和 `ctest --test-dir build-release --output-on-failure`，使用冻结 CMake 目录中的 ctest.exe。CTest 为子进程设置 Qt / MinGW DLL 搜索路径，不修改系统 PATH。
 
@@ -264,6 +293,9 @@ SQLite 仅有 `app_meta(key, value)` 和 `schema_version = 1`；未知版本拒�
 - **Phase 01 Manual Acceptance：PASS**，由用户实际操作后在 `09.md` 中确认；Debug GUI：**PASS**。
 - 用户确认正式 Shell、概览 / 项目 / 设置导航、页面切换、选中态、状态栏、窗口缩放、Phase 02 项目占位、设置偏好保存及 lastNavigationPage 恢复正常，关闭 / 重启正常，无崩溃、明显卡死、DLL / Qt plugin 或数据库初始化错误。
 - Phase 01 Release GUI：**NOT REQUIRED / AUTOMATED ONLY**；本阶段仅要求 Release 自动 Build / Test，未要求用户再次人工验收。
+- **Phase 02 Manual Acceptance：PASS**，由用户实际操作后在 `11.md` 中确认；Debug GUI：**PASS**，Release：**AUTOMATED ONLY**。
+- 已确认创建、自动选中、详情、关闭 / 重启持久化、第二项目排序及选择切换、删除取消 / 确认、删除后重启不恢复、最后项目空态、空名称 / 纯空格拒绝和输入边界反馈正常。
+- 概览 / 项目 / 设置导航、lastNavigationPage 恢复及窗口缩放正常；无崩溃、数据库错误、明显卡顿或 DLL / Qt plugin 错误。
 
 # 19. 当前重要技术决策
 
@@ -276,7 +308,10 @@ SQLite 仅有 `app_meta(key, value)` 和 `schema_version = 1`；未知版本拒�
 - SQLite 每线程独立连接、主线程更新 GUI，密钥不进入代码、日志及 Git。
 - MainWindow 仅承担 Application Shell、导航和页面协调；QStackedWidget 是当前页面的唯一状态来源，数据库、日志和配置内部职责独立，启动组合由 main.cpp 完成。
 - 运行数据默认使用 QStandardPaths::AppDataLocation；QSettings 使用独立 INI，仅保存轻量 UI preference；测试显式使用临时路径。
-- SQLite schema version 从 1 开始，当前唯一 metadata 表为 app_meta；AppDatabase 在调用线程管理连接，借用的连接句柄和查询须先于连接关闭释放。Phase 02 业务表尚未创建。
+- SQLite schema version 当前为 2；app_meta 保存版本，projects 保存项目。v1 → v2 使用事务迁移；AppDatabase 在调用线程管理连接，借用的连接句柄和查询须先于连接关闭释放。
+- Project 使用 UUID 作为稳定 ID，名称可重名；列表固定按 `created_at DESC, id DESC` 排序，关联和删除均使用 ID。
+- ProjectRepository 统一项目校验和 SQL；MainWindow / ProjectPage 不执行 SQL。ProjectPage 负责输入、选择、详情和删除确认，SQLite 是项目数据的持久化来源。
+- projects 当前采用真实 DELETE；尚无子记录关系，因此不引入 soft-delete。main.cpp 组合已有数据库、日志、Repository 和页面，并在关闭连接前销毁页面和 Repository。
 
 **AI 分工：** ChatGPT 负责规划、Phase、Prompt、方案、审查及验收设计；Codex 负责读取真实工程、实现、编译、自动测试和 Git 检查；用户负责 GUI 操作、人工验收和决定是否进入下一 Phase。
 
@@ -345,20 +380,20 @@ SQLite 仅有 `app_meta(key, value)` 和 `schema_version = 1`；未知版本拒�
 
 # 21. 当前已知问题 / 风险
 
-- **Phase 01 无 Blocker。** 代码、自动测试、用户 Debug 人工验收、维护性检查及 Git 封版均已通过。
+- **Phase 02 Blocker = None。** 代码、schema 迁移、自动测试、用户 Debug 人工验收、维护性检查及 Git 封版均已通过。
 - optional Vulkan Headers 缺失仍为 non-blocking warning，不影响当前 Qt Widgets 工程；无需据此安装额外组件。
 - 本轮未发现正式目录冲突、错误 origin 或 GitHub 认证问题；Qt Creator 新增的本地配置和构建目录已被正确忽略并保留。
-- 正式业务功能尚未开始；不要把 Phase 00 / 01 基础能力与未来完整系统混同。
+- 项目管理已实现；SBOM、漏洞和风险业务尚未开始，不要把当前能力与未来完整系统混同。
 - 后续主要技术风险是身份／版本误匹配、缺失数据产生错误确定结论、评分缺乏依据，以及范围扩张造成过度设计；应在相应阶段验证。
 - 父目录旧资料包含重复版本；后续以本文当前状态和更高优先级实查证据为准。
 
 # 22. 下一步
 
-**READY FOR PHASE 02 —— 项目管理。Phase 02 尚未开始。**
+**READY FOR PHASE 03 —— CycloneDX SBOM 导入。Phase 03 尚未开始。**
 
-预计内容：Project 数据模型、projects 持久化、创建项目、项目列表、项目详情和删除项目；具体设计以下一阶段指令为准。
+总体目标：实现 CycloneDX SBOM 导入；具体范围和设计等待下一阶段指令。
 
-Phase 01 正式封版已完成；等待 Phase 02 正式开发指令，本轮未实现上述内容或后续业务。
+Phase 02 正式封版已完成；等待 Phase 03 正式开发指令，本轮未开始 SBOM 导入或其他后续业务。
 
 # 23. 新 Codex 接手规则
 
@@ -369,4 +404,4 @@ Phase 01 正式封版已完成；等待 Phase 02 正式开发指令，本轮未�
 5. 实现后完成适当构建、测试及 19.6 的 diff／维护性检查，清楚记录结果与限制；阶段通过必须包含用户要求的人工验收。
 6. 未经允许不得 `reset --hard`、`clean -fd`、force push、rebase、删除 branch / tag、删除用户文件或重写 Git 历史；发现已有错误 remote 先报告，不自行覆盖。身份配置优先仓库级，冻结环境不无故变更。
 7. 完成阶段后按 19.6 就地更新本文，不另造动态管理文档，不追加重复状态或全过程日志。
-8. 长期工程规则持续生效；`09.md` 授权的 Phase 01 最终封版已完成，`phase-00-complete` 保持原位置，`phase-01-complete` 为新的稳定基线。Phase 02 尚未开始，必须等待用户下一条正式开发指令。
+8. 长期工程规则持续生效；`11.md` 授权的 Phase 02 最终封版已完成，`phase-00-complete` / `phase-01-complete` 保持原位置，`phase-02-complete` 为新的稳定基线。Phase 03 尚未开始，必须等待用户下一条正式开发指令。

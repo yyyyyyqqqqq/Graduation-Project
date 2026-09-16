@@ -7,6 +7,7 @@
 class AppDatabase final
 {
 public:
+    static constexpr int SchemaVersion = 2;
     AppDatabase();
     ~AppDatabase();
     AppDatabase(const AppDatabase&) = delete;
@@ -20,6 +21,7 @@ public:
 
 private:
     bool initializeSchema(QString& error);
+    bool migrateV1ToV2(QString& error);
     const QString m_connectionName;
     QSqlDatabase m_database;
 };

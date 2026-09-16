@@ -3,6 +3,8 @@
 #include "AppLogger.h"
 #include "AppPaths.h"
 #include "AppSettings.h"
+#include "ProjectPage.h"
+#include "ProjectRepository.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -16,7 +18,7 @@ int main(int argc, char* argv[])
     QApplication application(argc, argv);
     QApplication::setOrganizationName(QStringLiteral("GraduationProject"));
     QApplication::setApplicationName(QStringLiteral("SupplyChainRiskAssessment"));
-    QApplication::setApplicationVersion(QStringLiteral("0.2.0"));
+    QApplication::setApplicationVersion(QStringLiteral("0.3.0"));
 
     QCommandLineParser parser;
     parser.setApplicationDescription(QStringLiteral("软件供应链漏洞风险评估系统"));
@@ -42,7 +44,7 @@ int main(int argc, char* argv[])
     if (!logOpened) {
         std::fprintf(stderr, "Cannot open application log: %s\n", qPrintable(logger.errorString()));
     }
-    bool loggingReady = logger.write(AppLogger::Level::Info, QStringLiteral("Application starting, version 0.2.0"));
+    bool loggingReady = logger.write(AppLogger::Level::Info, QStringLiteral("Application starting, version 0.3.0"));
     loggingReady = logger.write(AppLogger::Level::Info,
                                QStringLiteral("Runtime directories ready: %1").arg(paths.root)) && loggingReady;
     if (!logOpened || !loggingReady) {
@@ -65,27 +67,33 @@ int main(int argc, char* argv[])
                               QStringLiteral("无法打开应用数据库或数据库版本不受支持。请检查访问权限，或使用与数据版本匹配的程序。详情见本地日志。"));
         return 1;
     }
-    logger.write(AppLogger::Level::Info, QStringLiteral("Database initialized, schema_version=1"));
+    logger.write(AppLogger::Level::Info,
+                 QStringLiteral("Database initialized, schema_version=%1").arg(AppDatabase::SchemaVersion));
 
-    MainWindow window(nullptr, initialPage);
-    if (window.currentPageId() != initialPage) {
-        logger.write(AppLogger::Level::Warning, QStringLiteral("Unknown last navigation page; using overview"));
-    }
-    const auto savePage = [&](const QString& pageId) {
-        QString saveError;
-        if (!AppSettings::writeLastNavigationPage(paths.settingsFile(), pageId, saveError)) {
-            logger.write(AppLogger::Level::Error, saveError);
-            window.statusBar()->showMessage(QStringLiteral("页面偏好保存失败，下次启动可能无法恢复。"));
-            QMessageBox::warning(&window, QStringLiteral("配置保存失败"),
-                                 QStringLiteral("无法保存页面偏好，请检查应用数据目录的访问权限。"));
+    int result;
+    {
+        // Destroy pages/dialogs and their repository before closing the shared connection.
+        ProjectRepository projects(database, logger);
+        MainWindow window(new ProjectPage(projects), nullptr, initialPage);
+        if (window.currentPageId() != initialPage) {
+            logger.write(AppLogger::Level::Warning, QStringLiteral("Unknown last navigation page; using overview"));
         }
-    };
-    // Persist on navigation; MainWindow owns only UI state, never file settings.
-    QObject::connect(&window, &MainWindow::navigationChanged, &window, savePage);
-    savePage(window.currentPageId());
-    window.show();
-    logger.write(AppLogger::Level::Info, QStringLiteral("Main window shown, page=%1").arg(window.currentPageId()));
-    const int result = application.exec();
+        const auto savePage = [&](const QString& pageId) {
+            QString saveError;
+            if (!AppSettings::writeLastNavigationPage(paths.settingsFile(), pageId, saveError)) {
+                logger.write(AppLogger::Level::Error, saveError);
+                window.statusBar()->showMessage(QStringLiteral("页面偏好保存失败，下次启动可能无法恢复。"));
+                QMessageBox::warning(&window, QStringLiteral("配置保存失败"),
+                                     QStringLiteral("无法保存页面偏好，请检查应用数据目录的访问权限。"));
+            }
+        };
+        // Persist on navigation; MainWindow owns only UI state, never file settings.
+        QObject::connect(&window, &MainWindow::navigationChanged, &window, savePage);
+        savePage(window.currentPageId());
+        window.show();
+        logger.write(AppLogger::Level::Info, QStringLiteral("Main window shown, page=%1").arg(window.currentPageId()));
+        result = application.exec();
+    }
     database.close();
     logger.write(AppLogger::Level::Info, QStringLiteral("Application closed normally, exit code %1").arg(result));
     return result;

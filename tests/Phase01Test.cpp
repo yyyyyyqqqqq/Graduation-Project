@@ -99,12 +99,14 @@ void Phase01Test::database()
         QVERIFY(QFileInfo::exists(paths.databaseFile()));
         {
             const auto connection = database.connection();
-            QCOMPARE(connection.tables(), QStringList{QStringLiteral("app_meta")});
+            auto tables = connection.tables();
+            tables.sort();
+            QCOMPARE(tables, (QStringList{QStringLiteral("app_meta"), QStringLiteral("projects")}));
             QSqlQuery query(connection);
             QVERIFY(query.exec(QStringLiteral("SELECT key, value FROM app_meta")));
             QVERIFY(query.next());
             QCOMPARE(query.value(0).toString(), QStringLiteral("schema_version"));
-            QCOMPARE(query.value(1).toString(), QStringLiteral("1"));
+            QCOMPARE(query.value(1).toString(), QStringLiteral("2"));
             QVERIFY(!query.next());
         }
         database.close();
@@ -130,7 +132,7 @@ void Phase01Test::databaseRejectsUnknownSchema()
         AppDatabase database;
         QVERIFY(database.open(file, error));
         QSqlQuery query(database.connection());
-        QVERIFY(query.exec(QStringLiteral("UPDATE app_meta SET value='2' WHERE key='schema_version'")));
+        QVERIFY(query.exec(QStringLiteral("UPDATE app_meta SET value='99' WHERE key='schema_version'")));
     }
     AppDatabase database;
     QVERIFY(!database.open(file, error));
@@ -146,7 +148,7 @@ void Phase01Test::databaseRejectsUnknownSchema()
     QSqlQuery query(connection);
     QVERIFY(query.exec(QStringLiteral("SELECT value FROM app_meta WHERE key='schema_version'")));
     QVERIFY(query.next());
-    QCOMPARE(query.value(0).toString(), QStringLiteral("2")); // No silent downgrade.
+    QCOMPARE(query.value(0).toString(), QStringLiteral("99")); // No silent downgrade.
 }
 
 void Phase01Test::logging()
@@ -187,7 +189,7 @@ void Phase01Test::navigation()
     QString page;
     QVERIFY(AppSettings::readLastNavigationPage(settingsFile, page, error));
     {
-        MainWindow window(nullptr, page);
+        MainWindow window(new QWidget, nullptr, page);
         window.show();
         QVERIFY(QTest::qWaitForWindowExposed(&window));
         QCOMPARE(window.currentPageId(), QStringLiteral("overview"));
@@ -218,10 +220,10 @@ void Phase01Test::navigation()
     }
     QVERIFY(AppSettings::readLastNavigationPage(settingsFile, page, error));
     QCOMPARE(page, QStringLiteral("settings"));
-    MainWindow restored(nullptr, page);
+    MainWindow restored(new QWidget, nullptr, page);
     QCOMPARE(restored.currentPageId(), QStringLiteral("settings"));
     QVERIFY(restored.findChild<QPushButton*>(QStringLiteral("nav_settings"))->isChecked());
-    MainWindow unknown(nullptr, QStringLiteral("obsolete-page"));
+    MainWindow unknown(new QWidget, nullptr, QStringLiteral("obsolete-page"));
     QCOMPARE(unknown.currentPageId(), QStringLiteral("overview"));
 }
 
@@ -243,7 +245,7 @@ void Phase01Test::applicationStartup()
         QFile file(paths.logFile());
         return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray();
     };
-    QTRY_VERIFY_WITH_TIMEOUT(readLog().contains("Database initialized, schema_version=1"), 10000);
+    QTRY_VERIFY_WITH_TIMEOUT(readLog().contains("Database initialized, schema_version=2"), 10000);
     QTRY_VERIFY_WITH_TIMEOUT(readLog().contains("Main window shown, page=overview"), 5000);
     QVERIFY(QFileInfo::exists(paths.settingsFile()));
     QCOMPARE(process.state(), QProcess::Running);

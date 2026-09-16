@@ -42,7 +42,7 @@ void Phase00SmokeTest::qtCppSmoke()
                       << "Platform:" << QGuiApplication::platformName()
                       << "C++:" << __cplusplus;
 
-    MainWindow window;
+    MainWindow window(new QWidget); // Shell smoke uses an injected page; business UI is tested in Phase 02.
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
     QVERIFY(window.isVisible());

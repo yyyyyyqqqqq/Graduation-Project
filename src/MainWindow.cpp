@@ -9,7 +9,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-MainWindow::MainWindow(QWidget* parent, const QString& initialPage)
+MainWindow::MainWindow(QWidget* projectPage, QWidget* parent, const QString& initialPage)
     : QMainWindow(parent)
 {
     setWindowTitle(QStringLiteral("软件供应链漏洞风险评估系统"));
@@ -35,9 +35,18 @@ MainWindow::MainWindow(QWidget* parent, const QString& initialPage)
     m_navigation->setExclusive(true);
     m_pages = new QStackedWidget(content);
     m_pages->setObjectName(QStringLiteral("pages"));
-    const auto addPage = [&](const QString& id, const QString& heading, const QString& description) {
-        auto* page = new QWidget(m_pages);
+    const auto addPage = [&](QWidget* page, const QString& id, const QString& heading) {
         page->setObjectName(id);
+        const int index = m_pages->addWidget(page);
+        auto* button = new QPushButton(heading, sidebar);
+        button->setObjectName(QStringLiteral("nav_%1").arg(id));
+        button->setCheckable(true);
+        button->setMinimumHeight(46);
+        m_navigation->addButton(button, index);
+        navigationLayout->addWidget(button);
+    };
+    const auto addTextPage = [&](const QString& id, const QString& heading, const QString& description) {
+        auto* page = new QWidget(m_pages);
         auto* pageLayout = new QVBoxLayout(page);
         pageLayout->setContentsMargins(32, 32, 32, 32);
         pageLayout->setSpacing(20);
@@ -51,25 +60,18 @@ MainWindow::MainWindow(QWidget* parent, const QString& initialPage)
         pageLayout->addWidget(title);
         pageLayout->addWidget(body);
         pageLayout->addStretch();
-        const int index = m_pages->addWidget(page);
-        auto* button = new QPushButton(heading, sidebar);
-        button->setObjectName(QStringLiteral("nav_%1").arg(id));
-        button->setCheckable(true);
-        button->setMinimumHeight(46);
-        m_navigation->addButton(button, index);
-        navigationLayout->addWidget(button);
+        addPage(page, id, heading);
     };
-    addPage(QStringLiteral("overview"), QStringLiteral("概览"),
+    addTextPage(QStringLiteral("overview"), QStringLiteral("概览"),
             QStringLiteral("软件供应链漏洞风险评估系统\n\n欢迎使用应用工作台。\n\n"
-                           "当前已提供基础导航、本地日志、页面偏好保存和数据库初始化能力。\n\n"
+                           "当前已提供项目创建、查看与删除，以及本地日志和页面偏好保存能力。\n\n"
                            "业务分析功能将随后续阶段逐步开放。"));
-    addPage(QStringLiteral("projects"), QStringLiteral("项目"),
-            QStringLiteral("项目管理功能将在 Phase 02 实现。\n\n当前页面仅为占位，尚不提供项目创建、列表或删除操作。"));
-    addPage(QStringLiteral("settings"), QStringLiteral("设置"),
+    addPage(projectPage, QStringLiteral("projects"), QStringLiteral("项目"));
+    addTextPage(QStringLiteral("settings"), QStringLiteral("设置"),
             QStringLiteral("页面偏好\n\n应用自动保存最后访问的页面，并在下次启动时恢复。\n\n"
                            "验证方法：停留在本页，正常关闭程序后再次启动，应回到“设置”。"));
     navigationLayout->addStretch();
-    auto* stage = new QLabel(QStringLiteral("Phase 01 · 应用基础框架"), sidebar);
+    auto* stage = new QLabel(QStringLiteral("Phase 02 · 项目管理"), sidebar);
     stage->setWordWrap(true);
     navigationLayout->addWidget(stage);
     layout->addWidget(sidebar);

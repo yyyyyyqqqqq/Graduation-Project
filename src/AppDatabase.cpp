@@ -57,8 +57,18 @@ bool AppDatabase::initializeSchema(QString& error)
         return false;
     }
     const QString version = query.value(0).toString();
-    if (version != QStringLiteral("1")) {
-        error = QStringLiteral("Unsupported schema_version '%1'; expected 1. No migration was performed.").arg(version);
+    query.finish();
+    if (version == QStringLiteral("1")) {
+        if (!migrateV1ToV2(error)) {
+            return false;
+        }
+    } else if (version != QString::number(SchemaVersion)) {
+        error = QStringLiteral("Unsupported schema_version '%1'; supported versions are 1 and 2. No migration was performed.").arg(version);
+        return false;
+    }
+    // Reject incomplete v2 databases instead of silently recreating missing user tables.
+    if (!query.exec(QStringLiteral("SELECT id, name, description, created_at FROM projects LIMIT 0"))) {
+        error = QStringLiteral("Invalid projects schema: %1").arg(query.lastError().text());
         return false;
     }
     query.finish();
@@ -67,6 +77,24 @@ bool AppDatabase::initializeSchema(QString& error)
         return false;
     }
     rollback.dismiss();
+    return true;
+}
+
+bool AppDatabase::migrateV1ToV2(QString& error)
+{
+    // The caller owns the transaction: schema and metadata commit or roll back together.
+    QSqlQuery query(m_database);
+    if (!query.exec(QStringLiteral("CREATE TABLE projects ("
+                                   "id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, "
+                                   "description TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL)"))) {
+        error = QStringLiteral("Migration 1 -> 2: cannot create projects: %1").arg(query.lastError().text());
+        return false;
+    }
+    if (!query.exec(QStringLiteral("UPDATE app_meta SET value='2' WHERE key='schema_version'")) ||
+        query.numRowsAffected() != 1) {
+        error = QStringLiteral("Migration 1 -> 2: cannot update schema_version: %1").arg(query.lastError().text());
+        return false;
+    }
     return true;
 }
 

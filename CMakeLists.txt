@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 
-project(SupplyChainRiskAssessment VERSION 0.2.0 LANGUAGES CXX)
+project(SupplyChainRiskAssessment VERSION 0.3.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -10,12 +10,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(Qt6 6.11.2 EXACT REQUIRED COMPONENTS Widgets Sql)
 
-# Shared by the application and its tests; each component has a current Phase 01 use.
+# Shared by the application and its tests; components have current responsibilities.
 add_library(AppFoundation STATIC
     src/AppPaths.h src/AppPaths.cpp
     src/AppSettings.h src/AppSettings.cpp
     src/AppLogger.h src/AppLogger.cpp
     src/AppDatabase.h src/AppDatabase.cpp
+    src/Project.h
+    src/ProjectRepository.h src/ProjectRepository.cpp
 )
 target_include_directories(AppFoundation PUBLIC src)
 target_link_libraries(AppFoundation PUBLIC Qt6::Core Qt6::Sql)
@@ -24,6 +26,7 @@ add_executable(SupplyChainRiskAssessment WIN32
     src/main.cpp
     src/MainWindow.h
     src/MainWindow.cpp
+    src/ProjectPage.h src/ProjectPage.cpp
 )
 target_link_libraries(SupplyChainRiskAssessment PRIVATE Qt6::Widgets AppFoundation)
 
@@ -58,6 +61,13 @@ if(BUILD_TESTING)
     )
     add_dependencies(Phase01Test SupplyChainRiskAssessment)
 
+    add_executable(Phase02Test
+        tests/Phase02Test.cpp
+        src/MainWindow.h src/MainWindow.cpp
+        src/ProjectPage.h src/ProjectPage.cpp
+    )
+    target_link_libraries(Phase02Test PRIVATE Qt6::Widgets Qt6::Test AppFoundation)
+
     function(add_qt_test phase target test_case)
         # File output retains Qt Test diagnostics even when Windows stdout is unavailable.
         add_test(NAME ${phase}.${test_case} COMMAND ${target} ${test_case}
@@ -78,6 +88,10 @@ if(BUILD_TESTING)
     endforeach()
     foreach(test_case IN ITEMS paths settings database databaseRejectsUnknownSchema logging navigation applicationStartup)
         add_qt_test(Phase01 Phase01Test ${test_case})
+    endforeach()
+    foreach(test_case IN ITEMS freshDatabase migrateV1 migrationRollback migrationConflict createAndFind
+            validation stableOrder persistenceAndDelete databaseErrors projectUi uiValidation uiErrors)
+        add_qt_test(Phase02 Phase02Test ${test_case})
     endforeach()
 endif()
 
