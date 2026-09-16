@@ -1,4 +1,5 @@
 #include "AppDatabase.h"
+#include "ComponentRepository.h"
 #include "AppLogger.h"
 #include "MainWindow.h"
 #include "ProjectPage.h"
@@ -33,6 +34,7 @@ struct Context
     AppLogger logger;
     AppDatabase database;
     ProjectRepository repository{database, logger};
+    ComponentRepository components{database};
     QString error;
 
     QString file() const { return temporary.filePath(QStringLiteral("projects.db")); }
@@ -114,10 +116,10 @@ void Phase02Test::freshDatabase()
 {
     Context context;
     QVERIFY2(context.open(), qPrintable(context.error));
-    QCOMPARE(version(context.file()), QStringLiteral("2"));
+    QCOMPARE(version(context.file()), QStringLiteral("3"));
     auto tables = context.database.connection().tables();
     tables.sort();
-    QCOMPARE(tables, (QStringList{QStringLiteral("app_meta"), QStringLiteral("projects")}));
+    QCOMPARE(tables, (QStringList{QStringLiteral("app_meta"), QStringLiteral("components"), QStringLiteral("projects")}));
     QSqlQuery query(context.database.connection());
     QVERIFY(query.exec(QStringLiteral("PRAGMA table_info(projects)")));
     QStringList columns;
@@ -135,7 +137,7 @@ void Phase02Test::migrateV1()
     QVERIFY(context.prepare());
     QVERIFY(createV1(context.file()));
     QVERIFY2(context.database.open(context.file(), context.error), qPrintable(context.error));
-    QCOMPARE(version(context.file()), QStringLiteral("2"));
+    QCOMPARE(version(context.file()), QStringLiteral("3"));
     QCOMPARE(inspect(context.file(), QStringLiteral("SELECT value FROM app_meta WHERE key='preserved'")).toString(),
              QStringLiteral("原有元数据"));
     Project project;
@@ -146,7 +148,7 @@ void Phase02Test::migrateV1()
     Project found;
     QVERIFY(context.repository.findById(project.id, found).ok());
     QCOMPARE(found.name, project.name);
-    QCOMPARE(version(context.file()), QStringLiteral("2"));
+    QCOMPARE(version(context.file()), QStringLiteral("3"));
 }
 
 void Phase02Test::migrationRollback()
@@ -167,7 +169,7 @@ void Phase02Test::migrationRollback()
              QStringLiteral("原有元数据"));
     QVERIFY(executeSql(context.file(), {QStringLiteral("DROP TRIGGER reject_version")}));
     QVERIFY(context.database.open(context.file(), context.error));
-    QCOMPARE(version(context.file()), QStringLiteral("2"));
+    QCOMPARE(version(context.file()), QStringLiteral("3"));
 }
 
 void Phase02Test::migrationConflict()
@@ -321,7 +323,7 @@ void Phase02Test::projectUi()
 {
     Context context;
     QVERIFY(context.open());
-    MainWindow window(new ProjectPage(context.repository, context.logger), nullptr, QStringLiteral("projects"));
+    MainWindow window(new ProjectPage(context.repository, context.components, context.logger), nullptr, QStringLiteral("projects"));
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
     auto* page = window.findChild<ProjectPage*>();
@@ -418,7 +420,7 @@ void Phase02Test::uiValidation()
 {
     Context context;
     QVERIFY(context.open());
-    MainWindow window(new ProjectPage(context.repository, context.logger), nullptr, QStringLiteral("projects"));
+    MainWindow window(new ProjectPage(context.repository, context.components, context.logger), nullptr, QStringLiteral("projects"));
     window.resize(680, 420);
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
@@ -469,7 +471,7 @@ void Phase02Test::uiErrors()
     QVERIFY(context.open());
     Project project;
     QVERIFY(context.repository.create(QStringLiteral("保留项目"), {}, project).ok());
-    MainWindow window(new ProjectPage(context.repository, context.logger), nullptr, QStringLiteral("projects"));
+    MainWindow window(new ProjectPage(context.repository, context.components, context.logger), nullptr, QStringLiteral("projects"));
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
     auto* page = window.findChild<ProjectPage*>();

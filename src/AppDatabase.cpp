@@ -23,6 +23,17 @@ bool AppDatabase::open(const QString& filePath, QString& error)
         close();
         return false;
     }
+    bool foreignKeysEnabled = false;
+    {
+        QSqlQuery query(m_database);
+        foreignKeysEnabled = query.exec(QStringLiteral("PRAGMA foreign_keys=ON"))
+            && query.exec(QStringLiteral("PRAGMA foreign_keys")) && query.next() && query.value(0).toInt() == 1;
+    }
+    if (!foreignKeysEnabled) {
+        error = QStringLiteral("Cannot enable SQLite foreign keys");
+        close();
+        return false;
+    }
     if (!initializeSchema(error)) {
         close();
         return false;
@@ -56,19 +67,26 @@ bool AppDatabase::initializeSchema(QString& error)
         error = QStringLiteral("Missing or unreadable schema_version: %1").arg(query.lastError().text());
         return false;
     }
-    const QString version = query.value(0).toString();
+    QString version = query.value(0).toString();
     query.finish();
     if (version == QStringLiteral("1")) {
         if (!migrateV1ToV2(error)) {
             return false;
         }
-    } else if (version != QString::number(SchemaVersion)) {
-        error = QStringLiteral("Unsupported schema_version '%1'; supported versions are 1 and 2. No migration was performed.").arg(version);
+        version = QStringLiteral("2");
+    } else if (version != QStringLiteral("2") && version != QString::number(SchemaVersion)) {
+        error = QStringLiteral("Unsupported schema_version '%1'; supported versions are 1, 2 and 3. No migration was performed.").arg(version);
         return false;
     }
     // Reject incomplete v2 databases instead of silently recreating missing user tables.
     if (!query.exec(QStringLiteral("SELECT id, name, description, created_at FROM projects LIMIT 0"))) {
         error = QStringLiteral("Invalid projects schema: %1").arg(query.lastError().text());
+        return false;
+    }
+    query.finish();
+    if (version == QStringLiteral("2") && !migrateV2ToV3(error)) return false;
+    if (!query.exec(QStringLiteral("SELECT id,project_id,source_role,source_order,bom_ref,type,name,version,purl FROM components LIMIT 0"))) {
+        error = QStringLiteral("Invalid components schema: %1").arg(query.lastError().text());
         return false;
     }
     query.finish();
@@ -98,6 +116,27 @@ bool AppDatabase::migrateV1ToV2(QString& error)
     return true;
 }
 
+bool AppDatabase::migrateV2ToV3(QString& error)
+{
+    // No IF NOT EXISTS: a conflicting user table must abort the entire migration.
+    QSqlQuery query(m_database);
+    if (!query.exec(QStringLiteral("CREATE TABLE components ("
+        "id TEXT PRIMARY KEY NOT NULL, project_id TEXT NOT NULL, "
+        "source_role INTEGER NOT NULL CHECK(source_role IN (0,1)), "
+        "source_order INTEGER NOT NULL CHECK(source_order>=0 AND (source_role=1 OR source_order=0)), "
+        "bom_ref TEXT NOT NULL DEFAULT '', type TEXT NOT NULL DEFAULT '', name TEXT NOT NULL DEFAULT '', "
+        "version TEXT NOT NULL DEFAULT '', purl TEXT NOT NULL DEFAULT '', "
+        "FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE)")) ||
+        // Uniqueness describes a storage position, never software package identity.
+        !query.exec(QStringLiteral("CREATE UNIQUE INDEX components_project_source ON components(project_id,source_role,source_order)")) ||
+        !query.exec(QStringLiteral("UPDATE app_meta SET value='3' WHERE key='schema_version'")) ||
+        query.numRowsAffected() != 1) {
+        error = QStringLiteral("Migration 2 -> 3 failed: %1").arg(query.lastError().text());
+        return false;
+    }
+    return true;
+}
+
 void AppDatabase::close()
 {
     if (m_database.isValid()) {
@@ -112,3 +151,4 @@ void AppDatabase::close()
 bool AppDatabase::isOpen() const { return m_database.isOpen(); }
 QString AppDatabase::connectionName() const { return m_connectionName; }
 QSqlDatabase AppDatabase::connection() const { return m_database; }
+QString AppDatabase::filePath() const { return m_database.databaseName(); }

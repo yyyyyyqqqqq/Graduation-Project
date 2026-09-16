@@ -1,4 +1,5 @@
 #include "AppDatabase.h"
+#include "ComponentRepository.h"
 #include "AppLogger.h"
 #include "CycloneDxParser.h"
 #include "ProjectRepository.h"
@@ -106,6 +107,7 @@ struct Context
     AppLogger logger;
     AppDatabase database;
     ProjectRepository repository{database, logger};
+    ComponentRepository components{database};
     bool open()
     {
         QString error;
@@ -120,17 +122,18 @@ QVariant scalar(AppDatabase& database, const QString& sql)
     return query.exec(sql) && query.next() ? query.value(0) : QVariant();
 }
 
-// Includes all rows/columns in both existing tables; content checks complement
+// Includes all rows/columns in all current tables; content checks complement
 // total_changes(), which alone would not detect writes from another connection.
 QByteArray databaseSnapshot(AppDatabase& database)
 {
     QByteArray bytes;
     QDataStream out(&bytes, QIODevice::WriteOnly);
     for (const auto& sql : {QStringLiteral("SELECT key,value FROM app_meta ORDER BY key"),
-                           QStringLiteral("SELECT id,name,description,created_at FROM projects ORDER BY id")}) {
+                           QStringLiteral("SELECT id,name,description,created_at FROM projects ORDER BY id"),
+                           QStringLiteral("SELECT id,project_id,source_role,source_order,bom_ref,type,name,version,purl FROM components ORDER BY id")}) {
         QSqlQuery query(database.connection());
         if (!query.exec(sql)) return {};
-        const int columns = sql.contains(QStringLiteral("app_meta")) ? 2 : 4;
+        const int columns = sql.contains(QStringLiteral("app_meta")) ? 2 : sql.contains(QStringLiteral("components")) ? 9 : 4;
         while (query.next()) {
             for (int i = 0; i < columns; ++i) out << query.value(i);
         }
@@ -412,7 +415,7 @@ void Phase04Test::qualityUi()
     QVERIFY(context.open());
     const auto file = context.temporary.filePath(QStringLiteral("synthetic.json"));
     QVERIFY(writeFile(file, encode(issuesObject())));
-    SbomImportDialog dialog(QStringLiteral("synthetic-project"), context.logger);
+    SbomImportDialog dialog(QStringLiteral("synthetic-project-id"), QStringLiteral("synthetic-project"), context.database.filePath(), context.logger);
     dialog.show();
     QVERIFY(QTest::qWaitForWindowExposed(&dialog));
     auto* components = dialog.findChild<QTableView*>(QStringLiteral("sbomComponents"));
@@ -487,7 +490,7 @@ void Phase04Test::qualityUi()
                                  QByteArray("MissingComponentVersion"), file.toUtf8()})
         QVERIFY(!bytes.contains(forbidden));
     QVERIFY(dialog.close());
-    SbomImportDialog reopened(QStringLiteral("synthetic"), context.logger);
+    SbomImportDialog reopened(QStringLiteral("synthetic-project-id"), QStringLiteral("synthetic"), context.database.filePath(), context.logger);
     QVERIFY(reopened.findChild<QLabel*>(QStringLiteral("sbomQualitySummary"))->text().contains(QStringLiteral("尚无")));
     QCOMPARE(reopened.findChild<QTableView*>(QStringLiteral("sbomQualityIssues"))->model()->rowCount(), 0);
     QVERIFY(writeFile(output.filePath(QStringLiteral("phase04-clean-sbom.json")), encode(cleanObject())));
@@ -532,7 +535,7 @@ void Phase04Test::largeInput()
     object.remove(QStringLiteral("dependencies"));
     const auto file = context.temporary.filePath(QStringLiteral("large.json"));
     QVERIFY(writeFile(file, encode(object)));
-    SbomImportDialog dialog(QStringLiteral("synthetic-large"), context.logger);
+    SbomImportDialog dialog(QStringLiteral("synthetic-project-id"), QStringLiteral("synthetic-large"), context.database.filePath(), context.logger);
     dialog.show();
     QSignalSpy finished(&dialog, &SbomImportDialog::importFinished);
     dialog.importFile(file);
@@ -546,7 +549,7 @@ void Phase04Test::largeInput()
     issues->scrollToBottom();
     QCoreApplication::processEvents();
     QVERIFY(dialog.close());
-    QPointer<SbomImportDialog> closing = new SbomImportDialog(QStringLiteral("synthetic"), context.logger);
+    QPointer<SbomImportDialog> closing = new SbomImportDialog(QStringLiteral("synthetic-project-id"), QStringLiteral("synthetic"), context.database.filePath(), context.logger);
     closing->setAttribute(Qt::WA_DeleteOnClose);
     closing->show();
     closing->importFile(file);
@@ -561,12 +564,13 @@ void Phase04Test::databaseUnchanged()
     QVERIFY(context.open());
     Project project;
     QVERIFY(context.repository.create(QStringLiteral("synthetic-project"), QStringLiteral("synthetic-description"), project).ok());
+    QVERIFY(context.components.replaceForProject(project.id, cleanDocument()).ok());
     const auto changes = scalar(context.database, QStringLiteral("SELECT total_changes()"));
     QVERIFY(changes.isValid());
     const auto before = databaseSnapshot(context.database);
     QVERIFY(!before.isEmpty());
     const auto file = context.temporary.filePath(QStringLiteral("synthetic.json"));
-    SbomImportDialog dialog(project.name, context.logger);
+    SbomImportDialog dialog(project.id, project.name, context.database.filePath(), context.logger);
     QSignalSpy finished(&dialog, &SbomImportDialog::importFinished);
     int count = 0;
     for (const auto& object : {cleanObject(), issuesObject()}) {
@@ -581,10 +585,10 @@ void Phase04Test::databaseUnchanged()
         QCOMPARE(databaseSnapshot(context.database), before);
         QCOMPARE(scalar(context.database, QStringLiteral("SELECT total_changes()")), changes);
     }
-    QCOMPARE(scalar(context.database, QStringLiteral("SELECT value FROM app_meta WHERE key='schema_version'")).toString(), QStringLiteral("2"));
+    QCOMPARE(scalar(context.database, QStringLiteral("SELECT value FROM app_meta WHERE key='schema_version'")).toString(), QStringLiteral("3"));
     auto tables = context.database.connection().tables();
     tables.sort();
-    QCOMPARE(tables, (QStringList{"app_meta", "projects"}));
+    QCOMPARE(tables, (QStringList{"app_meta", "components", "projects"}));
     Project found;
     QVERIFY(context.repository.findById(project.id, found).ok());
     QCOMPARE(found.id, project.id);

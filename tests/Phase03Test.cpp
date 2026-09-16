@@ -1,4 +1,5 @@
 #include "AppDatabase.h"
+#include "ComponentRepository.h"
 #include "AppLogger.h"
 #include "CycloneDxParser.h"
 #include "MainWindow.h"
@@ -68,6 +69,7 @@ struct Context
     AppLogger logger;
     AppDatabase database;
     ProjectRepository repository{database, logger};
+    ComponentRepository components{database};
     bool open()
     {
         QString error;
@@ -322,7 +324,7 @@ void Phase03Test::previewAtomicity()
     const auto bad = context.temporary.filePath(QStringLiteral("invalid.json"));
     QVERIFY(writeFile(file, demoJson()));
     QVERIFY(writeFile(bad, "{not-json"));
-    SbomImportDialog dialog(QStringLiteral("demo-project"), context.logger);
+    SbomImportDialog dialog(QStringLiteral("synthetic-project-id"), QStringLiteral("demo-project"), context.database.filePath(), context.logger);
     dialog.show();
     QVERIFY(QTest::qWaitForWindowExposed(&dialog));
     QSignalSpy finished(&dialog, &SbomImportDialog::importFinished);
@@ -395,7 +397,7 @@ void Phase03Test::projectIntegration()
     });
     Context context;
     QVERIFY(context.open());
-    MainWindow window(new ProjectPage(context.repository, context.logger), nullptr, QStringLiteral("projects"));
+    MainWindow window(new ProjectPage(context.repository, context.components, context.logger), nullptr, QStringLiteral("projects"));
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
     auto* page = window.findChild<ProjectPage*>();
@@ -426,10 +428,10 @@ void Phase03Test::projectIntegration()
     QVERIFY(QMetaObject::invokeMethod(picker, "accept", Qt::DirectConnection));
     QTRY_COMPARE(finished.count(), 1);
     QVERIFY(finished.at(0).at(0).toBool());
-    QCOMPARE(scalar(context.database, QStringLiteral("SELECT value FROM app_meta WHERE key='schema_version'")).toString(), QStringLiteral("2"));
+    QCOMPARE(scalar(context.database, QStringLiteral("SELECT value FROM app_meta WHERE key='schema_version'")).toString(), QStringLiteral("3"));
     auto tables = context.database.connection().tables();
     tables.sort();
-    QCOMPARE(tables, (QStringList{QStringLiteral("app_meta"), QStringLiteral("projects")}));
+    QCOMPARE(tables, (QStringList{QStringLiteral("app_meta"), QStringLiteral("components"), QStringLiteral("projects")}));
     QCOMPARE(scalar(context.database, QStringLiteral("SELECT total_changes()")), changes);
     Project found;
     QVERIFY(context.repository.findById(project.id, found).ok());
@@ -477,7 +479,7 @@ void Phase03Test::largePreview()
     QCOMPARE(parsed.document.components[0].name, longText); // Only the UI truncates; raw values survive parsing.
     const auto file = context.temporary.filePath(QStringLiteral("large.json"));
     QVERIFY(writeFile(file, encode(object)));
-    SbomImportDialog dialog(QStringLiteral("demo"), context.logger);
+    SbomImportDialog dialog(QStringLiteral("synthetic-project-id"), QStringLiteral("demo"), context.database.filePath(), context.logger);
     dialog.show();
     QSignalSpy finished(&dialog, &SbomImportDialog::importFinished);
     dialog.importFile(file);
@@ -499,7 +501,7 @@ void Phase03Test::closingDuringImport()
     QVERIFY(context.open());
     const auto file = context.temporary.filePath(QStringLiteral("demo.json"));
     QVERIFY(writeFile(file, demoJson()));
-    QPointer<SbomImportDialog> dialog = new SbomImportDialog(QStringLiteral("demo"), context.logger);
+    QPointer<SbomImportDialog> dialog = new SbomImportDialog(QStringLiteral("synthetic-project-id"), QStringLiteral("demo"), context.database.filePath(), context.logger);
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->show();
     dialog->importFile(file);
@@ -507,7 +509,7 @@ void Phase03Test::closingDuringImport()
     QTRY_VERIFY(dialog.isNull());
     // Join the actual bounded worker before the fixture removes its input; no timing sleeps.
     QVERIFY(QThreadPool::globalInstance()->waitForDone(5000));
-    SbomImportDialog reopened(QStringLiteral("demo"), context.logger);
+    SbomImportDialog reopened(QStringLiteral("synthetic-project-id"), QStringLiteral("demo"), context.database.filePath(), context.logger);
     QCOMPARE(reopened.findChild<QTableView*>(QStringLiteral("sbomComponents"))->model()->rowCount(), 0);
 }
 

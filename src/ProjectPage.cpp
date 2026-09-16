@@ -1,8 +1,13 @@
 #include "ProjectPage.h"
 #include "ProjectRepository.h"
+#include "ComponentRepository.h"
 #include "SbomImportDialog.h"
 
 #include <QDateTime>
+#include <QAbstractTableModel>
+#include <QHeaderView>
+#include <QTableView>
+#include <QTabWidget>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFormLayout>
@@ -31,8 +36,45 @@ QLabel* textLabel(const QString& objectName, QWidget* parent)
 }
 }
 
-ProjectPage::ProjectPage(ProjectRepository& repository, AppLogger& logger, QWidget* parent)
-    : QWidget(parent), m_repository(repository), m_logger(logger)
+// A read-only snapshot obtained from the repository on selection/refresh/Apply.
+// SQLite remains authoritative; visible cells are formatted lazily.
+class ProjectComponentsModel final : public QAbstractTableModel
+{
+public:
+    explicit ProjectComponentsModel(QObject* parent) : QAbstractTableModel(parent) {}
+    int rowCount(const QModelIndex& parent = {}) const override { return parent.isValid() ? 0 : int(m_rows.size()); }
+    int columnCount(const QModelIndex& parent = {}) const override { return parent.isValid() ? 0 : 6; }
+    QVariant data(const QModelIndex& index, int role) const override
+    {
+        if (!index.isValid() || index.row() < 0 || index.row() >= rowCount() || role != Qt::DisplayRole) return {};
+        const auto& c = m_rows.at(index.row());
+        if (index.column() == 0) return c.sourceRole == ComponentSourceRole::MetadataRoot
+            ? QStringLiteral("元数据根组件") : QStringLiteral("组件 #%1").arg(c.sourceOrder + 1);
+        const QString* text = nullptr;
+        switch (index.column()) {
+        case 1: text = &c.name; break;
+        case 2: text = &c.version; break;
+        case 3: text = &c.type; break;
+        case 4: text = &c.purl; break;
+        case 5: text = &c.bomRef; break;
+        default: return {};
+        }
+        return text->size() > 512 ? text->left(512) + QStringLiteral("…") : *text;
+    }
+    QVariant headerData(int section, Qt::Orientation orientation, int role) const override
+    {
+        if (orientation != Qt::Horizontal || role != Qt::DisplayRole)
+            return QAbstractTableModel::headerData(section, orientation, role);
+        return QStringList{QStringLiteral("来源"), QStringLiteral("名称 / Name"), QStringLiteral("版本 / Version"),
+            QStringLiteral("类型 / Type"), QStringLiteral("PURL"), QStringLiteral("bom-ref")}.value(section);
+    }
+    void replace(QList<Component> rows) { beginResetModel(); m_rows = std::move(rows); endResetModel(); }
+private:
+    QList<Component> m_rows;
+};
+
+ProjectPage::ProjectPage(ProjectRepository& repository, ComponentRepository& components, AppLogger& logger, QWidget* parent)
+    : QWidget(parent), m_repository(repository), m_components(components), m_logger(logger)
 {
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(32, 24, 32, 24);
@@ -83,7 +125,27 @@ ProjectPage::ProjectPage(ProjectRepository& repository, AppLogger& logger, QWidg
     m_details->setOpenExternalLinks(false);
     m_details->setWordWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
     m_details->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
-    layout->addWidget(m_details, 2);
+    m_tabs = new QTabWidget(this);
+    m_tabs->setObjectName(QStringLiteral("projectTabs"));
+    m_tabs->addTab(m_details, QStringLiteral("项目详情"));
+    auto* componentPage = new QWidget(m_tabs);
+    auto* componentLayout = new QVBoxLayout(componentPage);
+    m_componentSummary = textLabel(QStringLiteral("currentComponentsSummary"), componentPage);
+    componentLayout->addWidget(m_componentSummary);
+    auto* table = new QTableView(componentPage);
+    table->setObjectName(QStringLiteral("currentComponents"));
+    m_componentModel = new ProjectComponentsModel(table);
+    table->setModel(m_componentModel);
+    table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    table->setSelectionBehavior(QAbstractItemView::SelectRows);
+    table->setAlternatingRowColors(true);
+    table->setWordWrap(false);
+    table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Ignored);
+    table->horizontalHeader()->setDefaultSectionSize(150);
+    table->setColumnWidth(4, 280);
+    componentLayout->addWidget(table, 1);
+    m_tabs->addTab(componentPage, QStringLiteral("当前组件"));
+    layout->addWidget(m_tabs, 2);
 
     connect(create, &QPushButton::clicked, this, &ProjectPage::showCreateDialog);
     connect(m_remove, &QPushButton::clicked, this, &ProjectPage::confirmRemoval);
@@ -127,7 +189,8 @@ void ProjectPage::reload(const QString& preferredId)
 void ProjectPage::showSelection()
 {
     m_details->clear();
-    m_details->hide();
+    m_tabs->hide();
+    m_componentModel->replace({});
     m_remove->setEnabled(false);
     m_import->setEnabled(false);
     m_selectionHint->setVisible(m_list->count() > 0);
@@ -152,9 +215,20 @@ void ProjectPage::showSelection()
                                      "<p><b>项目描述</b></p><div style='white-space: pre-wrap;'>%3</div>")
                            .arg(project.name.toHtmlEscaped(), createdAt, description.toHtmlEscaped()));
     m_selectionHint->hide();
-    m_details->show();
+    m_tabs->show();
     m_remove->setEnabled(true);
     m_import->setEnabled(true);
+    QList<Component> components;
+    const auto componentResult = m_components.listForProject(id, components);
+    if (!componentResult.ok()) {
+        m_error->setText(componentResult.userMessage());
+        m_error->show();
+    }
+    m_componentSummary->setText(!componentResult.ok() ? QStringLiteral("当前组件读取失败。")
+        : components.isEmpty() ? QStringLiteral("当前项目没有已保存组件。导入预览后点击“应用到项目”保存。")
+        : QStringLiteral("当前已保存 %1 条组件（包含元数据根组件）。来源序号为展开顺序；超长文本省略显示。")
+            .arg(components.size()));
+    m_componentModel->replace(std::move(components));
 }
 
 void ProjectPage::showSbomImport()
@@ -170,7 +244,10 @@ void ProjectPage::showSbomImport()
         return;
     }
     // Window modality keeps this project's context fixed until its preview is closed.
-    auto* dialog = new SbomImportDialog(project.name, m_logger, this);
+    auto* dialog = new SbomImportDialog(project.id, project.name, m_components.databaseFilePath(), m_logger, this);
+    connect(dialog, &SbomImportDialog::applyFinished, this, [this](bool success) {
+        if (success) showSelection();
+    });
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->open();
     dialog->chooseFile();

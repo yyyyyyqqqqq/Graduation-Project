@@ -2,6 +2,7 @@
 #include "AppLogger.h"
 
 #include <QAbstractTableModel>
+#include <QCloseEvent>
 #include <QDialogButtonBox>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -62,6 +63,7 @@ public:
         m_document = std::move(document);
         endResetModel();
     }
+    const SbomDocument& document() const { return m_document; }
 private:
     SbomDocument m_document;
 };
@@ -122,12 +124,13 @@ private:
     SbomQualityReport m_report;
 };
 
-SbomImportDialog::SbomImportDialog(const QString& projectName, AppLogger& logger, QWidget* parent)
-    : QDialog(parent), m_logger(logger), m_model(new SbomPreviewModel(this)),
+SbomImportDialog::SbomImportDialog(const QString& projectId, const QString& projectName, const QString& databaseFile,
+                                 AppLogger& logger, QWidget* parent)
+    : QDialog(parent), m_logger(logger), m_projectId(projectId), m_databaseFile(databaseFile), m_model(new SbomPreviewModel(this)),
       m_qualityModel(new SbomQualityModel(this))
 {
     setObjectName(QStringLiteral("sbomImportDialog"));
-    setWindowTitle(QStringLiteral("导入 SBOM · 只读预览与质量诊断"));
+    setWindowTitle(QStringLiteral("导入 SBOM · 预览、质量诊断与应用"));
     setWindowModality(Qt::WindowModal);
     resize(900, 600);
     setMinimumSize(560, 400);
@@ -138,7 +141,7 @@ SbomImportDialog::SbomImportDialog(const QString& projectName, AppLogger& logger
     project->setWordWrap(true);
     layout->addWidget(project);
     auto* hint = new QLabel(QStringLiteral("支持 CycloneDX JSON 1.4 / 1.5 / 1.6，最大 %1 MiB。\n"
-        "解析、质量诊断与只读预览；不保存组件。关闭后清除本次结果，超长文本显示为省略形式。")
+        "预览不写入数据库。点击“应用到项目”后，将完整替换当前组件（含元数据根组件）。")
         .arg(CycloneDxParser::MaxFileBytes / (1024 * 1024)), this);
     hint->setWordWrap(true);
     layout->addWidget(hint);
@@ -199,15 +202,33 @@ SbomImportDialog::SbomImportDialog(const QString& projectName, AppLogger& logger
     tabs->addTab(qualityPage, QStringLiteral("质量诊断"));
     layout->addWidget(tabs, 1);
     auto* buttons = new QDialogButtonBox(QDialogButtonBox::Close, this);
-    buttons->button(QDialogButtonBox::Close)->setText(QStringLiteral("关闭"));
+    m_close = buttons->button(QDialogButtonBox::Close);
+    m_close->setText(QStringLiteral("关闭"));
+    m_apply = buttons->addButton(QStringLiteral("应用到项目"), QDialogButtonBox::ActionRole);
+    m_apply->setObjectName(QStringLiteral("applySbom"));
+    m_apply->setAutoDefault(false);
     layout->addWidget(buttons);
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
     connect(m_choose, &QPushButton::clicked, this, &SbomImportDialog::chooseFile);
+    connect(m_apply, &QPushButton::clicked, this, &SbomImportDialog::applyToProject);
+    connect(&m_applyWatcher, &QFutureWatcher<ComponentResult>::finished, this, [this] {
+        const auto result = m_applyWatcher.result();
+        m_applyState = result.ok() ? ApplyState::Applied : ApplyState::Ready;
+        m_status->setStyleSheet(result.ok() ? QString() : QStringLiteral("color: #a12622;"));
+        m_status->setText(result.ok()
+            ? QStringLiteral("已应用：项目当前组件已完整替换。质量诊断仍有效，保存不代表数据没有问题。")
+            : result.userMessage());
+        // Driver diagnostics may contain input; log only a fixed error category.
+        m_logger.write(result.ok() ? AppLogger::Level::Info : AppLogger::Level::Warning,
+            QStringLiteral("Component apply finished, result=%1").arg(static_cast<int>(result.error)));
+        updateActions();
+        emit applyFinished(result.ok());
+    });
+    updateActions();
     connect(&m_watcher, &QFutureWatcher<ImportResult>::finished, this, [this] {
         auto result = m_watcher.result();
         auto& parsed = result.parsed;
         m_importing = false;
-        m_choose->setEnabled(true);
         if (!parsed.ok()) {
             m_logger.write(AppLogger::Level::Warning, QStringLiteral("SBOM parse failed: %1").arg(parsed.errorCode()));
             m_status->setText(parsed.userMessage() + QStringLiteral(" 当前预览与质量诊断未更改。"));
@@ -239,18 +260,21 @@ SbomImportDialog::SbomImportDialog(const QString& projectName, AppLogger& logger
                     .arg(errors).arg(warnings).arg(infos));
             m_model->replace(std::move(parsed.document));
             m_qualityModel->replace(std::move(result.quality));
+            m_applyState = ApplyState::Ready;
             m_status->setStyleSheet(QString());
-            m_status->setText(QStringLiteral("解析成功，质量诊断已完成（%1 项问题）。组件数不含元数据根组件。")
-                                 .arg(total));
+            m_status->setText(QStringLiteral("解析成功（%1 项问题，Error：%2），尚未应用。组件数不含元数据根组件。%3")
+                .arg(total).arg(errors).arg(errors > 0
+                    ? QStringLiteral("存在质量 Error；仍可保存当前输入，保存不代表数据没有问题。") : QString()));
         }
         m_pendingFileName.clear();
+        updateActions();
         emit importFinished(parsed.ok());
     });
 }
 
 void SbomImportDialog::chooseFile()
 {
-    if (m_importing || m_picker) return;
+    if (m_importing || m_picker || m_applyState == ApplyState::Working) return;
     auto* picker = new QFileDialog(this, QStringLiteral("选择 CycloneDX JSON"));
     m_picker = picker;
     picker->setAttribute(Qt::WA_DeleteOnClose);
@@ -262,10 +286,10 @@ void SbomImportDialog::chooseFile()
 
 void SbomImportDialog::importFile(const QString& path)
 {
-    if (m_importing || path.isEmpty()) return;
+    if (m_importing || path.isEmpty() || m_applyState == ApplyState::Working) return;
     m_importing = true;
     m_pendingFileName = QFileInfo(path).fileName();
-    m_choose->setEnabled(false);
+    updateActions();
     m_status->setStyleSheet(QString());
     m_status->setText(QStringLiteral("正在读取、解析并诊断质量…"));
     // Value capture only: closing the window during parsing cannot access destroyed UI/services.
@@ -275,4 +299,38 @@ void SbomImportDialog::importFile(const QString& path)
         if (result.parsed.ok()) result.quality = SbomQualityAnalyzer::analyze(result.parsed.document);
         return result;
     }));
+}
+
+void SbomImportDialog::updateActions()
+{
+    const bool working = m_applyState == ApplyState::Working;
+    m_choose->setEnabled(!m_importing && !working);
+    m_apply->setEnabled(!m_importing && m_applyState == ApplyState::Ready);
+    m_apply->setText(working ? QStringLiteral("正在应用…")
+        : m_applyState == ApplyState::Applied ? QStringLiteral("已应用") : QStringLiteral("应用到项目"));
+    m_close->setEnabled(!working);
+}
+
+void SbomImportDialog::applyToProject()
+{
+    if (m_importing || m_picker || m_applyState != ApplyState::Ready) return;
+    m_applyState = ApplyState::Working;
+    updateActions();
+    m_status->setStyleSheet(QString());
+    m_status->setText(QStringLiteral("正在应用组件，请等待事务完成。原组件仅在完整保存成功后替换。"));
+    m_applyWatcher.setFuture(QtConcurrent::run([path = m_databaseFile, id = m_projectId,
+                                               document = m_model->document()] {
+        return ComponentRepository::replaceInFile(path, id, document);
+    }));
+}
+
+void SbomImportDialog::reject()
+{
+    if (m_applyState != ApplyState::Working) QDialog::reject();
+}
+
+void SbomImportDialog::closeEvent(QCloseEvent* event)
+{
+    if (m_applyState == ApplyState::Working) event->ignore();
+    else QDialog::closeEvent(event);
 }

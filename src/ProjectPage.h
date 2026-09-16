@@ -3,6 +3,9 @@
 #include <QWidget>
 
 class ProjectRepository;
+class ComponentRepository;
+class ProjectComponentsModel;
+class QTabWidget;
 class AppLogger;
 class QLabel;
 class QListWidget;
@@ -15,7 +18,7 @@ class ProjectPage final : public QWidget
     Q_OBJECT
 
 public:
-    explicit ProjectPage(ProjectRepository& repository, AppLogger& logger, QWidget* parent = nullptr);
+    explicit ProjectPage(ProjectRepository& repository, ComponentRepository& components, AppLogger& logger, QWidget* parent = nullptr);
 
 private:
     QString selectedId() const;
@@ -26,6 +29,7 @@ private:
     void showSbomImport();
 
     ProjectRepository& m_repository;
+    ComponentRepository& m_components;
     AppLogger& m_logger;
     QListWidget* m_list;
     QLabel* m_empty;
@@ -34,4 +38,7 @@ private:
     QTextBrowser* m_details;
     QPushButton* m_remove;
     QPushButton* m_import;
+    QTabWidget* m_tabs;
+    ProjectComponentsModel* m_componentModel;
+    QLabel* m_componentSummary;
 };

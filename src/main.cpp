@@ -5,6 +5,7 @@
 #include "AppSettings.h"
 #include "ProjectPage.h"
 #include "ProjectRepository.h"
+#include "ComponentRepository.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -18,7 +19,7 @@ int main(int argc, char* argv[])
     QApplication application(argc, argv);
     QApplication::setOrganizationName(QStringLiteral("GraduationProject"));
     QApplication::setApplicationName(QStringLiteral("SupplyChainRiskAssessment"));
-    QApplication::setApplicationVersion(QStringLiteral("0.5.0"));
+    QApplication::setApplicationVersion(QStringLiteral("0.6.0"));
 
     QCommandLineParser parser;
     parser.setApplicationDescription(QStringLiteral("软件供应链漏洞风险评估系统"));
@@ -44,7 +45,7 @@ int main(int argc, char* argv[])
     if (!logOpened) {
         std::fprintf(stderr, "Cannot open application log: %s\n", qPrintable(logger.errorString()));
     }
-    bool loggingReady = logger.write(AppLogger::Level::Info, QStringLiteral("Application starting, version 0.5.0"));
+    bool loggingReady = logger.write(AppLogger::Level::Info, QStringLiteral("Application starting, version 0.6.0"));
     loggingReady = logger.write(AppLogger::Level::Info,
                                QStringLiteral("Runtime directories ready: %1").arg(paths.root)) && loggingReady;
     if (!logOpened || !loggingReady) {
@@ -74,7 +75,8 @@ int main(int argc, char* argv[])
     {
         // Destroy pages/dialogs and their repository before closing the shared connection.
         ProjectRepository projects(database, logger);
-        MainWindow window(new ProjectPage(projects, logger), nullptr, initialPage);
+        ComponentRepository components(database);
+        MainWindow window(new ProjectPage(projects, components, logger), nullptr, initialPage);
         if (window.currentPageId() != initialPage) {
             logger.write(AppLogger::Level::Warning, QStringLiteral("Unknown last navigation page; using overview"));
         }

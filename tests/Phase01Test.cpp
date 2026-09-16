@@ -101,12 +101,12 @@ void Phase01Test::database()
             const auto connection = database.connection();
             auto tables = connection.tables();
             tables.sort();
-            QCOMPARE(tables, (QStringList{QStringLiteral("app_meta"), QStringLiteral("projects")}));
+            QCOMPARE(tables, (QStringList{QStringLiteral("app_meta"), QStringLiteral("components"), QStringLiteral("projects")}));
             QSqlQuery query(connection);
             QVERIFY(query.exec(QStringLiteral("SELECT key, value FROM app_meta")));
             QVERIFY(query.next());
             QCOMPARE(query.value(0).toString(), QStringLiteral("schema_version"));
-            QCOMPARE(query.value(1).toString(), QStringLiteral("2"));
+            QCOMPARE(query.value(1).toString(), QStringLiteral("3"));
             QVERIFY(!query.next());
         }
         database.close();
@@ -245,7 +245,7 @@ void Phase01Test::applicationStartup()
         QFile file(paths.logFile());
         return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray();
     };
-    QTRY_VERIFY_WITH_TIMEOUT(readLog().contains("Database initialized, schema_version=2"), 10000);
+    QTRY_VERIFY_WITH_TIMEOUT(readLog().contains("Database initialized, schema_version=3"), 10000);
     QTRY_VERIFY_WITH_TIMEOUT(readLog().contains("Main window shown, page=overview"), 5000);
     QVERIFY(QFileInfo::exists(paths.settingsFile()));
     QCOMPARE(process.state(), QProcess::Running);
