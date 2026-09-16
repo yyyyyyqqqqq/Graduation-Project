@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 
-project(SupplyChainRiskAssessment VERSION 0.3.0 LANGUAGES CXX)
+project(SupplyChainRiskAssessment VERSION 0.4.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -8,7 +8,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-find_package(Qt6 6.11.2 EXACT REQUIRED COMPONENTS Widgets Sql)
+find_package(Qt6 6.11.2 EXACT REQUIRED COMPONENTS Widgets Sql Concurrent)
+
+# Parsing remains independent of Widgets, SQL and application services.
+add_library(SbomParsing STATIC src/SbomDocument.h src/CycloneDxParser.h src/CycloneDxParser.cpp)
+target_include_directories(SbomParsing PUBLIC src)
+target_link_libraries(SbomParsing PUBLIC Qt6::Core)
 
 # Shared by the application and its tests; components have current responsibilities.
 add_library(AppFoundation STATIC
@@ -27,8 +32,9 @@ add_executable(SupplyChainRiskAssessment WIN32
     src/MainWindow.h
     src/MainWindow.cpp
     src/ProjectPage.h src/ProjectPage.cpp
+    src/SbomImportDialog.h src/SbomImportDialog.cpp
 )
-target_link_libraries(SupplyChainRiskAssessment PRIVATE Qt6::Widgets AppFoundation)
+target_link_libraries(SupplyChainRiskAssessment PRIVATE Qt6::Widgets Qt6::Concurrent AppFoundation SbomParsing)
 
 include(CTest)
 if(BUILD_TESTING)
@@ -65,8 +71,17 @@ if(BUILD_TESTING)
         tests/Phase02Test.cpp
         src/MainWindow.h src/MainWindow.cpp
         src/ProjectPage.h src/ProjectPage.cpp
+        src/SbomImportDialog.h src/SbomImportDialog.cpp
     )
-    target_link_libraries(Phase02Test PRIVATE Qt6::Widgets Qt6::Test AppFoundation)
+    target_link_libraries(Phase02Test PRIVATE Qt6::Widgets Qt6::Test Qt6::Concurrent AppFoundation SbomParsing)
+
+    add_executable(Phase03Test
+        tests/Phase03Test.cpp
+        src/MainWindow.h src/MainWindow.cpp
+        src/ProjectPage.h src/ProjectPage.cpp
+        src/SbomImportDialog.h src/SbomImportDialog.cpp
+    )
+    target_link_libraries(Phase03Test PRIVATE Qt6::Widgets Qt6::Test Qt6::Concurrent AppFoundation SbomParsing)
 
     function(add_qt_test phase target test_case)
         # File output retains Qt Test diagnostics even when Windows stdout is unavailable.
@@ -92,6 +107,11 @@ if(BUILD_TESTING)
     foreach(test_case IN ITEMS freshDatabase migrateV1 migrationRollback migrationConflict createAndFind
             validation stableOrder persistenceAndDelete databaseErrors projectUi uiValidation uiErrors)
         add_qt_test(Phase02 Phase02Test ${test_case})
+    endforeach()
+    foreach(test_case IN ITEMS minimal supportedVersions components metadata dependencies invalidJson
+            invalidHeaders invalidStructures utf8 limits fileRead previewAtomicity projectIntegration
+            largePreview closingDuringImport)
+        add_qt_test(Phase03 Phase03Test ${test_case})
     endforeach()
 endif()
 

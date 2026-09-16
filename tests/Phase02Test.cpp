@@ -321,7 +321,7 @@ void Phase02Test::projectUi()
 {
     Context context;
     QVERIFY(context.open());
-    MainWindow window(new ProjectPage(context.repository), nullptr, QStringLiteral("projects"));
+    MainWindow window(new ProjectPage(context.repository, context.logger), nullptr, QStringLiteral("projects"));
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
     auto* page = window.findChild<ProjectPage*>();
@@ -418,7 +418,7 @@ void Phase02Test::uiValidation()
 {
     Context context;
     QVERIFY(context.open());
-    MainWindow window(new ProjectPage(context.repository), nullptr, QStringLiteral("projects"));
+    MainWindow window(new ProjectPage(context.repository, context.logger), nullptr, QStringLiteral("projects"));
     window.resize(680, 420);
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
@@ -469,7 +469,7 @@ void Phase02Test::uiErrors()
     QVERIFY(context.open());
     Project project;
     QVERIFY(context.repository.create(QStringLiteral("保留项目"), {}, project).ok());
-    MainWindow window(new ProjectPage(context.repository), nullptr, QStringLiteral("projects"));
+    MainWindow window(new ProjectPage(context.repository, context.logger), nullptr, QStringLiteral("projects"));
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
     auto* page = window.findChild<ProjectPage*>();

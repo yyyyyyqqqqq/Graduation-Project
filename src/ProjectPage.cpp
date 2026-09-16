@@ -1,5 +1,6 @@
 #include "ProjectPage.h"
 #include "ProjectRepository.h"
+#include "SbomImportDialog.h"
 
 #include <QDateTime>
 #include <QDialog>
@@ -30,8 +31,8 @@ QLabel* textLabel(const QString& objectName, QWidget* parent)
 }
 }
 
-ProjectPage::ProjectPage(ProjectRepository& repository, QWidget* parent)
-    : QWidget(parent), m_repository(repository)
+ProjectPage::ProjectPage(ProjectRepository& repository, AppLogger& logger, QWidget* parent)
+    : QWidget(parent), m_repository(repository), m_logger(logger)
 {
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(32, 24, 32, 24);
@@ -48,6 +49,9 @@ ProjectPage::ProjectPage(ProjectRepository& repository, QWidget* parent)
     refresh->setObjectName(QStringLiteral("refreshProjects"));
     actions->addWidget(create);
     actions->addWidget(m_remove);
+    m_import = new QPushButton(QStringLiteral("导入 SBOM"), this);
+    m_import->setObjectName(QStringLiteral("importSbom"));
+    actions->addWidget(m_import);
     actions->addStretch();
     actions->addWidget(refresh);
     layout->addLayout(actions);
@@ -83,6 +87,7 @@ ProjectPage::ProjectPage(ProjectRepository& repository, QWidget* parent)
 
     connect(create, &QPushButton::clicked, this, &ProjectPage::showCreateDialog);
     connect(m_remove, &QPushButton::clicked, this, &ProjectPage::confirmRemoval);
+    connect(m_import, &QPushButton::clicked, this, &ProjectPage::showSbomImport);
     connect(refresh, &QPushButton::clicked, this, [this] { reload(selectedId()); });
     connect(m_list, &QListWidget::currentItemChanged, this, [this] { showSelection(); });
     reload();
@@ -124,6 +129,7 @@ void ProjectPage::showSelection()
     m_details->clear();
     m_details->hide();
     m_remove->setEnabled(false);
+    m_import->setEnabled(false);
     m_selectionHint->setVisible(m_list->count() > 0);
     m_error->hide();
     const QString id = selectedId();
@@ -148,6 +154,26 @@ void ProjectPage::showSelection()
     m_selectionHint->hide();
     m_details->show();
     m_remove->setEnabled(true);
+    m_import->setEnabled(true);
+}
+
+void ProjectPage::showSbomImport()
+{
+    const QString id = selectedId();
+    if (id.isEmpty()) return;
+    Project project;
+    const auto result = m_repository.findById(id, project);
+    if (!result.ok()) {
+        reload();
+        m_error->setText(result.userMessage());
+        m_error->show();
+        return;
+    }
+    // Window modality keeps this project's context fixed until its preview is closed.
+    auto* dialog = new SbomImportDialog(project.name, m_logger, this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->open();
+    dialog->chooseFile();
 }
 
 void ProjectPage::showCreateDialog()
