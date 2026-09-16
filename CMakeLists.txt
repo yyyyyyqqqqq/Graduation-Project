@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 
-project(SupplyChainRiskAssessment VERSION 0.1.0 LANGUAGES CXX)
+project(SupplyChainRiskAssessment VERSION 0.2.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -8,14 +8,24 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-find_package(Qt6 6.11.2 EXACT REQUIRED COMPONENTS Widgets)
+find_package(Qt6 6.11.2 EXACT REQUIRED COMPONENTS Widgets Sql)
+
+# Shared by the application and its tests; each component has a current Phase 01 use.
+add_library(AppFoundation STATIC
+    src/AppPaths.h src/AppPaths.cpp
+    src/AppSettings.h src/AppSettings.cpp
+    src/AppLogger.h src/AppLogger.cpp
+    src/AppDatabase.h src/AppDatabase.cpp
+)
+target_include_directories(AppFoundation PUBLIC src)
+target_link_libraries(AppFoundation PUBLIC Qt6::Core Qt6::Sql)
 
 add_executable(SupplyChainRiskAssessment WIN32
     src/main.cpp
     src/MainWindow.h
     src/MainWindow.cpp
 )
-target_link_libraries(SupplyChainRiskAssessment PRIVATE Qt6::Widgets)
+target_link_libraries(SupplyChainRiskAssessment PRIVATE Qt6::Widgets AppFoundation)
 
 include(CTest)
 if(BUILD_TESTING)
@@ -38,20 +48,38 @@ if(BUILD_TESTING)
         GRAPHVIZ_DOT_EXECUTABLE="${GRAPHVIZ_DOT_EXECUTABLE}"
     )
 
-    foreach(test_case IN ITEMS qtCppSmoke sqliteReadWrite graphvizSvg)
-        add_test(NAME Phase00.${test_case} COMMAND Phase00SmokeTest ${test_case})
-        set_tests_properties(Phase00.${test_case} PROPERTIES TIMEOUT 40)
+    add_executable(Phase01Test
+        tests/Phase01Test.cpp
+        src/MainWindow.h src/MainWindow.cpp
+    )
+    target_link_libraries(Phase01Test PRIVATE Qt6::Widgets Qt6::Test AppFoundation)
+    target_compile_definitions(Phase01Test PRIVATE
+        APPLICATION_EXECUTABLE="$<TARGET_FILE:SupplyChainRiskAssessment>"
+    )
+    add_dependencies(Phase01Test SupplyChainRiskAssessment)
+
+    function(add_qt_test phase target test_case)
+        # File output retains Qt Test diagnostics even when Windows stdout is unavailable.
+        add_test(NAME ${phase}.${test_case} COMMAND ${target} ${test_case}
+            -o "${CMAKE_CURRENT_BINARY_DIR}/${phase}.${test_case}.txt,txt")
+        set_tests_properties(${phase}.${test_case} PROPERTIES TIMEOUT 40)
         if(WIN32)
             # CTest can find the existing Qt/MinGW DLLs without a deployment package
             # or any changes to the user's system PATH.
             get_filename_component(compiler_bin "${CMAKE_CXX_COMPILER}" DIRECTORY)
-            set_tests_properties(Phase00.${test_case} PROPERTIES
+            set_tests_properties(${phase}.${test_case} PROPERTIES
                 ENVIRONMENT_MODIFICATION
                     "PATH=path_list_prepend:${compiler_bin};PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
             )
         endif()
+    endfunction()
+    foreach(test_case IN ITEMS qtCppSmoke sqliteReadWrite graphvizSvg)
+        add_qt_test(Phase00 Phase00SmokeTest ${test_case})
+    endforeach()
+    foreach(test_case IN ITEMS paths settings database databaseRejectsUnknownSchema logging navigation applicationStartup)
+        add_qt_test(Phase01 Phase01Test ${test_case})
     endforeach()
 endif()
 
-message(STATUS "Phase 00 compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} (${CMAKE_CXX_COMPILER})")
-message(STATUS "Phase 00 Qt: ${Qt6_VERSION} (${Qt6_DIR})")
+message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} (${CMAKE_CXX_COMPILER})")
+message(STATUS "Qt: ${Qt6_VERSION} (${Qt6_DIR})")
