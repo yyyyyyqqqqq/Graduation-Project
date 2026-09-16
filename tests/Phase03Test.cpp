@@ -443,7 +443,7 @@ void Phase03Test::projectIntegration()
     dialog = page->findChild<SbomImportDialog*>();
     QVERIFY(dialog);
     dialog->findChild<QFileDialog*>()->reject();
-    QCOMPARE(dialog->findChild<QTableView*>()->model()->rowCount(), 0);
+    QCOMPARE(dialog->findChild<QTableView*>(QStringLiteral("sbomComponents"))->model()->rowCount(), 0);
     dialog->reject();
     QTRY_VERIFY(dialog.isNull());
     QVERIFY(context.repository.remove(project.id).ok());
@@ -483,7 +483,7 @@ void Phase03Test::largePreview()
     dialog.importFile(file);
     QTRY_COMPARE_WITH_TIMEOUT(finished.count(), 1, 10000);
     QVERIFY(finished.at(0).at(0).toBool());
-    auto* table = dialog.findChild<QTableView*>();
+    auto* table = dialog.findChild<QTableView*>(QStringLiteral("sbomComponents"));
     QCOMPARE(table->model()->rowCount(), 10000);
     const auto displayed = table->model()->data(table->model()->index(0, 0)).toString();
     QVERIFY(displayed.size() < 2000);
@@ -508,7 +508,7 @@ void Phase03Test::closingDuringImport()
     // Join the actual bounded worker before the fixture removes its input; no timing sleeps.
     QVERIFY(QThreadPool::globalInstance()->waitForDone(5000));
     SbomImportDialog reopened(QStringLiteral("demo"), context.logger);
-    QCOMPARE(reopened.findChild<QTableView*>()->model()->rowCount(), 0);
+    QCOMPARE(reopened.findChild<QTableView*>(QStringLiteral("sbomComponents"))->model()->rowCount(), 0);
 }
 
 QTEST_MAIN(Phase03Test)

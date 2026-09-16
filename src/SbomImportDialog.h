@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CycloneDxParser.h"
+#include "SbomQualityAnalyzer.h"
 #include <QDialog>
 #include <QFutureWatcher>
 #include <QPointer>
@@ -11,6 +12,7 @@ class QLabel;
 class QPushButton;
 class QTextBrowser;
 class SbomPreviewModel;
+class SbomQualityModel;
 
 // One project-bound, window-modal preview. Closing releases its session data.
 // The worker owns only a path; it never touches this dialog, the logger or SQLite.
@@ -26,10 +28,16 @@ signals:
     void importFinished(bool success);
 
 private:
+    struct ImportResult {
+        SbomParseResult parsed;
+        SbomQualityReport quality;
+    };
     AppLogger& m_logger;
-    QFutureWatcher<SbomParseResult> m_watcher;
+    QFutureWatcher<ImportResult> m_watcher;
     QPointer<QFileDialog> m_picker;
     SbomPreviewModel* m_model;
+    SbomQualityModel* m_qualityModel;
+    QLabel* m_qualitySummary;
     QTextBrowser* m_summary;
     QLabel* m_status;
     QPushButton* m_choose;

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 
-project(SupplyChainRiskAssessment VERSION 0.4.0 LANGUAGES CXX)
+project(SupplyChainRiskAssessment VERSION 0.5.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -10,8 +10,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(Qt6 6.11.2 EXACT REQUIRED COMPONENTS Widgets Sql Concurrent)
 
-# Parsing remains independent of Widgets, SQL and application services.
-add_library(SbomParsing STATIC src/SbomDocument.h src/CycloneDxParser.h src/CycloneDxParser.cpp)
+# Parsing and quality analysis remain independent of Widgets, SQL and application services.
+add_library(SbomParsing STATIC src/SbomDocument.h src/CycloneDxParser.h src/CycloneDxParser.cpp
+    src/SbomQualityAnalyzer.h src/SbomQualityAnalyzer.cpp)
 target_include_directories(SbomParsing PUBLIC src)
 target_link_libraries(SbomParsing PUBLIC Qt6::Core)
 
@@ -83,6 +84,12 @@ if(BUILD_TESTING)
     )
     target_link_libraries(Phase03Test PRIVATE Qt6::Widgets Qt6::Test Qt6::Concurrent AppFoundation SbomParsing)
 
+    add_executable(Phase04Test
+        tests/Phase04Test.cpp
+        src/SbomImportDialog.h src/SbomImportDialog.cpp
+    )
+    target_link_libraries(Phase04Test PRIVATE Qt6::Widgets Qt6::Test Qt6::Concurrent AppFoundation SbomParsing)
+
     function(add_qt_test phase target test_case)
         # File output retains Qt Test diagnostics even when Windows stdout is unavailable.
         add_test(NAME ${phase}.${test_case} COMMAND ${target} ${test_case}
@@ -112,6 +119,10 @@ if(BUILD_TESTING)
             invalidHeaders invalidStructures utf8 limits fileRead previewAtomicity projectIntegration
             largePreview closingDuringImport)
         add_qt_test(Phase03 Phase03Test ${test_case})
+    endforeach()
+    foreach(test_case IN ITEMS clean missingFields duplicateIdentifiers emptyDocument dependencyRules
+            deterministicReport documentUnchanged parseQualitySeparation qualityUi largeInput databaseUnchanged)
+        add_qt_test(Phase04 Phase04Test ${test_case})
     endforeach()
 endif()
 
