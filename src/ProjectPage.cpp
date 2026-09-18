@@ -2,6 +2,7 @@
 #include "ProjectRepository.h"
 #include "ComponentRepository.h"
 #include "SbomImportDialog.h"
+#include "DependencyPage.h"
 
 #include <QDateTime>
 #include <QAbstractTableModel>
@@ -145,6 +146,8 @@ ProjectPage::ProjectPage(ProjectRepository& repository, ComponentRepository& com
     table->setColumnWidth(4, 280);
     componentLayout->addWidget(table, 1);
     m_tabs->addTab(componentPage, QStringLiteral("当前组件"));
+    m_dependencies = new DependencyPage(m_components.databaseFilePath(),m_tabs);
+    m_tabs->addTab(m_dependencies,QStringLiteral("依赖关系"));
     layout->addWidget(m_tabs, 2);
 
     connect(create, &QPushButton::clicked, this, &ProjectPage::showCreateDialog);
@@ -190,6 +193,7 @@ void ProjectPage::showSelection()
 {
     m_details->clear();
     m_tabs->hide();
+    m_dependencies->setProject({});
     m_componentModel->replace({});
     m_remove->setEnabled(false);
     m_import->setEnabled(false);
@@ -216,6 +220,7 @@ void ProjectPage::showSelection()
                            .arg(project.name.toHtmlEscaped(), createdAt, description.toHtmlEscaped()));
     m_selectionHint->hide();
     m_tabs->show();
+    m_dependencies->setProject(id);
     m_remove->setEnabled(true);
     m_import->setEnabled(true);
     QList<Component> components;

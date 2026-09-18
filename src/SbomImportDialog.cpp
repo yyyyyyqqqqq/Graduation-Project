@@ -141,7 +141,7 @@ SbomImportDialog::SbomImportDialog(const QString& projectId, const QString& proj
     project->setWordWrap(true);
     layout->addWidget(project);
     auto* hint = new QLabel(QStringLiteral("支持 CycloneDX JSON 1.4 / 1.5 / 1.6，最大 %1 MiB。\n"
-        "预览不写入数据库。点击“应用到项目”后，将完整替换当前组件（含元数据根组件）。")
+        "预览不写入数据库。点击“应用到项目”后，将完整替换当前组件（含元数据根组件）及原始依赖声明。")
         .arg(CycloneDxParser::MaxFileBytes / (1024 * 1024)), this);
     hint->setWordWrap(true);
     layout->addWidget(hint);
@@ -216,7 +216,7 @@ SbomImportDialog::SbomImportDialog(const QString& projectId, const QString& proj
         m_applyState = result.ok() ? ApplyState::Applied : ApplyState::Ready;
         m_status->setStyleSheet(result.ok() ? QString() : QStringLiteral("color: #a12622;"));
         m_status->setText(result.ok()
-            ? QStringLiteral("已应用：项目当前组件已完整替换。质量诊断仍有效，保存不代表数据没有问题。")
+            ? QStringLiteral("已应用：项目当前组件及依赖已完整替换。质量诊断仍有效，保存不代表数据没有问题。")
             : result.userMessage());
         // Driver diagnostics may contain input; log only a fixed error category.
         m_logger.write(result.ok() ? AppLogger::Level::Info : AppLogger::Level::Warning,
@@ -317,7 +317,7 @@ void SbomImportDialog::applyToProject()
     m_applyState = ApplyState::Working;
     updateActions();
     m_status->setStyleSheet(QString());
-    m_status->setText(QStringLiteral("正在应用组件，请等待事务完成。原组件仅在完整保存成功后替换。"));
+    m_status->setText(QStringLiteral("正在应用当前 SBOM，请等待事务完成。组件及依赖仅在完整保存成功后一起替换。"));
     m_applyWatcher.setFuture(QtConcurrent::run([path = m_databaseFile, id = m_projectId,
                                                document = m_model->document()] {
         return ComponentRepository::replaceInFile(path, id, document);

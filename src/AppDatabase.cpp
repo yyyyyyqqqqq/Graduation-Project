@@ -74,8 +74,8 @@ bool AppDatabase::initializeSchema(QString& error)
             return false;
         }
         version = QStringLiteral("2");
-    } else if (version != QStringLiteral("2") && version != QString::number(SchemaVersion)) {
-        error = QStringLiteral("Unsupported schema_version '%1'; supported versions are 1, 2 and 3. No migration was performed.").arg(version);
+    } else if (version != QStringLiteral("2") && version != QStringLiteral("3") && version != QString::number(SchemaVersion)) {
+        error = QStringLiteral("Unsupported schema_version '%1'; supported versions are 1 through 4. No migration was performed.").arg(version);
         return false;
     }
     // Reject incomplete v2 databases instead of silently recreating missing user tables.
@@ -84,12 +84,25 @@ bool AppDatabase::initializeSchema(QString& error)
         return false;
     }
     query.finish();
-    if (version == QStringLiteral("2") && !migrateV2ToV3(error)) return false;
+    if (version == QStringLiteral("2")) {
+        if (!migrateV2ToV3(error)) return false;
+        version = QStringLiteral("3");
+    }
     if (!query.exec(QStringLiteral("SELECT id,project_id,source_role,source_order,bom_ref,type,name,version,purl FROM components LIMIT 0"))) {
         error = QStringLiteral("Invalid components schema: %1").arg(query.lastError().text());
         return false;
     }
     query.finish();
+    if (version == QStringLiteral("3") && !migrateV3ToV4(error)) return false;
+    for (const auto& sql : {QStringLiteral("SELECT project_id FROM dependency_capture LIMIT 0"),
+                           QStringLiteral("SELECT id,project_id,source_order,source_ref FROM dependency_entries LIMIT 0"),
+                           QStringLiteral("SELECT id,dependency_entry_id,target_order,target_ref FROM dependency_targets LIMIT 0")}) {
+        if (!query.exec(sql)) {
+            error = QStringLiteral("Invalid dependency schema: %1").arg(query.lastError().text());
+            return false;
+        }
+        query.finish();
+    }
     if (!m_database.commit()) {
         error = QStringLiteral("Cannot commit schema initialization: %1").arg(m_database.lastError().text());
         return false;
@@ -132,6 +145,36 @@ bool AppDatabase::migrateV2ToV3(QString& error)
         !query.exec(QStringLiteral("UPDATE app_meta SET value='3' WHERE key='schema_version'")) ||
         query.numRowsAffected() != 1) {
         error = QStringLiteral("Migration 2 -> 3 failed: %1").arg(query.lastError().text());
+        return false;
+    }
+    return true;
+}
+
+bool AppDatabase::migrateV3ToV4(QString& error)
+{
+    // Absence of a capture row means Not Captured, including all migrated projects.
+    // The initialization transaction owns every DDL statement and version update.
+    QSqlQuery query(m_database);
+    const QStringList statements{
+        QStringLiteral("CREATE TABLE dependency_capture (project_id TEXT PRIMARY KEY NOT NULL, "
+                       "FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE)"),
+        QStringLiteral("CREATE TABLE dependency_entries (id TEXT PRIMARY KEY NOT NULL, project_id TEXT NOT NULL, "
+                       "source_order INTEGER NOT NULL CHECK(source_order>=0), source_ref TEXT NOT NULL DEFAULT '', "
+                       "FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE)"),
+        QStringLiteral("CREATE UNIQUE INDEX dependency_entries_project_order ON dependency_entries(project_id,source_order)"),
+        QStringLiteral("CREATE TABLE dependency_targets (id TEXT PRIMARY KEY NOT NULL, dependency_entry_id TEXT NOT NULL, "
+                       "target_order INTEGER NOT NULL CHECK(target_order>=0), target_ref TEXT NOT NULL DEFAULT '', "
+                       "FOREIGN KEY(dependency_entry_id) REFERENCES dependency_entries(id) ON DELETE CASCADE)"),
+        QStringLiteral("CREATE UNIQUE INDEX dependency_targets_entry_order ON dependency_targets(dependency_entry_id,target_order)"),
+        QStringLiteral("UPDATE app_meta SET value='4' WHERE key='schema_version'")};
+    for (const auto& sql : statements) {
+        if (!query.exec(sql)) {
+            error = QStringLiteral("Migration 3 -> 4 failed: %1").arg(query.lastError().text());
+            return false;
+        }
+    }
+    if (query.numRowsAffected() != 1) {
+        error = QStringLiteral("Migration 3 -> 4: missing schema_version");
         return false;
     }
     return true;

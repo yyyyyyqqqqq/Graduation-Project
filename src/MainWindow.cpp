@@ -64,14 +64,14 @@ MainWindow::MainWindow(QWidget* projectPage, QWidget* parent, const QString& ini
     };
     addTextPage(QStringLiteral("overview"), QStringLiteral("概览"),
             QStringLiteral("软件供应链漏洞风险评估系统\n\n欢迎使用应用工作台。\n\n"
-                           "当前已提供项目创建、查看与删除，以及 CycloneDX SBOM 预览、质量诊断、组件应用与持久化。\n\n"
+                           "当前已提供项目创建、查看与删除，以及 CycloneDX SBOM 预览、质量诊断、组件与依赖持久化、依赖关系分析。\n\n"
                            "业务分析功能将随后续阶段逐步开放。"));
     addPage(projectPage, QStringLiteral("projects"), QStringLiteral("项目"));
     addTextPage(QStringLiteral("settings"), QStringLiteral("设置"),
             QStringLiteral("页面偏好\n\n应用自动保存最后访问的页面，并在下次启动时恢复。\n\n"
                            "验证方法：停留在本页，正常关闭程序后再次启动，应回到“设置”。"));
     navigationLayout->addStretch();
-    auto* stage = new QLabel(QStringLiteral("Phase 05 · 组件管理与持久化"), sidebar);
+    auto* stage = new QLabel(QStringLiteral("Phase 06 · 依赖关系分析"), sidebar);
     stage->setWordWrap(true);
     navigationLayout->addWidget(stage);
     layout->addWidget(sidebar);

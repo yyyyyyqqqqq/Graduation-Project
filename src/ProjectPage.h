@@ -5,6 +5,7 @@
 class ProjectRepository;
 class ComponentRepository;
 class ProjectComponentsModel;
+class DependencyPage;
 class QTabWidget;
 class AppLogger;
 class QLabel;
@@ -41,4 +42,5 @@ private:
     QTabWidget* m_tabs;
     ProjectComponentsModel* m_componentModel;
     QLabel* m_componentSummary;
+    DependencyPage* m_dependencies;
 };

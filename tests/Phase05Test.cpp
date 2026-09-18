@@ -132,10 +132,10 @@ void Phase05Test::schema()
 {
     Context c;
     QVERIFY2(c.open(), qPrintable(c.error));
-    QCOMPARE(AppDatabase::SchemaVersion, 3);
-    QCOMPARE(scalar(c.database, "SELECT value FROM app_meta WHERE key='schema_version'").toString(), QStringLiteral("3"));
+    QCOMPARE(AppDatabase::SchemaVersion, 4);
+    QCOMPARE(scalar(c.database, "SELECT value FROM app_meta WHERE key='schema_version'").toString(), QStringLiteral("4"));
     auto tables = c.database.connection().tables(); tables.sort();
-    QCOMPARE(tables, (QStringList{"app_meta", "components", "projects"}));
+    QCOMPARE(tables, (QStringList{"app_meta", "components", "dependency_capture", "dependency_entries", "dependency_targets", "projects"}));
     QSqlQuery q(c.database.connection());
     QVERIFY(q.exec("PRAGMA table_info(components)"));
     QStringList columns;
@@ -178,7 +178,7 @@ void Phase05Test::migrateV2()
     Context c;
     QVERIFY(createV2(c.file()));
     QVERIFY2(c.open(), qPrintable(c.error));
-    QCOMPARE(scalar(c.database, "SELECT value FROM app_meta WHERE key='schema_version'").toString(), QStringLiteral("3"));
+    QCOMPARE(scalar(c.database, "SELECT value FROM app_meta WHERE key='schema_version'").toString(), QStringLiteral("4"));
     QCOMPARE(scalar(c.database, "SELECT value FROM app_meta WHERE key='preserved'").toString(), QStringLiteral("synthetic metadata"));
     Project p;
     QVERIFY(c.projects.findById(QStringLiteral("synthetic-id"), p).ok());
@@ -204,7 +204,7 @@ void Phase05Test::migrateV2()
     QCOMPARE(inspect(chain.file(), "SELECT value FROM app_meta WHERE key='preserved'").toString(),QStringLiteral("synthetic metadata"));
     QVERIFY(execute(chain.file(), {"DROP TRIGGER reject_v3"}));
     QVERIFY(chain.database.open(chain.file(),chain.error));
-    QCOMPARE(scalar(chain.database,"SELECT value FROM app_meta WHERE key='schema_version'").toString(),QStringLiteral("3"));
+    QCOMPARE(scalar(chain.database,"SELECT value FROM app_meta WHERE key='schema_version'").toString(),QStringLiteral("4"));
 }
 
 void Phase05Test::migrationFailures_data()

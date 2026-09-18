@@ -17,6 +17,7 @@
 #include <QPointer>
 #include <QSignalSpy>
 #include <QSqlQuery>
+#include <QSqlRecord>
 #include <QTableView>
 #include <QTabWidget>
 #include <QTemporaryDir>
@@ -130,10 +131,13 @@ QByteArray databaseSnapshot(AppDatabase& database)
     QDataStream out(&bytes, QIODevice::WriteOnly);
     for (const auto& sql : {QStringLiteral("SELECT key,value FROM app_meta ORDER BY key"),
                            QStringLiteral("SELECT id,name,description,created_at FROM projects ORDER BY id"),
-                           QStringLiteral("SELECT id,project_id,source_role,source_order,bom_ref,type,name,version,purl FROM components ORDER BY id")}) {
+                           QStringLiteral("SELECT id,project_id,source_role,source_order,bom_ref,type,name,version,purl FROM components ORDER BY id"),
+                           QStringLiteral("SELECT project_id FROM dependency_capture ORDER BY project_id"),
+                           QStringLiteral("SELECT id,project_id,source_order,source_ref FROM dependency_entries ORDER BY id"),
+                           QStringLiteral("SELECT id,dependency_entry_id,target_order,target_ref FROM dependency_targets ORDER BY id")}) {
         QSqlQuery query(database.connection());
         if (!query.exec(sql)) return {};
-        const int columns = sql.contains(QStringLiteral("app_meta")) ? 2 : sql.contains(QStringLiteral("components")) ? 9 : 4;
+        const int columns = query.record().count();
         while (query.next()) {
             for (int i = 0; i < columns; ++i) out << query.value(i);
         }
@@ -585,10 +589,10 @@ void Phase04Test::databaseUnchanged()
         QCOMPARE(databaseSnapshot(context.database), before);
         QCOMPARE(scalar(context.database, QStringLiteral("SELECT total_changes()")), changes);
     }
-    QCOMPARE(scalar(context.database, QStringLiteral("SELECT value FROM app_meta WHERE key='schema_version'")).toString(), QStringLiteral("3"));
+    QCOMPARE(scalar(context.database, QStringLiteral("SELECT value FROM app_meta WHERE key='schema_version'")).toString(), QStringLiteral("4"));
     auto tables = context.database.connection().tables();
     tables.sort();
-    QCOMPARE(tables, (QStringList{"app_meta", "components", "projects"}));
+    QCOMPARE(tables, (QStringList{"app_meta", "components", "dependency_capture", "dependency_entries", "dependency_targets", "projects"}));
     Project found;
     QVERIFY(context.repository.findById(project.id, found).ok());
     QCOMPARE(found.id, project.id);

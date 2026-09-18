@@ -428,10 +428,10 @@ void Phase03Test::projectIntegration()
     QVERIFY(QMetaObject::invokeMethod(picker, "accept", Qt::DirectConnection));
     QTRY_COMPARE(finished.count(), 1);
     QVERIFY(finished.at(0).at(0).toBool());
-    QCOMPARE(scalar(context.database, QStringLiteral("SELECT value FROM app_meta WHERE key='schema_version'")).toString(), QStringLiteral("3"));
+    QCOMPARE(scalar(context.database, QStringLiteral("SELECT value FROM app_meta WHERE key='schema_version'")).toString(), QStringLiteral("4"));
     auto tables = context.database.connection().tables();
     tables.sort();
-    QCOMPARE(tables, (QStringList{QStringLiteral("app_meta"), QStringLiteral("components"), QStringLiteral("projects")}));
+    QCOMPARE(tables, (QStringList{QStringLiteral("app_meta"), QStringLiteral("components"), QStringLiteral("dependency_capture"), QStringLiteral("dependency_entries"), QStringLiteral("dependency_targets"), QStringLiteral("projects")}));
     QCOMPARE(scalar(context.database, QStringLiteral("SELECT total_changes()")), changes);
     Project found;
     QVERIFY(context.repository.findById(project.id, found).ok());

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 
-project(SupplyChainRiskAssessment VERSION 0.6.0 LANGUAGES CXX)
+project(SupplyChainRiskAssessment VERSION 0.7.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -15,6 +15,10 @@ add_library(SbomParsing STATIC src/SbomDocument.h src/CycloneDxParser.h src/Cycl
     src/SbomQualityAnalyzer.h src/SbomQualityAnalyzer.cpp)
 target_include_directories(SbomParsing PUBLIC src)
 target_link_libraries(SbomParsing PUBLIC Qt6::Core)
+
+add_library(DependencyAnalysis STATIC src/DependencySnapshot.h src/DependencyAnalyzer.h src/DependencyAnalyzer.cpp)
+target_include_directories(DependencyAnalysis PUBLIC src)
+target_link_libraries(DependencyAnalysis PUBLIC Qt6::Core)
 
 # Shared by the application and its tests; components have current responsibilities.
 add_library(AppFoundation STATIC
@@ -34,9 +38,10 @@ add_executable(SupplyChainRiskAssessment WIN32
     src/MainWindow.h
     src/MainWindow.cpp
     src/ProjectPage.h src/ProjectPage.cpp
+    src/DependencyPage.h src/DependencyPage.cpp
     src/SbomImportDialog.h src/SbomImportDialog.cpp
 )
-target_link_libraries(SupplyChainRiskAssessment PRIVATE Qt6::Widgets Qt6::Concurrent AppFoundation SbomParsing)
+target_link_libraries(SupplyChainRiskAssessment PRIVATE Qt6::Widgets Qt6::Concurrent AppFoundation SbomParsing DependencyAnalysis)
 
 include(CTest)
 if(BUILD_TESTING)
@@ -73,17 +78,19 @@ if(BUILD_TESTING)
         tests/Phase02Test.cpp
         src/MainWindow.h src/MainWindow.cpp
         src/ProjectPage.h src/ProjectPage.cpp
+        src/DependencyPage.h src/DependencyPage.cpp
         src/SbomImportDialog.h src/SbomImportDialog.cpp
     )
-    target_link_libraries(Phase02Test PRIVATE Qt6::Widgets Qt6::Test Qt6::Concurrent AppFoundation SbomParsing)
+    target_link_libraries(Phase02Test PRIVATE Qt6::Widgets Qt6::Test Qt6::Concurrent AppFoundation SbomParsing DependencyAnalysis)
 
     add_executable(Phase03Test
         tests/Phase03Test.cpp
         src/MainWindow.h src/MainWindow.cpp
         src/ProjectPage.h src/ProjectPage.cpp
+        src/DependencyPage.h src/DependencyPage.cpp
         src/SbomImportDialog.h src/SbomImportDialog.cpp
     )
-    target_link_libraries(Phase03Test PRIVATE Qt6::Widgets Qt6::Test Qt6::Concurrent AppFoundation SbomParsing)
+    target_link_libraries(Phase03Test PRIVATE Qt6::Widgets Qt6::Test Qt6::Concurrent AppFoundation SbomParsing DependencyAnalysis)
 
     add_executable(Phase04Test
         tests/Phase04Test.cpp
@@ -94,8 +101,16 @@ if(BUILD_TESTING)
     add_executable(Phase05Test tests/Phase05Test.cpp
         src/MainWindow.h src/MainWindow.cpp
         src/ProjectPage.h src/ProjectPage.cpp
+        src/DependencyPage.h src/DependencyPage.cpp
         src/SbomImportDialog.h src/SbomImportDialog.cpp)
-    target_link_libraries(Phase05Test PRIVATE Qt6::Widgets Qt6::Test Qt6::Concurrent AppFoundation SbomParsing)
+    target_link_libraries(Phase05Test PRIVATE Qt6::Widgets Qt6::Test Qt6::Concurrent AppFoundation SbomParsing DependencyAnalysis)
+
+    add_executable(Phase06Test tests/Phase06Test.cpp
+        src/MainWindow.h src/MainWindow.cpp
+        src/ProjectPage.h src/ProjectPage.cpp
+        src/DependencyPage.h src/DependencyPage.cpp
+        src/SbomImportDialog.h src/SbomImportDialog.cpp)
+    target_link_libraries(Phase06Test PRIVATE Qt6::Widgets Qt6::Test Qt6::Concurrent AppFoundation SbomParsing DependencyAnalysis)
 
     function(add_qt_test phase target test_case)
         # File output retains Qt Test diagnostics even when Windows stdout is unavailable.
@@ -134,6 +149,10 @@ if(BUILD_TESTING)
     foreach(test_case IN ITEMS schema migrateV2 migrationFailures foreignKeys sourcePreservation replacement rollback
             repositoryErrors previewOnly explicitApply parserFailures applyFailureRetry projectUi largeReplacement largeApply workerLifetime)
         add_qt_test(Phase05 Phase05Test ${test_case})
+    endforeach()
+    foreach(test_case IN ITEMS schema migration migrationFailures captureRaw atomicReplace resolution graphTraversal metricsSelf consistentSnapshot largeData
+            previewApply dependencyUi graphReuse staleResults projectIntegration largeUi workerLifetime manualFixtures)
+        add_qt_test(Phase06 Phase06Test ${test_case})
     endforeach()
 endif()
 

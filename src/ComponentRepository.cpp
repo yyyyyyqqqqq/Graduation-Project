@@ -3,6 +3,7 @@
 #include "SbomDocument.h"
 
 #include <QScopeGuard>
+#include <QHash>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QUuid>
@@ -23,7 +24,7 @@ QString ComponentResult::userMessage() const
     switch (error) {
     case ComponentError::None: return {};
     case ComponentError::ProjectNotFound: return QStringLiteral("该项目已不存在，请重新选择项目。");
-    case ComponentError::Database: return QStringLiteral("无法读写组件数据，请检查磁盘和访问权限后重试；应用失败时原组件保持不变。");
+    case ComponentError::Database: return QStringLiteral("无法读写当前 SBOM 数据，请检查磁盘和访问权限后重试；应用失败时原组件及依赖保持不变。");
     }
     return {};
 }
@@ -66,6 +67,13 @@ ComponentResult ComponentRepository::replaceForProject(const QString& projectId,
         ? ComponentResult{ComponentError::Database, query.lastError().text()}
         : ComponentResult{ComponentError::ProjectNotFound, {}};
     query.finish();
+    // Targets cascade from entries. The capture marker is replaced in this same transaction.
+    for (const auto& sql : {QStringLiteral("DELETE FROM dependency_entries WHERE project_id=?"),
+                           QStringLiteral("DELETE FROM dependency_capture WHERE project_id=?")}) {
+        if (!query.prepare(sql)) return {ComponentError::Database, query.lastError().text()};
+        query.addBindValue(projectId);
+        if (!query.exec()) return {ComponentError::Database, query.lastError().text()};
+    }
     if (!query.prepare(QStringLiteral("DELETE FROM components WHERE project_id=?")))
         return {ComponentError::Database, query.lastError().text()};
     query.addBindValue(projectId);
@@ -90,7 +98,105 @@ ComponentResult ComponentRepository::replaceForProject(const QString& projectId,
         if (!insert(document.components.at(i), ComponentSourceRole::Component, i))
             return {ComponentError::Database, query.lastError().text()};
     query.finish();
+    QSqlQuery entry(db), target(db);
+    if (!entry.prepare(QStringLiteral("INSERT INTO dependency_entries(id,project_id,source_order,source_ref) VALUES(?,?,?,?)")))
+        return {ComponentError::Database, entry.lastError().text()};
+    if (!target.prepare(QStringLiteral("INSERT INTO dependency_targets(id,dependency_entry_id,target_order,target_ref) VALUES(?,?,?,?)")))
+        return {ComponentError::Database, target.lastError().text()};
+    const auto text = [](const QString& value) { return value.isNull() ? QStringLiteral("") : value; };
+    for (qsizetype i = 0; i < document.dependencies.size(); ++i) {
+        const auto& declaration = document.dependencies.at(i);
+        const auto entryId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        entry.bindValue(0, entryId);
+        entry.bindValue(1, projectId);
+        entry.bindValue(2, qint64(i));
+        entry.bindValue(3, text(declaration.ref));
+        if (!entry.exec()) return {ComponentError::Database, entry.lastError().text()};
+        for (qsizetype j = 0; j < declaration.dependsOn.size(); ++j) {
+            target.bindValue(0, QUuid::createUuid().toString(QUuid::WithoutBraces));
+            target.bindValue(1, entryId);
+            target.bindValue(2, qint64(j));
+            target.bindValue(3, text(declaration.dependsOn.at(j)));
+            if (!target.exec()) return {ComponentError::Database, target.lastError().text()};
+        }
+    }
+    entry.finish();
+    target.finish();
+    if (!query.prepare(QStringLiteral("INSERT INTO dependency_capture(project_id) VALUES(?)")))
+        return {ComponentError::Database, query.lastError().text()};
+    query.addBindValue(projectId);
+    if (!query.exec()) return {ComponentError::Database, query.lastError().text()};
+    query.finish();
     if (!db.commit()) return {ComponentError::Database, db.lastError().text()};
     rollback.dismiss();
+    return {};
+}
+
+ComponentResult ComponentRepository::readSnapshotInFile(const QString& filePath, const QString& projectId, DependencySnapshot& snapshot)
+{
+    snapshot = {};
+    AppDatabase database;
+    QString error;
+    if (!database.open(filePath, error)) return {ComponentError::Database, error};
+    return ComponentRepository(database).readSnapshot(projectId, snapshot);
+}
+
+ComponentResult ComponentRepository::readSnapshot(const QString& projectId, DependencySnapshot& snapshot) const
+{
+    snapshot = {};
+    if (!m_database.isOpen()) return {ComponentError::Database, QStringLiteral("Database is not open")};
+    auto db = m_database.connection();
+    if (!db.transaction()) return {ComponentError::Database, db.lastError().text()};
+    auto rollback = qScopeGuard([&] { db.rollback(); });
+    // The first SELECT establishes SQLite's snapshot; all subsequent SELECTs share it.
+    QSqlQuery query(db);
+    if (!query.prepare(QStringLiteral("SELECT id FROM projects WHERE id=?")))
+        return {ComponentError::Database, query.lastError().text()};
+    query.addBindValue(projectId);
+    if (!query.exec()) return {ComponentError::Database, query.lastError().text()};
+    if (!query.next()) return query.lastError().isValid()
+        ? ComponentResult{ComponentError::Database, query.lastError().text()}
+        : ComponentResult{ComponentError::ProjectNotFound, {}};
+    query.finish();
+    DependencySnapshot candidate;
+    const auto componentsResult = listForProject(projectId, candidate.components);
+    if (!componentsResult.ok()) return componentsResult;
+    if (!query.prepare(QStringLiteral("SELECT project_id FROM dependency_capture WHERE project_id=?")))
+        return {ComponentError::Database, query.lastError().text()};
+    query.addBindValue(projectId);
+    if (!query.exec()) return {ComponentError::Database, query.lastError().text()};
+    candidate.captured = query.next();
+    if (query.lastError().isValid()) return {ComponentError::Database, query.lastError().text()};
+    query.finish();
+    if (!query.prepare(QStringLiteral("SELECT id,project_id,source_order,source_ref FROM dependency_entries WHERE project_id=? ORDER BY source_order")))
+        return {ComponentError::Database, query.lastError().text()};
+    query.addBindValue(projectId);
+    if (!query.exec()) return {ComponentError::Database, query.lastError().text()};
+    QHash<QString, qsizetype> positions;
+    while (query.next()) {
+        positions.insert(query.value(0).toString(), candidate.entries.size());
+        candidate.entries.append({query.value(0).toString(),query.value(1).toString(),
+            query.value(2).toLongLong(),query.value(3).toString(),{}});
+    }
+    if (query.lastError().isValid()) return {ComponentError::Database, query.lastError().text()};
+    query.finish();
+    if (!query.prepare(QStringLiteral("SELECT t.id,t.dependency_entry_id,t.target_order,t.target_ref "
+        "FROM dependency_targets t JOIN dependency_entries e ON e.id=t.dependency_entry_id "
+        "WHERE e.project_id=? ORDER BY e.source_order,t.target_order")))
+        return {ComponentError::Database, query.lastError().text()};
+    query.addBindValue(projectId);
+    if (!query.exec()) return {ComponentError::Database, query.lastError().text()};
+    while (query.next()) {
+        const auto entryId = query.value(1).toString();
+        const auto position = positions.constFind(entryId);
+        if (position == positions.cend()) return {ComponentError::Database, QStringLiteral("Inconsistent dependency entry")};
+        candidate.entries[*position].targets.append({query.value(0).toString(),entryId,
+            query.value(2).toLongLong(),query.value(3).toString()});
+    }
+    if (query.lastError().isValid()) return {ComponentError::Database, query.lastError().text()};
+    query.finish();
+    if (!db.commit()) return {ComponentError::Database, db.lastError().text()};
+    rollback.dismiss();
+    snapshot = std::move(candidate);
     return {};
 }
