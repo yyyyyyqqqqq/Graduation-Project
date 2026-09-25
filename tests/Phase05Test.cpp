@@ -586,7 +586,7 @@ void Phase05Test::projectUi()
     const auto file = c.temporary.filePath(QStringLiteral("candidate.json"));
     QVERIFY(writeFile(file, sample()));
     {
-        MainWindow window(new ProjectPage(c.projects,c.components,c.logger),nullptr,QStringLiteral("projects"));
+        MainWindow window(new ProjectPage(c.projects,c.components,c.logger,c.temporary.filePath("cache/osv-v1")),nullptr,QStringLiteral("projects"));
         window.show();
         QVERIFY(QTest::qWaitForWindowExposed(&window));
         auto* list = window.findChild<QListWidget*>(QStringLiteral("projectList"));
@@ -626,7 +626,7 @@ void Phase05Test::projectUi()
     }
     c.database.close();
     QVERIFY(c.database.open(c.file(), c.error));
-    MainWindow reopened(new ProjectPage(c.projects,c.components,c.logger),nullptr,QStringLiteral("projects"));
+    MainWindow reopened(new ProjectPage(c.projects,c.components,c.logger,c.temporary.filePath("cache/osv-v1")),nullptr,QStringLiteral("projects"));
     auto* list = reopened.findChild<QListWidget*>(QStringLiteral("projectList"));
     for (int i = 0; i < list->count(); ++i) if (list->item(i)->data(Qt::UserRole).toString() == a.id) list->setCurrentRow(i);
     QCOMPARE(reopened.findChild<QTableView*>(QStringLiteral("currentComponents"))->model()->rowCount(),5);
@@ -692,7 +692,7 @@ void Phase05Test::largeApply()
     dialog.applyToProject();
     QCOMPARE(rows(c.components,a.id),persisted);
     // Measure actual persisted-view selection as well, rather than claiming a repository benchmark proves UI performance.
-    ProjectPage page(c.projects,c.components,c.logger);
+    ProjectPage page(c.projects,c.components,c.logger,c.temporary.filePath("cache/osv-v1"));
     page.show();
     QVERIFY(QTest::qWaitForWindowExposed(&page));
     timer.restart();

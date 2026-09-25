@@ -141,6 +141,29 @@ ComponentResult ComponentRepository::readSnapshotInFile(const QString& filePath,
     return ComponentRepository(database).readSnapshot(projectId, snapshot);
 }
 
+ComponentResult ComponentRepository::listForProjectInFile(const QString& filePath, const QString& projectId, QList<Component>& components)
+{
+    components.clear();
+    AppDatabase database;
+    QString error;
+    if (!database.open(filePath,error)) return {ComponentError::Database,error};
+    auto db = database.connection();
+    if (!db.transaction()) return {ComponentError::Database,db.lastError().text()};
+    auto rollback = qScopeGuard([&]{ db.rollback(); });
+    QSqlQuery query(db);
+    if (!query.prepare(QStringLiteral("SELECT id FROM projects WHERE id=?"))) return {ComponentError::Database,query.lastError().text()};
+    query.addBindValue(projectId);
+    if (!query.exec()) return {ComponentError::Database,query.lastError().text()};
+    if (!query.next()) return query.lastError().isValid() ? ComponentResult{ComponentError::Database,query.lastError().text()}
+        : ComponentResult{ComponentError::ProjectNotFound,{}};
+    query.finish();
+    QList<Component> candidate;
+    const auto result = ComponentRepository(database).listForProject(projectId,candidate);
+    if (!result.ok()) return result;
+    if (!db.commit()) return {ComponentError::Database,db.lastError().text()};
+    rollback.dismiss(); components = std::move(candidate); return {};
+}
+
 ComponentResult ComponentRepository::readSnapshot(const QString& projectId, DependencySnapshot& snapshot) const
 {
     snapshot = {};

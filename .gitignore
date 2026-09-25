@@ -5,6 +5,8 @@
 /CMakeCache.txt
 /Testing/
 /CMakeUserPresets.json
+# OSV runtime cache when an explicitly selected data root is in the checkout
+**/cache/osv-v1/
 /compile_commands.json
 /cmake_install.cmake
 /CTestTestfile.cmake

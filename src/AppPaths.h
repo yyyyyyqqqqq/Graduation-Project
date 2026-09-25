@@ -13,5 +13,6 @@ struct AppPaths
     QString databaseFile() const;
     QString settingsFile() const;
     QString logFile() const;
+    QString osvCacheDirectory() const;
     bool initialize(QString& error) const;
 };

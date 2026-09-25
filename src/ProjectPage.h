@@ -6,6 +6,7 @@ class ProjectRepository;
 class ComponentRepository;
 class ProjectComponentsModel;
 class DependencyPage;
+class VulnerabilityPage;
 class QTabWidget;
 class AppLogger;
 class QLabel;
@@ -19,7 +20,7 @@ class ProjectPage final : public QWidget
     Q_OBJECT
 
 public:
-    explicit ProjectPage(ProjectRepository& repository, ComponentRepository& components, AppLogger& logger, QWidget* parent = nullptr);
+    explicit ProjectPage(ProjectRepository& repository, ComponentRepository& components, AppLogger& logger, const QString& cacheDirectory, QWidget* parent = nullptr);
 
 private:
     QString selectedId() const;
@@ -43,4 +44,5 @@ private:
     ProjectComponentsModel* m_componentModel;
     QLabel* m_componentSummary;
     DependencyPage* m_dependencies;
+    VulnerabilityPage* m_vulnerabilities;
 };

@@ -3,6 +3,8 @@
 #include "ComponentRepository.h"
 #include "SbomImportDialog.h"
 #include "DependencyPage.h"
+#include "VulnerabilityPage.h"
+#include "VulnerabilityController.h"
 
 #include <QDateTime>
 #include <QAbstractTableModel>
@@ -74,7 +76,7 @@ private:
     QList<Component> m_rows;
 };
 
-ProjectPage::ProjectPage(ProjectRepository& repository, ComponentRepository& components, AppLogger& logger, QWidget* parent)
+ProjectPage::ProjectPage(ProjectRepository& repository, ComponentRepository& components, AppLogger& logger, const QString& cacheDirectory, QWidget* parent)
     : QWidget(parent), m_repository(repository), m_components(components), m_logger(logger)
 {
     auto* layout = new QVBoxLayout(this);
@@ -148,6 +150,9 @@ ProjectPage::ProjectPage(ProjectRepository& repository, ComponentRepository& com
     m_tabs->addTab(componentPage, QStringLiteral("当前组件"));
     m_dependencies = new DependencyPage(m_components.databaseFilePath(),m_tabs);
     m_tabs->addTab(m_dependencies,QStringLiteral("依赖关系"));
+    auto* vulnerabilityController = new VulnerabilityController(m_components.databaseFilePath(),cacheDirectory,m_logger,this);
+    m_vulnerabilities = new VulnerabilityPage(*vulnerabilityController,m_tabs);
+    m_tabs->addTab(m_vulnerabilities,QStringLiteral("漏洞匹配"));
     layout->addWidget(m_tabs, 2);
 
     connect(create, &QPushButton::clicked, this, &ProjectPage::showCreateDialog);
@@ -194,6 +199,7 @@ void ProjectPage::showSelection()
     m_details->clear();
     m_tabs->hide();
     m_dependencies->setProject({});
+    m_vulnerabilities->setProject({});
     m_componentModel->replace({});
     m_remove->setEnabled(false);
     m_import->setEnabled(false);
@@ -221,6 +227,7 @@ void ProjectPage::showSelection()
     m_selectionHint->hide();
     m_tabs->show();
     m_dependencies->setProject(id);
+    m_vulnerabilities->setProject(id);
     m_remove->setEnabled(true);
     m_import->setEnabled(true);
     QList<Component> components;

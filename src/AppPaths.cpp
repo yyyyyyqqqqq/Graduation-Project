@@ -13,6 +13,7 @@ QString AppPaths::logsDirectory() const { return QDir(root).filePath(QStringLite
 QString AppPaths::databaseFile() const { return QDir(dataDirectory()).filePath(QStringLiteral("supply_chain_risk.db")); }
 QString AppPaths::settingsFile() const { return QDir(root).filePath(QStringLiteral("settings.ini")); }
 QString AppPaths::logFile() const { return QDir(logsDirectory()).filePath(QStringLiteral("application.log")); }
+QString AppPaths::osvCacheDirectory() const { return QDir(root).filePath(QStringLiteral("cache/osv-v1")); }
 
 bool AppPaths::initialize(QString& error) const
 {

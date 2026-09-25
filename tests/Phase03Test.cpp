@@ -397,7 +397,7 @@ void Phase03Test::projectIntegration()
     });
     Context context;
     QVERIFY(context.open());
-    MainWindow window(new ProjectPage(context.repository, context.components, context.logger), nullptr, QStringLiteral("projects"));
+    MainWindow window(new ProjectPage(context.repository, context.components, context.logger, context.temporary.filePath("cache/osv-v1")), nullptr, QStringLiteral("projects"));
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
     auto* page = window.findChild<ProjectPage*>();

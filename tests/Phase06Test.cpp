@@ -504,7 +504,7 @@ void Phase06Test::projectIntegration()
     const auto restore=qScopeGuard([&]{QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs,native);});
     Context c; QVERIFY(c.open()); const auto a=c.project(),b=c.project();
     QVERIFY(c.current.replaceForProject(a,document({"A","B"},{{"A",{"B"}}})).ok());
-    MainWindow window(new ProjectPage(c.projects,c.current,c.logger),nullptr,"projects"); window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window));
+    MainWindow window(new ProjectPage(c.projects,c.current,c.logger,c.dir.filePath("cache/osv-v1")),nullptr,"projects"); window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window));
     auto* list=window.findChild<QListWidget*>("projectList"); const auto select=[&](const QString& id){for(int i=0;i<list->count();++i) if(list->item(i)->data(Qt::UserRole).toString()==id) list->setCurrentRow(i);};
     auto* dep=window.findChild<DependencyPage*>(); QSignalSpy built(dep,&DependencyPage::analysisFinished);
     select(a); window.findChild<QTabWidget*>("projectTabs")->setCurrentIndex(2); QTRY_COMPARE(built.count(),1);

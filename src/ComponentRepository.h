@@ -23,6 +23,7 @@ class ComponentRepository final
 public:
     explicit ComponentRepository(AppDatabase& database) : m_database(database) {}
     ComponentResult listForProject(const QString& projectId, QList<Component>& components) const;
+    static ComponentResult listForProjectInFile(const QString& filePath, const QString& projectId, QList<Component>& components);
     ComponentResult replaceForProject(const QString& projectId, const SbomDocument& document);
     ComponentResult readSnapshot(const QString& projectId, DependencySnapshot& snapshot) const;
     static ComponentResult readSnapshotInFile(const QString& filePath, const QString& projectId, DependencySnapshot& snapshot);
