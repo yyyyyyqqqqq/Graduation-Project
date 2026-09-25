@@ -1,12 +1,12 @@
 # 毕业设计项目总交接文档
 
-更新日期：2026-09-25（Asia/Shanghai；Phase 07.5-AUX 辅助开发基础设施采用记录）
+更新日期：2026-09-25（Asia/Shanghai；Phase 07.5-AUX 真实连接验收与最终收口）
 
 本文是项目唯一的长期动态交接文档。每个阶段结束后，更新当前状态、代码结构、Git、测试、人工验收、技术决策和下一步，避免另建多套状态文件。
 
 本文保留此前授权的审计修订、Phase 00—06 已完成事实及 `22.md` 冻结的长期路线。Phase 07 按 `23.md` / `24.md` 设计、`25.md` 开发，已按 `26.md` 最终封版并执行 Debug / Release 构建和全部回归。用户在 `26.md` 明确确认亲自完成 Debug GUI 人工验收 18/18 PASS；这是用户实际操作结果，不是 Codex 模拟或自动测试替代。Release GUI 为 AUTOMATED ONLY。
 
-本轮依据已核验的 `28.md` MCP 实验及 `29.md` 采用文档授权，记录已完成本地验收、且用户在 `29.md` 确认已通过 ChatGPT 审查的 Phase 07.5-AUX；只维护本文并创建普通 docs commit，不改变产品功能或正式业务 Phase。下文 Phase 07 的实现、构建、测试、人工验收与封版记录均为该阶段历史成果，本轮未重新执行；未建立 ChatGPT connection，不开始 Phase 08。
+Phase 07.5-AUX 已按 `28.md` 完成本地 MCP 实验，并按 `29.md` 完成采用文档更新。本轮依据用户在 `30.md` 提供的真实 ChatGPT 连接及重启后重连 PASS 验收，完成辅助基础设施收口、修正 MCP 过时状态并更新本文；正式仓库仅增加普通 docs commit，不改变产品功能或正式业务 Phase。下文 Phase 07 的实现、构建、测试、人工验收与封版记录均为该阶段历史成果，本轮未重新执行，不开始 Phase 08。
 
 依据：项目历史资料、已通过的理解与交接审查、`04.md` 开发任务、`05.md` 封版授权及人工验收结果、`06.md` 长期规则增强要求、`07.md` 文档提交授权、`08.md` Phase 01 开发要求、`09.md` Phase 01 封版授权、`10.md` Phase 02 开发要求、`11.md` Phase 02 人工验收及封版授权、`12.md` / `13.md` 隐私规则与维护授权、`14.md` Phase 03 开发要求、`15.md` Phase 03 人工验收及最终封版授权、此前用户授权的 Handoff 审计更新、`16.md` Phase 04 开发要求、`17.md` Phase 04 人工验收及最终封版授权、`18.md` Phase 05 开发要求、`19.md` Phase 05 人工验收及最终封版授权、`20.md` Phase 06 开发要求、`21.md` Phase 06 人工验收及最终封版授权、`22.md` 长期路线调整及独立文档提交授权，`23.md` / `24.md` Phase 07 设计、`25.md` Phase 07 开发、`26.md` 用户人工验收及最终封版授权，以及各阶段正式工程构建、测试和现场 Git / GitHub 实查。
 
@@ -36,13 +36,13 @@ Phase 07 已完成 Component Identity 与 OSV-first Vulnerability Matching MVP�
 
 唯一正式根目录：`D:\codex\Graduation Project\project`。
 
-后续源码、CMake、测试、项目文档和 Git 均围绕此目录组织。不维护多个正式工程副本；父目录的 `01.md` 至 `26.md` 是既有准备、设计、开发、封版与文档维护任务的输入资料，另已核验 `28.md` 为独立 MCP 实验、`29.md` 为本轮采用文档更新授权。
+后续源码、CMake、测试、项目文档和 Git 均围绕此目录组织。不维护多个正式工程副本；父目录的 `01.md` 至 `26.md` 是既有准备、设计、开发、封版与文档维护任务的输入资料，另已核验 `28.md` 为独立 MCP 实验、`29.md` 为采用文档更新、`30.md` 为真实连接验收及本轮最终收口授权。
 
 `D:\codex\SupplyChainRiskAssessment` 是历史环境验证目录，不是正式项目；本轮未检查或修改其内容。
 
 # 5. Git / GitHub 当前状态
 
-Phase 07 开发及封版前基线为 `dedd79dfeaab8245bfcb1568ccf28a8913f6f59e`（`docs: realign project roadmap around vulnerability risk pipeline`）。本轮文档维护开始时，HEAD / main / origin/main / 远端 main 均为 Phase 07 completion commit `ad8c75274a2a8c4db275ab099f949a7c47fcecdb`，ahead / behind 为 0 / 0，工作区 clean；本轮仅在其后追加普通 docs commit。
+Phase 07 开发及封版前基线为 `dedd79dfeaab8245bfcb1568ccf28a8913f6f59e`（`docs: realign project roadmap around vulnerability risk pipeline`）。本轮开始时，HEAD / main / origin/main / 远端 main 均为已授权的采用文档提交 `d77f4f50868d5b63842159e1f8198ba70225fa33`（`docs: record phase 07.5 readonly mcp experiment`），ahead / behind 为 0 / 0，工作区 clean；本轮仅在其后追加普通 docs commit，Phase 07 completion commit 与 tag 保持下表固定值。
 
 | 项目 | 封版标识与核验方式 |
 | --- | --- |
@@ -54,7 +54,7 @@ Phase 07 开发及封版前基线为 `dedd79dfeaab8245bfcb1568ccf28a8913f6f59e`�
 | tag 核验 | 核对本地 / 远端既有 tag object 与 peeled target；Phase 00—07 tags 均不移动，不创建 Phase 07.5 tag |
 | 工作区核验 | 本轮仅提交 PROJECT-HANDOFF.md，main 推送与历史标签核对后确认 tracked / untracked clean；ignored build / manual artifacts 保留 |
 
-Phase 07 封版时，本文随 completion commit 保存，后续可通过普通 docs commit 维护，不能再用“本文所在提交”推断产品封版提交。本轮新 docs commit 的精确 SHA 与远端实查结果在 Adoption Documentation Report 中报告，不把自身尚未生成的 hash 写入自身；后续接手用下述命令重新核对，不只依赖文档中的阶段状态。
+Phase 07 封版时，本文随 completion commit 保存，后续可通过普通 docs commit 维护，不能再用“本文所在提交”推断产品封版提交。本轮新 docs commit 的精确 SHA 与远端实查结果在 Phase 07.5-AUX Final Seal Report 回复中报告，不把自身尚未生成的 hash 写入自身；后续接手用下述命令重新核对，不只依赖文档中的阶段状态。
 
 既有提交使用仓库级身份 `yyyyyyqqqqq` / `104704290+yyyyyyqqqqq@users.noreply.github.com`。仓库级 `credential.https://github.com.username` 为 `yyyyyyqqqqq`，用于 HTTPS 认证账户选择；认证账户与 commit 作者配置不同。本轮不修改凭据或全局 Git 配置。
 
@@ -228,7 +228,7 @@ Phase 07 未实现且本轮不增加：
 
 | Task | Name | Type | Status |
 | --- | --- | --- | --- |
-| Phase 07.5-AUX | Read-Only Project Context MCP Experiment | Auxiliary Development Infrastructure | COMPLETE / READY FOR CONNECTION TEST |
+| Phase 07.5-AUX | Read-Only Project Context MCP | Auxiliary Development Infrastructure | COMPLETE / CHATGPT CONNECTION PASS |
 
 Phase 07.5-AUX 已完成本地实验验收并采用为辅助开发基础设施。它位于正式 Git 仓库之外的同级独立目录 `project-readonly-mcp`，不属于 Product Feature 或论文业务 Phase，不插入上方正式 Phase 表或 Foundation → Vulnerability → Risk → Validation / Presentation 业务路线；不改变正式 CURRENT PHASE、产品架构、数据库、版本或产品能力。
 
@@ -238,7 +238,11 @@ Git 仅受限只读查询，SQLite 使用真正 read-only connection，仅支持
 
 本地验收结论：正式工程与数据库只读 integrity proof PASS；自动测试 76 项（75 PASS / 0 FAIL / 1 SKIP），skip 为当前 Windows 权限无法实际创建 file symlink，真实 junction 与 reparse 防护已验证；MCP Inspector 52 项 PASS。实验未修改正式产品工程、数据库或运行数据。详细技术资料和验收记录留在独立工具的 README.md / REPORT.md，不复制 local 证据，也不作为第二套长期项目状态源。
 
-当前状态：**READ-ONLY MCP EXPERIMENT READY**；**READY FOR CHATGPT CONNECTION TEST**。ChatGPT connection **NOT YET EXECUTED**；未启动 Secure MCP Tunnel、未创建公网 endpoint，未开始 Phase 08。Connection ready 不代表连接已经完成。
+**CHATGPT MCP CONNECTION TEST: PASS**
+
+用户在 `30.md` 确认真实链路 ChatGPT → OpenAI Secure MCP Tunnel → tunnel-client → localhost Read-Only MCP 已建立；ChatGPT MCP App 已连接，恰好 7 个工具发现 PASS，get_project_status / get_git_status / get_handoff_outline 实际调用 PASS，23 个一级章节 outline 读取成功，停止并重启本地服务后的 reconnect / invocation 也 PASS。这是实际用户 / ChatGPT 验收，不是 Codex 模拟或仅由 Inspector 推断。此前 READY FOR CHATGPT CONNECTION TEST 已完成验收；当前 **PHASE 07.5-AUX: COMPLETE**、**READ-ONLY MCP: OPERATIONAL**。
+
+get_project_status 的 auxiliary_task_status 从本文明确的连接验收标记派生，表示已记录的验收结论，不是实时 Tunnel 健康探测。MCP 与 tunnel-client 仍需用户手动启动，用毕 Ctrl+C 停止；两进程关闭后 ChatGPT 无法继续访问。仅 localhost MCP 与出站 Secure MCP Tunnel，无公网 MCP 入站 endpoint、常驻服务或自动启动；不改变产品工程，不开始 Phase 08。
 
 # 14. 已完成 Phase
 
@@ -699,9 +703,11 @@ if ($LASTEXITCODE -ne 0) { throw 'Release tests failed' }
 
 **开发证据职责：** GitHub → committed source / history truth，用于核对已提交源码、commit 与 tag；Read-Only MCP → local development state / evidence，补充 GitHub 不可见的本地状态与受限证据；PROJECT-HANDOFF → semantic project state / decisions / roadmap，仍是唯一长期项目语义交接文档。MCP 不构成第二套业务真相，其输出不自动覆盖实际运行结果、真实代码或 Git；历史 LastTest.log 不能单独证明当前 HEAD 已测试通过，授权元数据访问不代表 ChatGPT 获得完整本地文件访问权。
 
-**长期阶段闭环：** 设计 → 开发 → 自动验收 → 用户 GUI 人工验收 → 封版 → 更新 PROJECT-HANDOFF → 再设计下一阶段；每轮以已验证成果作为下一轮设计依据，不跨阶段预建完整系统。
+ChatGPT 已真实连接 Read-Only MCP。标准业务 Phase 可在开始前核验 baseline、Codex 开发完成后交叉核对本地 Git / validation evidence、最终封版后核验本地最终状态三个节点使用 MCP；它只是证据源，不新增审批层或多轮循环审计，目标是减少信息中转。
 
-**具体执行与封版顺序：** 明确并设计当前 Phase → 读取真实工程 → 实现 → Build / 自动 Test → 用户人工验收 → 确认 PASS → 更新本文并完成最终回归、维护性及隐私审查 → 按授权 commit / push / tag → 核验远端与工作区 → 报告完成。本文随封版同步维护，Git 结果必须实查后报告；必要修正如实更新，不以预期代替完成。个别阶段有特殊顺序时，以具体授权为准。Phase 07 已按 `26.md` 封版；本轮 `29.md` 仅授权采用文档更新、普通 docs commit、main 推送与核验，不重跑正式 C++ 回归、不创建业务 tag，完成后停止。
+**长期阶段闭环：** 设计 → 设计审查 / 冻结 → Codex 开发 → Build / 自动测试 → ChatGPT 审查 → 用户 GUI 人工验收 → 最终封版 → 更新 PROJECT-HANDOFF → 下一阶段设计；MCP 只增强 baseline 与 evidence verification，不替代 Codex、用户 GUI 验收或本文，不跨阶段预建完整系统。
+
+**具体执行与封版顺序：** 明确并设计当前 Phase → 读取真实工程 → 实现 → Build / 自动 Test → 用户人工验收 → 确认 PASS → 更新本文并完成最终回归、维护性及隐私审查 → 按授权 commit / push / tag → 核验远端与工作区 → 报告完成。本文随封版同步维护，Git 结果必须实查后报告；必要修正如实更新，不以预期代替完成。个别阶段有特殊顺序时，以具体授权为准。Phase 07 已按 `26.md` 封版；本轮 `30.md` 仅授权辅助 MCP 过时状态最小修正及必要回归、相关文档更新、正式仓库单一 Handoff docs commit 与 main 推送核验，不重跑正式 C++ 回归、不创建业务 tag，完成后停止。
 
 ## 19.1 代码质量与职责边界
 
@@ -803,18 +809,18 @@ if ($LASTEXITCODE -ne 0) { throw 'Release tests failed' }
 
 下一核心方向为 **Vulnerability continuation — Version Applicability / Finding design**。依据已有 QueryIdentity、真实 OSV Candidate / affected evidence 与支持生态设计；具体 Phase 名称、范围、算法与数据模型等下一轮正式设计再冻结。本轮封版后停止，不开始 Phase 08，不创建类 / schema，不执行 applicability 或风险计算，不新增 NVD / EPSS / KEV。
 
-**独立 Auxiliary 方向：** Read-Only MCP 已达到 READY FOR CHATGPT CONNECTION TEST；用户另行授权后可单独进行 ChatGPT connection test。它不是 Phase 08 的前置 blocker，与下一业务设计互相独立，可先做任一方向；正式业务第一优先方向仍为 Version Applicability / Finding design。本轮文档维护完成后停止，不启动 MCP 或连接测试。
+**Auxiliary 已收口：** Read-Only MCP 真实 ChatGPT 连接、调用及 restart / reconnect 已 PASS，按需手动运行。MCP failure / offline 或 Tunnel 临时不可用不得阻塞产品开发，仍可通过 GitHub + 最新 PROJECT-HANDOFF + Codex 继续；下一正式业务方向仍为 Version Applicability / Finding design。本轮收口后停止，等待下一业务阶段设计授权。
 
 # 23. 新 Codex 接手规则
 
-1. 先阅读本文及当前阶段具体指令，再读取真实代码、Git 和必要的 GitHub 状态；按 19.2 定位调用链、状态来源、已有实现和扩展点，不凭历史文字假定实现存在。
+1. 先阅读本文及当前阶段具体指令，再读取真实代码、Git 和必要的 GitHub 状态；按 19.2 定位调用链、状态来源、已有实现和扩展点，不凭历史文字假定实现存在。MCP 与 Tunnel 运行且连接可用时，新 ChatGPT 对话可优先用 get_project_status、get_git_status、get_handoff_outline、get_handoff_section 读取 baseline 与必要章节，无需默认上传全文；不可用时上传最新 PROJECT-HANDOFF 作为标准 fallback，项目不依赖 MCP 才能继续。
 2. 如实区分已实现、已验证和规划；发现冲突按本文顶部真实性优先级处理，并更新相关状态。
 3. 延续已有简单合理结构，不因 Prompt 出现类名或目录建议就机械创建；只执行授权阶段，同时考虑功能正确性、回归风险和后续可维护性。
 4. Bug 优先修根因，避免 workaround 链；允许有测试保护、与当前需求直接相关的小型重构。大范围架构调整及 19.4 所列高风险问题先暂停，提供方案并获得用户确认。
 5. 实现后完成适当构建、测试及 19.6 的 diff／维护性检查，清楚记录结果与限制；阶段通过必须包含用户要求的人工验收。
 6. 未经允许不得 `reset --hard`、`clean -fd`、force push、rebase、删除 branch / tag、删除用户文件或重写 Git 历史；发现已有错误 remote 先报告，不自行覆盖。身份配置优先仓库级，冻结环境不无故变更。
 7. 完成阶段后按 19.6 就地更新本文，不另造动态管理文档，不追加重复状态或全过程日志。
-8. 长期工程规则持续生效；Phase 07 已按 `26.md` 封版，`phase-07-complete` 固定指向 `ad8c75274a2a8c4db275ab099f949a7c47fcecdb`，Phase 00—06 tags 同样不移动。本轮 `29.md` 仅授权单一 Handoff 普通 docs commit 与 main 推送；不创建 Phase 07.5 tag、不启动 MCP / tunnel / ChatGPT connection 或 Phase 08。精确新提交与 tag 对象按第 5 节实查。
+8. 长期工程规则持续生效；Phase 07 已按 `26.md` 封版，`phase-07-complete` 固定指向 `ad8c75274a2a8c4db275ab099f949a7c47fcecdb`，Phase 00—06 tags 同样不移动。本轮 `30.md` 的正式仓库修改仅为本文及普通 docs commit / main 推送；辅助 MCP 修正留在独立目录，不创建 Phase 07.5 tag、常驻服务、公网 endpoint 或 Phase 08 实现。精确新提交与 tag 对象按第 5 节实查。
 9. 任何 git add / commit / push 前均须按 19.7 审查候选／staged 文件及 privacy / sensitive information，push 同时检查待推送 commits；不得将真实 runtime database、SBOM、日志、用户数据、私有配置、API Key、token 或 credential 加入 Git。`12.md` / `13.md` 的隐私规则及 `.gitignore` 维护已独立提交并推送，其规则继续适用于本次及后续封版。
 10. 当前四层路线是唯一有效长期方向；旧 Phase 07—17 安排只属 Historical / Superseded Plan，不得据其自行启动开发。Phase 07 的 Component Identity + OSV-first Vulnerability Matching MVP 已 COMPLETE；下一轮先做 Vulnerability continuation 的需求与技术设计，不直接开发。
 11. 遵循“大方向冻结 + 单 Phase 逐步冻结”；未来详细 Phase 设计须在该阶段开始前、根据已完成成果逐步冻结，不提前创建未来表、领域模型、Repository、Service / Provider 框架、UI 或评分公式。Candidate 不等于 Affected Finding，Applicability gate、Risk / Confidence 分离和 Quality 证据原则持续生效；Risk Model 尚未冻结。
