@@ -44,6 +44,14 @@ std::optional<QueryIdentity> PackageIdentity::query() const
     return QueryIdentity{ecosystem,name,version,1};
 }
 
+std::optional<QString> PackageIdentity::canonicalPypiName(const QString& name)
+{
+    static const QRegularExpression pattern(QStringLiteral("\\A[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?\\z"));
+    static const QRegularExpression separators(QStringLiteral("[-_.]+"));
+    if (!pattern.match(name).hasMatch()) return {};
+    return name.toLower().replace(separators, QStringLiteral("-"));
+}
+
 PackageIdentity PackageIdentity::resolve(const Component& c)
 {
     PackageIdentity r;
@@ -76,10 +84,9 @@ PackageIdentity PackageIdentity::resolve(const Component& c)
     QString name,scope;
     if (!decode(parts.last(),name) || !validText(name)) return fail(IdentityReason::MalformedPurl);
     if (type=="pypi") {
-        static const QRegularExpression pattern(QStringLiteral("\\A[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?\\z"));
-        static const QRegularExpression separators(QStringLiteral("[-_.]+"));
-        if (!pattern.match(name).hasMatch()) return fail(IdentityReason::MalformedPurl);
-        r.name=name.toLower().replace(separators,QStringLiteral("-"));
+        const auto canonical = canonicalPypiName(name);
+        if (!canonical) return fail(IdentityReason::MalformedPurl);
+        r.name = *canonical;
         r.nameNormalized=r.name!=name;
     } else {
         static const QRegularExpression pattern(QStringLiteral("\\A[A-Za-z0-9][A-Za-z0-9._-]*\\z"));

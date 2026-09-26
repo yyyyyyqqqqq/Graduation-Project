@@ -1,14 +1,14 @@
 # 毕业设计项目总交接文档
 
-更新日期：2026-09-25（Asia/Shanghai；Phase 07.5-AUX 真实连接验收与最终收口）
+更新日期：2026-09-26（Asia/Shanghai；Phase 08 Version Applicability & Finding MVP 最终封版）
 
 本文是项目唯一的长期动态交接文档。每个阶段结束后，更新当前状态、代码结构、Git、测试、人工验收、技术决策和下一步，避免另建多套状态文件。
 
-本文保留此前授权的审计修订、Phase 00—06 已完成事实及 `22.md` 冻结的长期路线。Phase 07 按 `23.md` / `24.md` 设计、`25.md` 开发，已按 `26.md` 最终封版并执行 Debug / Release 构建和全部回归。用户在 `26.md` 明确确认亲自完成 Debug GUI 人工验收 18/18 PASS；这是用户实际操作结果，不是 Codex 模拟或自动测试替代。Release GUI 为 AUTOMATED ONLY。
+本文保留 Phase 00—07 已完成事实及长期规则。Phase 08 按 31.md 冻结设计与开发，32.md 导出完整审查材料，33.md 修复 ChatGPT 代码审查发现的 limit containing * 问题，34.md 确认审查与用户 Debug GUI 人工验收通过并授权最终封版。本轮重新执行 Debug / Release Build 与 Phase 00—08 完整回归，并完成维护性、隐私与交接核验。Release GUI 为 AUTOMATED ONLY。
 
-Phase 07.5-AUX 已按 `28.md` 完成本地 MCP 实验，并按 `29.md` 完成采用文档更新。本轮依据用户在 `30.md` 提供的真实 ChatGPT 连接及重启后重连 PASS 验收，完成辅助基础设施收口、修正 MCP 过时状态并更新本文；正式仓库仅增加普通 docs commit，不改变产品功能或正式业务 Phase。下文 Phase 07 的实现、构建、测试、人工验收与封版记录均为该阶段历史成果，本轮未重新执行，不开始 Phase 08。
+Phase 07.5-AUX 已按 28.md / 29.md / 30.md 完成本地只读 MCP 实验、采用与真实 ChatGPT 连接验收，保留为辅助基础设施，不属于产品业务 Phase。历史 Phase 07 封版事实保留；当前业务范围已推进到 Phase 08 Finding，Risk 尚未实现。
 
-依据：项目历史资料、已通过的理解与交接审查、`04.md` 开发任务、`05.md` 封版授权及人工验收结果、`06.md` 长期规则增强要求、`07.md` 文档提交授权、`08.md` Phase 01 开发要求、`09.md` Phase 01 封版授权、`10.md` Phase 02 开发要求、`11.md` Phase 02 人工验收及封版授权、`12.md` / `13.md` 隐私规则与维护授权、`14.md` Phase 03 开发要求、`15.md` Phase 03 人工验收及最终封版授权、此前用户授权的 Handoff 审计更新、`16.md` Phase 04 开发要求、`17.md` Phase 04 人工验收及最终封版授权、`18.md` Phase 05 开发要求、`19.md` Phase 05 人工验收及最终封版授权、`20.md` Phase 06 开发要求、`21.md` Phase 06 人工验收及最终封版授权、`22.md` 长期路线调整及独立文档提交授权，`23.md` / `24.md` Phase 07 设计、`25.md` Phase 07 开发、`26.md` 用户人工验收及最终封版授权，以及各阶段正式工程构建、测试和现场 Git / GitHub 实查。
+依据：各阶段既有设计、开发、用户验收与封版授权（04.md—30.md），以及 Phase 08 的 31.md—34.md、当前真实代码、本轮实际构建 / 测试和 Git / GitHub 核验。历史验收与本轮验证分开记录，用户人工验收不由自动测试替代。
 
 **真实性优先级：实际运行结果 > 当前真实代码 > 当前 Git 状态 > 当前 GitHub 状态 > 已验证环境审计 > 历史项目资料 > 推测。** 当前阶段授权以用户最新具体指令为准。
 
@@ -22,39 +22,41 @@ Phase 07.5-AUX 已按 `28.md` 完成本地 MCP 实验，并按 `29.md` 完成采
 
 # 2. 当前一句话状态
 
-Phase 07 已完成 Component Identity 与 OSV-first Vulnerability Matching MVP，并通过自动和用户人工验收。Foundation 基本完成，Vulnerability 层已实现 Current Components → Package Identity → OSV Candidate；Version Applicability / Finding 尚未实现，漏洞风险评估核心闭环仍待后续阶段完成。
+Phase 08 已完成 Version Applicability & Finding MVP，并通过自动测试、ChatGPT 代码审查和用户 Debug GUI 人工验收。Vulnerability 层现已实现 Current Components → Package Identity → OSV Package Version Query Candidate → Local Applicability → Provider Consistency Gate → Finding；Risk 尚未实现，下一步进入 Risk 层设计。
 
 # 3. 当前阶段
 
-**CURRENT PHASE: PHASE 07 COMPLETE**
+**CURRENT PHASE: PHASE 08 COMPLETE**
 
-**NEXT: Vulnerability continuation — Version Applicability / Finding design**
+**NEXT: Risk layer design based on confirmed Findings**
 
-**READY FOR NEXT PHASE DESIGN。** Phase 08+ 仍先做需求与技术设计，具体名称和范围待下一轮冻结；本轮封版后停止，不开始设计或开发。
+**READY FOR NEXT PHASE DESIGN。** 下一步先进行 Risk 层需求与技术设计；不提前冻结 Phase 09 的详细名称、模型、公式或实现，本轮封版后停止。
 
 # 4. 正式项目目录
 
 唯一正式根目录：`D:\codex\Graduation Project\project`。
 
-后续源码、CMake、测试、项目文档和 Git 均围绕此目录组织。不维护多个正式工程副本；父目录的 `01.md` 至 `26.md` 是既有准备、设计、开发、封版与文档维护任务的输入资料，另已核验 `28.md` 为独立 MCP 实验、`29.md` 为采用文档更新、`30.md` 为真实连接验收及本轮最终收口授权。
+后续源码、CMake、测试、项目文档和 Git 均围绕此目录组织。不维护多个正式工程副本；父目录的 `01.md` 至 `26.md` 是既有准备、设计、开发、封版与文档维护任务的输入资料，31.md—34.md 为 Phase 08 开发、审查、修复与封版依据；另已核验 `28.md` 为独立 MCP 实验、`29.md` 为采用文档更新、`30.md` 为历史真实连接验收及辅助基础设施收口授权。
 
 `D:\codex\SupplyChainRiskAssessment` 是历史环境验证目录，不是正式项目；本轮未检查或修改其内容。
 
 # 5. Git / GitHub 当前状态
 
-Phase 07 开发及封版前基线为 `dedd79dfeaab8245bfcb1568ccf28a8913f6f59e`（`docs: realign project roadmap around vulnerability risk pipeline`）。本轮开始时，HEAD / main / origin/main / 远端 main 均为已授权的采用文档提交 `d77f4f50868d5b63842159e1f8198ba70225fa33`（`docs: record phase 07.5 readonly mcp experiment`），ahead / behind 为 0 / 0，工作区 clean；本轮仅在其后追加普通 docs commit，Phase 07 completion commit 与 tag 保持下表固定值。
+Phase 08 开发及本轮封版前 HEAD / main / origin/main / remote main 均为 eb9f48196f757bd4eeae3301fe0f14ad8abe987a。封版前 branch=main、upstream=origin/main、ahead/behind=0/0、staged=0，包含 8 个 tracked 修改与 5 个 untracked 正式源码/测试文件；本轮再加入本文语义更新，共 14 个正式提交文件。
 
 | 项目 | 封版标识与核验方式 |
 | --- | --- |
-| 当前分支 / upstream | `main` / `origin/main` |
-| origin（fetch / push） | `https://github.com/yyyyyyqqqqq/Graduation-Project.git` |
-| Phase 07 completion commit | `ad8c75274a2a8c4db275ab099f949a7c47fcecdb`（`feat: complete phase 07 osv vulnerability matching`），由 `phase-07-complete^{commit}` 固定定位，不随后续 docs commit 移动 |
-| Phase 07 tag | annotated `phase-07-complete`；message：`Phase 07 complete: component identity and OSV matching` |
-| main 同步核验 | 本轮普通 docs commit 推送后核验 HEAD = origin/main = remote main，ahead / behind = 0 / 0 |
-| tag 核验 | 核对本地 / 远端既有 tag object 与 peeled target；Phase 00—07 tags 均不移动，不创建 Phase 07.5 tag |
-| 工作区核验 | 本轮仅提交 PROJECT-HANDOFF.md，main 推送与历史标签核对后确认 tracked / untracked clean；ignored build / manual artifacts 保留 |
+| 分支 / upstream | main / origin/main |
+| origin | https://github.com/yyyyyyqqqqq/Graduation-Project.git |
+| Phase 08 completion commit | message：feat: complete phase 08 version applicability and findings；由 phase-08-complete^{commit} 固定定位 |
+| Phase 08 tag | annotated phase-08-complete；message：Phase 08 complete: version applicability and findings |
+| Phase 07 completion commit | ad8c75274a2a8c4db275ab099f949a7c47fcecdb，保持不变 |
+| Phase 07 tag object | b4a5edd09c2836ccd71786e8d3178fed0307eb0b，保持 annotated |
+| 最终 main 同步 | completion commit 推送后核验 HEAD = main = origin/main = remote main，ahead/behind=0/0 |
+| 最终 tag 核验 | 本地 / 远端 tag object 与 peeled target 一致，target 为本次 completion commit；Phase 00—07 tags 原对象与 target 不变 |
+| 最终工作区核验 | clean，staged=0，无未忽略的新源码；构建、缓存、数据库、日志、截图及人工验收产物保持 ignored |
 
-Phase 07 封版时，本文随 completion commit 保存，后续可通过普通 docs commit 维护，不能再用“本文所在提交”推断产品封版提交。本轮新 docs commit 的精确 SHA 与远端实查结果在 Phase 07.5-AUX Final Seal Report 回复中报告，不把自身尚未生成的 hash 写入自身；后续接手用下述命令重新核对，不只依赖文档中的阶段状态。
+本文随 Phase 08 completion commit 保存，不能提前写入自身尚未生成的 SHA。精确 completion SHA、tag object、peeled target、远端同步与 clean 实查结果在本轮最终封版报告中给出；后续用 phase-08-complete^{commit} 固定定位，不用随 main 移动的最新文档推断封版 commit。
 
 既有提交使用仓库级身份 `yyyyyyqqqqq` / `104704290+yyyyyyqqqqq@users.noreply.github.com`。仓库级 `credential.https://github.com.username` 为 `yyyyyyqqqqq`，用于 HTTPS 认证账户选择；认证账户与 commit 作者配置不同。本轮不修改凭据或全局 Git 配置。
 
@@ -88,7 +90,7 @@ Phase 00—06 的七个 annotated tags 在封版前已核对本地对象、远�
 | CMake / Ninja | 3.30.5 / 1.12.1，配置与构建 |
 | SQLite / Qt Sql / QSQLITE | 本地持久化 |
 | Qt Network / Qt JSON | Network 已在 Phase 07 的 OsvMatching 正式接入；JSON 使用 Qt Core 中的 QJson 类型 |
-| Qt Concurrent | 后台导入 / 诊断、数据库 Apply、依赖快照 / 图与关系查询；Phase 07 用于 Current Components / Identity、OSV 解析、文件缓存与证据显示序列化 |
+| Qt Concurrent | 后台导入 / 诊断、数据库 Apply、依赖快照 / 图与关系查询；Phase 07 用于 Current Components / Identity、OSV 解析、文件缓存与证据显示序列化；Phase 08 扩展后台整批 Applicability / Finding 派生 |
 | Qt Test / CTest | 自动测试及测试执行 |
 | Graphviz / Qt Svg | Graphviz 16.1.0 当前仅用于 Phase 00 dot → SVG 冒烟；正式应用未接入 Graphviz 依赖图绘制或 Qt Svg 展示 |
 | windeployqt | 历史环境已验证；当前正式应用尚未完成最终部署包验收 |
@@ -117,11 +119,11 @@ Graphviz C:\Program Files\Graphviz\bin\dot.exe
 - 历史 `LongPathsEnabled=0`，保持浅目录；正式路径含空格，命令必须正确引用。
 - 历史 optional Vulkan Headers / DX12 compiler 提示不阻塞当前 Widgets + SVG 方案；Qt 导入配置为 RelWithDebInfo，历史 Debug 已验证，不据此重装。
 - 历史独立部署验证是在当前电脑排除开发路径后完成，尚不等同于全新 Windows 电脑验收。
-- **当前无已知环境 Blocker。** 本轮按 `26.md` 重新执行正式工程 Debug / Release 构建与全部回归，沿用正常的已有构建目录，没有无故 Clean Configure、重装或更换冻结工具链；未重跑完整历史环境审计。
+- **当前无已知环境 Blocker。** 本轮按 34.md 执行 Debug / Release 构建与 Phase 00—08 全量回归，沿用已有构建目录和冻结工具链，不重跑完整历史环境审计。
 
 # 8. 系统核心目标
 
-最终产品应回答：项目使用了什么组件，哪些组件关联漏洞，哪些漏洞适用于当前版本，哪些风险应优先处理，以及为什么得到这样的风险和置信度结论。Foundation 已基本完成：能预览 SBOM 组件、诊断质量、显式应用当前组件与原始依赖，并分析可靠直接 / 反向 / 传递关系；已能由 Current Components 得到身份与 OSV 候选，版本适用性、Finding 和风险核心闭环尚未实现。解析成功或当前质量规则未发现问题，均不等于 SBOM 完整、组件真实存在或没有风险。
+最终产品应回答：项目使用了什么组件，哪些组件关联漏洞，哪些漏洞适用于当前版本，哪些风险应优先处理，以及为什么得到这样的风险和置信度结论。Foundation 已基本完成：能预览 SBOM 组件、诊断质量、显式应用当前组件与原始依赖，并分析可靠直接 / 反向 / 传递关系；已能由 Current Components 得到身份与 OSV 候选，并解释本地适用性、经 Provider Consistency Gate 形成内存 Finding；Risk 核心闭环尚未实现。解析成功或当前质量规则未发现问题，均不等于 SBOM 完整、组件真实存在或没有风险。
 
 结果需要可解释、可追溯，后续通过实验、Dashboard 和报告支持论文及演示；扫描记录、历史比较的必要范围在对应阶段再确定。不能让完整业务完全依赖实时公网 API，应按实际 Phase 设计缓存、可复现验证及本地演示方式，不因此提前建设完整离线镜像。
 
@@ -133,14 +135,14 @@ Trivy、Grype、Dependency-Track、OSV-Scanner、cve-bin-tool 等成熟工具在
 
 # 9. 核心业务流程
 
-**当前已实现：** Project → SBOM Parse → Quality Diagnosis → Explicit Apply → Current Components + Raw Dependencies → Dependency Analysis；Current Components → Package Identity → OSV /v1/query → Vulnerability Candidate。
+**当前已实现：** Project → SBOM Parse → Quality Diagnosis → Explicit Apply → Current Components + Raw Dependencies → Dependency Analysis；以及 Current Components → Package Identity → OSV Package Version Query Candidate → Local Version Applicability → Provider Consistency Gate → Finding。Risk 尚未实现。
 
 **唯一有效长期路线：Foundation → Vulnerability → Risk → Validation / Presentation。**
 
 | 层 | 正式技术主线 | 当前状态与职责 |
 | --- | --- | --- |
 | Layer 1 — Foundation | SBOM → Component → Quality → Dependency | 基本完成；Phase 00—06 已建立标准化供应链输入、CycloneDX 解析、组件模型、质量诊断、SQLite / Current Components / Raw Dependencies 持久化及依赖分析，为漏洞分析提供可追溯输入与项目上下文 |
-| Layer 2 — Vulnerability | Component Identity → Candidate Matching → Version Applicability → Finding | 部分完成：Identity + OSV Candidate Matching 已实现；Applicability / Finding 尚未实现，下一步先设计 |
+| Layer 2 — Vulnerability | Component Identity → Candidate Matching → Version Applicability → Finding | MVP 已完成：Identity、OSV Candidate、本地 Applicability、Provider Consistency Gate 与内存 Finding；支持范围及 Unknown 边界见第 16 节 |
 | Layer 3 — Risk | CVSS / EPSS / KEV + Dependency Context + Quality Evidence → Risk + Assessment Confidence → Explanation | 尚未实现；解释 Finding 成立时的处理优先级、证据充分程度及判断理由；Risk Model 尚未冻结 |
 | Layer 4 — Validation / Presentation | Experiment → Dashboard → Report | 尚未实现；用于方法验证、论文实验、答辩和结果呈现，不是当前优先开发目标 |
 
@@ -153,11 +155,11 @@ Trivy、Grype、Dependency-Track、OSV-Scanner、cve-bin-tool 等成熟工具在
 | 模块 | 主要职责 |
 | --- | --- |
 | Foundation | 项目创建 / 列表 / 详情 / 删除、CycloneDX JSON 1.4 / 1.5 / 1.6 共同字段子集解析与只读预览、issue-based 质量诊断、当前组件及原始依赖事务持久化、精确引用解析、直接 / 反向及按需传递查询均已实现；无总体质量分或自动修复 |
-| Vulnerability | 已实现 PyPI/npm 最小身份与所选组件 OSV 候选查询、原始证据、文件缓存和隐私确认；版本适用性与 Finding 待后续设计 |
+| Vulnerability | 已实现 PyPI/npm 最小身份与所选组件 OSV 候选查询、原始证据、文件缓存和隐私确认；本地版本适用性、Provider Consistency Gate、内存 Finding 与解释 UI 已实现 |
 | Risk | 未来结合漏洞 enrichment、依赖上下文与质量证据，分别给出 Risk、Assessment Confidence 和 Explanation；模型及实现未冻结 |
 | Validation / Presentation | 未来通过验证实验、Dashboard 和 Report 呈现结论；Graphviz 后移为辅助 presentation / explanation 能力，不是下一开发优先项或 blocker |
 
-Project / projects 与 Component / components 已实现正式持久化；SbomDocument、SbomComponent、SbomDependency、SbomQualityIssue、SbomQualityReport 仍为导入或诊断内存模型。DependencySnapshot 表达一致读取结果，DependencyGraph 为可失效的内存派生图；原始依赖已持久化。PackageIdentity / QueryIdentity 与 VulnerabilityCandidate / OsvSnapshot 已实现为内存值模型，完整成功 OSV 查询另有外部证据文件缓存；没有正式 identity / vulnerability / finding / risk 表，缓存不是第二业务数据库。Finding、Risk、Confidence、扫描与报告仍待后续设计。
+Project / projects 与 Component / components 已实现正式持久化；SbomDocument、SbomComponent、SbomDependency、SbomQualityIssue、SbomQualityReport 仍为导入或诊断内存模型。DependencySnapshot 表达一致读取结果，DependencyGraph 为可失效的内存派生图；原始依赖已持久化。PackageIdentity / QueryIdentity 与 VulnerabilityCandidate / OsvSnapshot 已实现为内存值模型，完整成功 OSV 查询另有外部证据文件缓存；没有正式 identity / vulnerability / finding / risk 表，缓存不是第二业务数据库。ApplicabilityResult / CandidateAssessment / ApplicabilitySnapshot / VulnerabilityFinding 为派生内存值模型；Risk、Confidence、扫描与报告仍待后续设计。
 
 # 11. 漏洞数据源定位
 
@@ -172,11 +174,11 @@ OSV 已正式接入：固定 HTTPS `https://api.osv.dev/v1/query`，仅查询所
 
 # 12. 风险评估原则
 
-**以下仅为长期设计原则，Applicability、Finding、Risk 和 Assessment Confidence 均未实现。Risk ≠ CVSS；Risk Model 尚未冻结。**
+**Applicability 与 Finding MVP 已实现；Risk 和 Assessment Confidence 尚未实现。Finding 是 Risk 的输入前提。Risk ≠ CVSS；Risk Model 尚未冻结。**
 
-正式长期顺序为 **Component → Vulnerability Candidate → Version Applicability → Finding → Risk**。Applicability 是 Risk 的前置门控：Affected 可以形成有效 Finding；Not Affected 不形成有效风险 Finding；Unknown 不得输出看起来确定的 Risk，可进入 Assessment Uncertain。名称相似、相关 CVE 或获得 Candidate 均不能直接认定当前版本受影响；依赖关系也不等于 runtime reachability。
+正式长期顺序为 **Component → Vulnerability Candidate → Local Applicability → Provider Consistency Gate → Finding → Risk**。仅 Published Affected 可形成 Finding；Local NotAffected 在 OSV package-version Candidate 上转为 Published Unknown / ProviderEvidenceConflict，不能反向推翻 provider 证据。Unknown 不得输出确定 Risk，也不等于安全；未来 Assessment Uncertain 的表达仍待设计。
 
-Phase 07 已保留 OSV candidate 的 affected 原始证据，但未执行 ranges / events / versions 的适用性判断。下一阶段须根据真实 QueryIdentity、Candidate、affected evidence、ecosystem 与 version 设计 Applicability / Finding；**Identity Resolved ≠ Version Applicable；Candidate ≠ Affected ≠ Finding。** 不得从 Candidate 直接进入 Risk。
+Phase 08 在原始 affected 证据之上解释 exact versions 与严格 SEMVER。**Identity Resolved ≠ Version Applicable；Candidate ≠ Finding。** OSV package/version 查询可能使用 fuzzy upstream-version matching，不能宣称 strict equality。Unsupported evidence 保留 Unknown，withdrawn 作为记录生命周期 Excluded；不得从 Candidate 直接进入 Risk。
 
 **Risk** 回答“如果 Finding 确实成立，它有多值得优先处理”；**Assessment Confidence** 回答“当前证据对该判断支持有多充分”；Explanation 解释两者结论。Confidence 当前倾向 High / Medium / Low，不采用 0–100 的伪精确 Confidence Score，具体规则仍须未来冻结。
 
@@ -186,7 +188,7 @@ Quality Diagnostics 后续应成为证据完整性输入，不能永远只是独
 
 # 13. Phase 路线
 
-以下是第 9 节唯一长期路线的阶段状态。Phase 00—07 成果完成；Phase 08+ 仅保留方向，不提前分配详细实现阶段。
+以下是第 9 节唯一长期路线的阶段状态。Phase 00—08 成果完成；Phase 09+ 仅保留方向，不提前分配详细实现阶段。
 
 | Phase | 名称与主要目标 | 当前状态 |
 | --- | --- | --- |
@@ -198,7 +200,8 @@ Quality Diagnostics 后续应成为证据完整性输入，不能永远只是独
 | 05 | 组件管理与持久化 | COMPLETE |
 | 06 | 依赖关系分析 | COMPLETE |
 | 07 | Component Identity + OSV-first Vulnerability Matching MVP | COMPLETE |
-| 08+ | Vulnerability continuation → Risk → Validation / Presentation | 仅方向；具体阶段逐步设计和冻结 |
+| 08 | Version Applicability & Finding MVP | COMPLETE |
+| 09+ | Risk → Validation / Presentation | 仅方向；具体阶段逐步设计和冻结 |
 
 **Historical / Superseded Plan：** Phase 00—06 开发期间使用的旧 Phase 07—17 未来安排已被 `22.md` 路线决策取代，旧表从正式路线中移除，历史可由 Git 查询；不得据其启动开发。Graphviz 仅为后续辅助展示与解释能力，不是 Phase 07 任务。
 
@@ -210,19 +213,15 @@ Quality Diagnostics 后续应成为证据完整性输入，不能永远只是独
 
 已输出 ecosystem、查询包名、精确版本、版本来源、Identity 状态 / reason、OSV ID、CVE aliases 与原始证据。Resolved / Insufficient / Ambiguous 和 NotStarted / Working / Success / Failed / Cancelled 分离；只有完整成功查询的候选数才有确定含义。失败、取消或身份不足显示未知，完整零结果只说明当前查询未返回候选。
 
-具体身份规则、分页 / 限额 / 缓存、异步生命周期及 UI 见第 16 节；应用版本 0.8.0，schema 保持 4，没有新增业务表。
+具体身份规则、分页 / 限额 / 缓存、异步生命周期及 UI 见第 16 节；Phase 07 封版时应用版本 0.8.0，schema 保持 4，没有新增业务表。
 
-## 13.2 Phase 07 明确边界
+## 13.2 Phase 08 已完成定位与边界
 
-Phase 07 未实现且本轮不增加：
+**Phase 08 — Version Applicability & Finding MVP，COMPLETE。** 在既有 QueryIdentity / OSV Candidate 后增加纯 Core evaluator、strict SemVer、Provider Consistency Gate 和内存 Finding，扩展既有 Controller / Page，不建立第二套查询或 Provider Framework。
 
-- 完整 PURL → CPE；NVD 作为 MVP 主匹配链；EPSS；KEV。
-- Risk Score；Risk Model；Assessment Confidence 实现；正式 Applicability / Finding 业务层。
-- 所有 package ecosystem；Debian / Ubuntu backport；vendor-specific patch 完整处理；SPDX。
-- Graphviz 新功能；企业级漏洞同步；完整离线漏洞镜像；多 Provider Framework。
-- 二进制逆向；Machine Learning 风险模型。
+已实现 exact versions、SEMVER、同 ecosystem wildcard package、withdrawn exclusion，以及生命周期保护和解释 UI。ECOSYSTEM / PEP 440、GIT commit graph、完整生态与 vendor/backport 规则不在当前解释范围，保留 Unknown。
 
-已保留候选中的 affected evidence，下一步进入 Version Applicability / Finding 的需求与技术设计，门控原则见第 12 节；不从封版授权推断 Phase 08 开发授权。
+无 Finding persistence、Risk / Confidence 模型、NVD / EPSS / KEV enrichment、批量扫描、正式 Graphviz 业务、Dashboard 或报告。下一步只进行基于 confirmed Findings 的 Risk 层需求 / 技术设计，不从本次封版授权推断下一阶段实现授权。
 
 ## 13.3 Auxiliary Development Infrastructure
 
@@ -242,7 +241,7 @@ Git 仅受限只读查询，SQLite 使用真正 read-only connection，仅支持
 
 用户在 `30.md` 确认真实链路 ChatGPT → OpenAI Secure MCP Tunnel → tunnel-client → localhost Read-Only MCP 已建立；ChatGPT MCP App 已连接，恰好 7 个工具发现 PASS，get_project_status / get_git_status / get_handoff_outline 实际调用 PASS，23 个一级章节 outline 读取成功，停止并重启本地服务后的 reconnect / invocation 也 PASS。这是实际用户 / ChatGPT 验收，不是 Codex 模拟或仅由 Inspector 推断。此前 READY FOR CHATGPT CONNECTION TEST 已完成验收；当前 **PHASE 07.5-AUX: COMPLETE**、**READ-ONLY MCP: OPERATIONAL**。
 
-get_project_status 的 auxiliary_task_status 从本文明确的连接验收标记派生，表示已记录的验收结论，不是实时 Tunnel 健康探测。MCP 与 tunnel-client 仍需用户手动启动，用毕 Ctrl+C 停止；两进程关闭后 ChatGPT 无法继续访问。仅 localhost MCP 与出站 Secure MCP Tunnel，无公网 MCP 入站 endpoint、常驻服务或自动启动；不改变产品工程，不开始 Phase 08。
+get_project_status 的 auxiliary_task_status 从本文明确的连接验收标记派生，表示已记录的验收结论，不是实时 Tunnel 健康探测。MCP 与 tunnel-client 仍需用户手动启动，用毕 Ctrl+C 停止；两进程关闭后 ChatGPT 无法继续访问。仅 localhost MCP 与出站 Secure MCP Tunnel，无公网 MCP 入站 endpoint、常驻服务或自动启动；不改变产品工程，不构成新业务阶段的开发授权。
 
 # 14. 已完成 Phase
 
@@ -327,8 +326,18 @@ get_project_status 的 auxiliary_task_status 从本文明确的连接验收标�
 - AppData 文件缓存随 --data-dir 隔离；安全固定文件名、内部 QueryIdentity 校验、QSaveFile 原子写、完整零结果可缓存、24 小时 Fresh / Stale、Live / Cache、仅本地查询和显式清除。
 - 首次实际联网发送确认、最小请求数据、无自动批量查询；Current Components / Identity、解析与缓存后台任务、generation 失效保护及窗口 / reply 生命周期均有回归覆盖。
 - 应用 0.8.0，schema 4 和六表保持；未新增 identity / vulnerability / finding / risk 正式表。100000 Components 读取、身份计算、表格与 GUI responsiveness 验证通过。
-- 本轮最终 Debug / Release Build PASS，CTest 各 108/108 PASS（旧回归 82 + Phase 07 26）；用户在 `26.md` 亲自确认 Debug GUI 18/18 PASS，Release GUI 为 AUTOMATED ONLY。
-- 维护性及 Sensitive / Privacy Review 按第 19 节执行；completion commit、main 推送与 annotated `phase-07-complete` 的最终实查值见本轮封版报告。封版后停止，下一步只进入新一轮设计。
+- Phase 07 封版轮最终 Debug / Release Build PASS，CTest 各 108/108 PASS（旧回归 82 + Phase 07 26）；用户在 `26.md` 亲自确认 Debug GUI 18/18 PASS，Release GUI 为 AUTOMATED ONLY。
+- Phase 07 维护性及 Sensitive / Privacy Review 已通过；completion commit 与 annotated `phase-07-complete` 固定标识见第 5 节，历史封版事实不随后续业务阶段改变。
+
+**Phase 08 —— COMPLETE。**
+
+- VersionApplicability 为纯 Core evaluator，按 QueryIdentity 过滤 affected package；exact versions 使用字符串相等，strict SemVer 2.0 使用无整数溢出的十进制字符串比较，支持 prerelease 与 build metadata precedence。
+- OSV Provider query 与 Local Applicability 分离；Local NotAffected → Published Unknown / ProviderEvidenceConflict，不宣称 provider strict equality；仅 Published Affected 创建 Finding。
+- 同 ecosystem 的 package.name=* 作为 wildcard；withdrawn → Excluded / RecordWithdrawn；不支持的 ECOSYSTEM / GIT / range.type 保留 Unknown。
+- Code Review 发现的 limit 特殊值问题已按 33.md 修复为 contains('*')：*、1.*、future* 均为 infinity，finite + infinity 与 invalid finite limit 继续测试。
+- Finding 只在内存派生，绑定 component / query / snapshot / fetchedAt，整批结果由 generation 验证后发布；原始 OSV cache、schema 4、六表及迁移保持不变。应用版本为 CMake 唯一来源 0.9.0。
+- 本轮 34.md 最终 Debug / Release Build PASS，完整 CTest 各 128/128 PASS（既有 108 + Phase 08 20），耗时分别 46.83 s / 42.39 s。
+- ChatGPT Code Review PASS；用户在 34.md 确认亲自完成 Debug GUI 全部人工验收 PASS，Release GUI 为 AUTOMATED ONLY。维护性 / 隐私审查及 diff 检查通过；Git 封版标识见第 5 节和最终报告。
 
 # 15. 当前真实工程结构
 
@@ -354,6 +363,8 @@ D:\codex\Graduation Project\project\
 │  ├─ DependencyAnalyzer.h / .cpp
 │  ├─ DependencyPage.h / .cpp
 │  ├─ PackageIdentity.h / .cpp
+│  ├─ Semver.h / .cpp
+│  ├─ VersionApplicability.h / .cpp
 │  ├─ OsvResponseParser.h / .cpp
 │  ├─ OsvCache.h / .cpp
 │  ├─ OsvClient.h / .cpp
@@ -372,7 +383,8 @@ D:\codex\Graduation Project\project\
    ├─ Phase04Test.cpp
    ├─ Phase05Test.cpp
    ├─ Phase06Test.cpp
-   └─ Phase07Test.cpp
+   ├─ Phase07Test.cpp
+   └─ Phase08Test.cpp
 ```
 
 `.git` 为版本元数据；本地 `build-debug/`、`build-release/`、Qt Creator 的 `build/` 和 `.qtcreator/` 均被忽略，不进入正式提交。运行时数据库、日志和配置位于应用数据目录，不属于正式源码；测试数据库位于临时目录，截图和构建日志留在被忽略的构建目录。
@@ -385,11 +397,11 @@ D:\codex\Graduation Project\project\
 
 Phase 07 的 public / large / empty / invalid SBOM、cache fixture、launch 脚本、人工验收说明、截图、manual DB / logs、live smoke 记录均留在 ignored 构建目录；`phase07-manual-data` 不提交、不覆盖或删除。测试源码仅包含公开包或 synthetic 构造数据，不提交运行时 response dump。`.gitignore` 另覆盖 `**/cache/osv-v1/`。
 
-当前应用版本为 **0.8.0**，CMake 与 main.cpp 一致。`VulnerabilityCandidate` / `OsvSnapshot` 实际定义在 `OsvResponseParser.h`，没有同名独立文件。CMake target 边界：`SbomParsing`（Parser / Quality Analyzer）与 `DependencyAnalysis` 仅链接 Qt Core；`AppFoundation` 链接 Qt Core / Sql；`VulnerabilityCore`（PackageIdentity / OsvResponseParser / OsvCache）仅链接 Qt Core；`OsvMatching`（OsvClient / VulnerabilityController）链接 VulnerabilityCore、AppFoundation、Qt Network / Concurrent。应用链接 Widgets / Concurrent 及上述业务库，VulnerabilityPage 为应用 UI 源码。测试为 Phase00—07，开启时加入 Qt Test，Graphviz dot 仍只用于既有 smoke；没有新增 Qt Svg 或 Graphviz 业务。
+当前应用版本为 **0.9.0**，唯一来源是 CMake project VERSION，经 APPLICATION_VERSION compile definition 传入 main.cpp 的 QApplication::setApplicationVersion，日志复用 applicationVersion()。VulnerabilityCandidate / OsvSnapshot 定义在 OsvResponseParser.h；Applicability / Finding 值模型定义在 VersionApplicability.h。CMake target 边界：SbomParsing / DependencyAnalysis 仅 Qt Core；AppFoundation 为 Core / Sql；VulnerabilityCore（PackageIdentity / OsvResponseParser / OsvCache / Semver / VersionApplicability）仅 Qt Core；OsvMatching（OsvClient / VulnerabilityController）链接 VulnerabilityCore、AppFoundation、Network / Concurrent。应用包含 Widgets / Concurrent 与 VulnerabilityPage；测试为 Phase00—08，Graphviz 仍仅用于既有 smoke。Phase 08 的 synthetic SBOM、manual-data、cache、截图、审查包与日志留在 ignored build 目录，不提交、不覆盖已有人工数据库。
 
 # 16. 当前已经实现的功能
 
-当前已经建立 **Phase 00 工程基础 + Phase 01 Application Foundation + Phase 02 Project Management + Phase 03 CycloneDX SBOM Import + Phase 04 SBOM Quality Diagnosis + Phase 05 Component Persistence + Phase 06 Dependency Analysis + Phase 07 Component Identity / OSV Candidate Matching**。具备 Application Shell、导航、路径、日志、配置和 SQLite 基础；项目支持 create / list / findById / delete / persistence。业务链见第 9 节；预览文档及质量报告仍仅在内存中，当前组件、原始依赖及 Captured State 在明确 Apply 后统一持久化。
+当前已经建立 **Phase 00 工程基础 + Phase 01 Application Foundation + Phase 02 Project Management + Phase 03 CycloneDX SBOM Import + Phase 04 SBOM Quality Diagnosis + Phase 05 Component Persistence + Phase 06 Dependency Analysis + Phase 07 Component Identity / OSV Candidate Matching + Phase 08 Version Applicability / Finding**。具备 Application Shell、导航、路径、日志、配置和 SQLite 基础；项目支持 create / list / findById / delete / persistence。业务链见第 9 节；预览文档及质量报告仍仅在内存中，当前组件、原始依赖及 Captured State 在明确 Apply 后统一持久化。
 
 默认运行目录由 `QStandardPaths::AppDataLocation` 决定，Windows 通常为 `%APPDATA%/GraduationProject/SupplyChainRiskAssessment`：数据库 `data/supply_chain_risk.db`、日志 `logs/application.log`、配置 `settings.ini`。可用 `--data-dir <绝对路径>` 指定隔离数据根目录，空路径或相对路径会被拒绝。应用自行保存的 UI 配置仅含 `ui/lastNavigationPage`，启动及切换时保存，重启时恢复，未知页面回退概览。
 
@@ -526,7 +538,7 @@ Qt Concurrent 在后台完成一致读取和图构建；QFutureWatcher 回 GUI �
 
 用户在开发后的人工验收另行确认“大规模响应很快、没有明显卡顿或未响应”，详见第 18 节。自动耗时与人工体验分别记录，不能互相替代；这些只是当前机器的运行证据，不是长期性能保证。真实 SBOM 可能缺失依赖声明，可靠图中的空关系不证明没有依赖；dependency analysis 不等于 runtime reachability。
 
-**当前 SQLite 持久化范围仅为 Project、Current Components、Raw Dependencies 与 Capture State。** 无 sboms / quality_reports / quality_issues / identity / vulnerability / finding / risk / Scan 等表；Phase 07 未升级 schema。Project 不保存 sbomPath 或 import history。OSV 文件缓存为历史外部证据，不是第二业务数据库。
+**当前 SQLite 持久化范围仅为 Project、Current Components、Raw Dependencies 与 Capture State。** 无 sboms / quality_reports / quality_issues / identity / vulnerability / finding / risk / Scan 等表；Phase 07 / 08 均未升级 schema。Project 不保存 sbomPath 或 import history。OSV 文件缓存为历史外部证据，不是第二业务数据库。
 
 ## Phase 07：身份、候选、缓存与异步边界
 
@@ -534,13 +546,13 @@ Qt Concurrent 在后台完成一致读取和图构建；QFutureWatcher 回 GUI �
 
 PURL 最长 4096 UTF-16 单元，scheme / type 不区分大小写；源文本采用严格 ASCII URL 子集，percent-encoded UTF-8 只解码一次，非法转义 / UTF-8 拒绝，`+` 不转空格。只支持 pypi / npm，无 name / type / bom-ref fallback；qualifiers 与 subpath 明确拒绝。PyPI 名称转小写并合并连续 `[-_.]`，无 namespace；npm 保留大小写，scoped npm 使用 `%40scope/name`，名称长度上限 214。
 
-Identity 为 Resolved / Insufficient / Ambiguous，reason 包括 MissingPurl、MissingVersion、UnsupportedEcosystem、VersionConflict、MalformedPurl、UnsupportedQualifiers、UnsupportedSubpath 及长度 / 输入安全限制。版本来源为 Purl / Component / Both；两者完全相同或仅一个来源可 Resolved，两者明确不同为 Ambiguous / VersionConflict。纯空白视为缺失；非空字符串保留原值，不 trim、补位、转小写或移除 v prefix，最长 256 UTF-16 单元，拒绝控制字符及无效 UTF-16。epoch、local version、v prefix 或不被本地完整 parser 解释的形式不会仅因此被拒绝。未实现 PEP 440、SemVer applicability、生态版本排序或 range evaluation；**Identity Resolved ≠ Version Applicable**。
+Identity 为 Resolved / Insufficient / Ambiguous，reason 包括 MissingPurl、MissingVersion、UnsupportedEcosystem、VersionConflict、MalformedPurl、UnsupportedQualifiers、UnsupportedSubpath 及长度 / 输入安全限制。版本来源为 Purl / Component / Both；两者完全相同或仅一个来源可 Resolved，两者明确不同为 Ambiguous / VersionConflict。纯空白视为缺失；非空字符串保留原值，不 trim、补位、转小写或移除 v prefix，最长 256 UTF-16 单元，拒绝控制字符及无效 UTF-16。epoch、local version、v prefix 或不被本地完整 parser 解释的形式不会仅因此被拒绝。身份解析本身不执行 PEP 440、SemVer applicability 或 range evaluation；**Identity Resolved ≠ Version Applicable**。
 
 OSV 固定 HTTPS `POST https://api.osv.dev/v1/query`，正文只含 package.ecosystem / package.name / version，后续分页增加服务返回的 page_token。每次只查询所选组件，最大并发 1；自动分页支持 token-only page，重复 token 拒绝，最多 20 页、累计 10000 条原始记录、16 MiB 解码后响应字节。reply 读取缓冲为 64 KiB，单次 transfer timeout 30 秒，网络及解析链 total deadline 120 秒。Qt Network 异步 I/O，解析 Qt Concurrent 值任务；仅所有页完整成功才发布及缓存，不暴露部分成功。
 
 错误区分 HTTP 400 / 401、403 / 404 / 429 / 5xx、Timeout、TlsFailure、ConnectionFailure、ResponseInvalid、ResponseLimitExceeded、UnexpectedRedirect、Cancelled 及 Cache / Database 错误。429 解析 Retry-After 并限制过早重发，没有自动重试或修改 identity 重试。禁止重定向自动跟随、自动 cookie 读取 / 保存与 TLS 绕过。QNetworkReply 完成后 deleteLater，销毁时断开回调并 abort；借用 transport 必须在相同线程且寿命覆盖 client。解析任务不捕获 UI。
 
-Candidate 以 OSV ID 为主记录身份，保留完整 QJsonObject：summary、modified、published / withdrawn（若存在）、aliases、affected 及未知扩展字段；必要字段 / 已知结构校验后原样保留。CVE 只是 alias，可 0 / 1 / 多个，不按 CVE 合并 OSV 记录。同 ID 跨页按较新 modified 去重，比较保留亚毫秒精度；相同 modified 但内容冲突则整次失败。affected evidence 不求值；**Candidate ≠ Affected ≠ Finding**。
+Candidate 以 OSV ID 为主记录身份，保留完整 QJsonObject：summary、modified、published / withdrawn（若存在）、aliases、affected 及未知扩展字段；必要字段 / 已知结构校验后原样保留。CVE 只是 alias，可 0 / 1 / 多个，不按 CVE 合并 OSV 记录。同 ID 跨页按较新 modified 去重，比较保留亚毫秒精度；相同 modified 但内容冲突则整次失败。Parser / Candidate 层不对 affected evidence 求值，由下述 Phase 08 evaluator 解释；**Candidate ≠ Affected ≠ Finding**。
 
 缓存路径为 `<AppData root>/cache/osv-v1/`，随 `--data-dir` 隔离。endpoint / rules / ecosystem / name / version 的结构化键经 SHA-256 生成安全固定文件名，SHA-256 不用于内容真实性或 package identity 判定。文件内部保存完整 QueryIdentity、endpoint、format / rules version、fetchedAt、complete 标记和 vulns，读取再次核对及解析，读写上限 20 MiB。QSaveFile 原子写；仅完整成功结果可写，完整零 Candidate 可写，失败 / 部分页不覆盖旧成功缓存。
 
@@ -550,22 +562,36 @@ ProjectPage 第四页签为“漏洞匹配”。Identity 表显示状态 / reaso
 
 首次实际联网前用非阻塞窗口模态确认框展示待发送 ecosystem / name / version，确认仅在当前 controller 生命周期内保留，不持久化。查询由用户明确点击；启动、Project switch、Apply、组件选择均不自动联网。不发送完整 SBOM、项目描述、UUID、bom-ref、本地路径、依赖图、SQLite、日志或其他组件；分页 token 只用于继续该查询。OSV 日志只记录固定错误代码，不记录包身份、正文、token 或 response dump。
 
-加载与所选查询使用独立 generation；Project switch / selection / Reload / Apply success 使旧结果失效，Preview 与 Apply failure 保留旧状态。隐藏页切换再显示也会正确合并加载。查询 busy 覆盖 cache read → consent → network / parse → cache write，失效或取消不会提前释放仍运行的 worker；完成前禁用 clear，clear 期间禁止查询，避免缓存清除后被旧任务重新写回。无生产 sleep、busy wait、nested event loop、mock endpoint 或 test-only switch。
+加载与所选查询使用独立 generation；Project switch / selection / Reload / Apply success 使旧结果失效，Preview 与 Apply failure 保留旧状态。隐藏页切换再显示也会正确合并加载。查询 busy 覆盖 cache read → consent → network / parse → cache write → applicability evaluation，失效或取消不会提前释放仍运行的 worker；完成前禁用 clear，clear 期间禁止查询，避免缓存清除后被旧任务重新写回。无生产 sleep、busy wait、nested event loop、mock endpoint 或 test-only switch。
 
-本轮 100000 Components 自动用例通过：Debug apply / read+identity+install / scroll+select 为 839 / 729 / 6 ms，GUI wakeups 63；Release 为 755 / 494 / 6 ms，GUI wakeups 50；两者 HTTP=0。用户 GUI 验收另行通过；这些性能仅为当前机器证据，不是跨机器保证。Applicability、Finding、Risk / Confidence、enrichment、bulk scan / querybatch、正式 Graphviz 业务与报告仍未实现。
+Phase 07 封版轮 100000 Components 自动用例通过：Debug apply / read+identity+install / scroll+select 为 839 / 729 / 6 ms，GUI wakeups 63；Release 为 755 / 494 / 6 ms，GUI wakeups 50；两者 HTTP=0。用户 GUI 验收另行通过；这些性能仅为当前机器证据，不是跨机器保证。Phase 08 已补齐 Applicability / Finding；Risk / Confidence、enrichment、bulk scan / querybatch、正式 Graphviz 业务与报告仍未实现。
+
+## Phase 08：本地适用性、Finding 与解释边界
+
+VersionApplicability::evaluateLocal 根据 QueryIdentity 选择同 ecosystem affected entry；PyPI 复用 PackageIdentity::canonicalPypiName，npm 精确比较。只有 package.name 精确为 * 且 ecosystem 匹配时为 wildcard；不改写 provider JSON。不匹配 entry 的无效范围不参与判断。
+
+versions[] 使用 exact string equality，不进行 SemVer 规范化。SEMVER 使用严格 2.0 解析和 precedence（build metadata 不参与排序）；introduced 包含边界，fixed / finite limit 不包含，last_affected 包含。introduced="0" 为负无穷；缺 limit 为隐式正无穷，任何包含 "*" 的 limit 字符串为显式正无穷。多个有限 limit 使用 BeforeLimits 的任一满足语义。事件先整体验证再排序，同序列 fixed / last_affected 混用、缺 introduced、非法边界或冲突返回 Unknown。相同优先级的不同转换保守返回 InvalidRangeEvents。
+
+可靠 positive evidence 优先；无 positive 时任何 unsupported / missing evidence 保留 Unknown，全部可解释且未命中才为 Local NotAffected。unknown / empty / missing range.type → UnsupportedRangeType，ECOSYSTEM → UnsupportedEcosystemRange，GIT → GitRangeRequiresCommitGraph。Provider source 为 OsvPackageVersionQuery；publish 将 Local NotAffected 改为 Published Unknown / ProviderEvidenceConflict。withdrawn 在 evaluateLocal 之前成为 Excluded，无普通 Local / Published 版本判断。
+
+只有 Published Affected 创建 VulnerabilityFinding。Finding 绑定当前 componentId、QueryIdentity、OSV ID / CVE aliases、applicability evidence、snapshot identity、fetchedAt 与 source；所属 ApplicabilitySnapshot 保存 generation 和整批 assessments / findings / counts。派生结果不进 SQLite 或 OSV cache；Live / Fresh / Stale 原始快照都走相同 evaluator。
+
+既有 VulnerabilityController::finishWithEvaluation 在 QtConcurrent worker 中值捕获快照，主线程校验 generation、component、snapshot identity 与 fetchedAt 后一次发布完整结果。切换组件 / 项目、reload、成功 Apply、cancel 使旧结果失效；Preview / Apply failure 保留旧状态。任务完成前保持 busy，不发布 partial batch；销毁后不调用 UI。无 SQL / Network / Widgets 混入 evaluator，无第二 Controller / Provider Framework。
+
+VulnerabilityPage 增加 Applicability / Reason / Finding 列及 Affected / Unknown / Excluded / Finding Count，解释展示 Local 与 Published、ProviderEvidenceConflict、wildcard、QueryIdentity / fetchedAt 和 Raw JSON；异步解释也使用 generation 防止过期覆盖。Unknown 不表示 Safe / 无风险；刷新失败时明确区分当前操作与保留的历史完整快照。
 
 # 17. 当前自动测试状态
 
-**Phase 00—06 Regression：82/82 PASS。Phase 07 Automated Acceptance：26/26 PASS。Debug / Release 均 108/108 PASS。**
+**Phase 00—07 Regression：108/108 PASS。Phase 08 Automated Acceptance：20/20 PASS。Debug / Release 均 128/128 PASS。**
 
-下表为 2026-09-25 按 `26.md` 重新执行的最终回归实际结果，未复制开发轮耗时。早期阶段验收保留在第 14 / 18 节。已有构建缓存正常，两次增量构建均为 no work to do；未 Clean Configure，未更换工具链，未模拟重做用户 18 项人工验收。
+下表为 2026-09-26 按 34.md 本轮重新执行的最终回归结果。两种配置增量构建均为 no work to do，未更换工具链或重新配置；用户 Debug GUI 验收来自 34.md 的明确确认，未模拟重新执行。
 
 | 正式工程验证 | 结果 |
 | --- | --- |
-| Debug Build | PASS；1.45 s |
-| Release Build | PASS；0.11 s |
-| Debug CTest | 108/108 PASS；50.69 s |
-| Release CTest | 108/108 PASS；40.32 s |
+| Debug Build | PASS；no work to do |
+| Release Build | PASS；no work to do |
+| Debug CTest | 128/128 PASS；46.83 s |
+| Release CTest | 128/128 PASS；42.39 s |
 | Phase 00 Regression：Qt / C++20、SQLite、Graphviz SVG | Debug / Release 均 3/3 PASS |
 | Phase 01：路径、配置、数据库、未知 schema、日志、导航、真实程序启动关闭 | Debug / Release 均 7/7 PASS |
 | Phase 02：schema 初始化 / 迁移 / 回滚 / 冲突保护、项目读写 / 校验 / 排序 / 持久化、UI 和错误处理 | Debug / Release 均 12/12 PASS |
@@ -574,16 +600,19 @@ ProjectPage 第四页签为“漏洞匹配”。Identity 表显示状态 / reaso
 | Phase 05：schema / 迁移 / 回滚 / FK / 原值与顺序 / replacement / 错误 / Preview / Apply / Parser Failure / 重试 / 项目 UI / 大替换 / 大 Apply / worker 生命周期 | Debug / Release 均 16/16 PASS |
 | Phase 06：schema 4 / 全迁移链与回滚 / raw 保存 / capture / 原子 Apply / 一致 snapshot / exact resolution / metrics / deterministic graph / self-loop / BFS / UI / graph reuse / stale result / 大规模 / worker 生命周期 | Debug / Release 均 18/18 PASS |
 | Phase 07：identity / version / parser / merge / network errors / pagination / limits / cancel / privacy / cache / controller / lifecycle / hidden page / UI / Apply integration / 100000 components / fixtures | Debug / Release 均 26/26 PASS |
+| Phase 08：SemVer / exact versions / ranges / limits / wildcard / provider gate / withdrawn / findings / cache-live / lifecycle / cancellation / destruction / Apply / large snapshot / UI / fixtures | Debug / Release 均 20/20 PASS |
 | GUI smoke | PASS；真实程序隔离启动和关闭、项目与导航回归、只读组件与质量预览、正常 / 最小尺寸 / 超长字段、失败保留旧结果、10000 组件预览 / 500000 问题行及异步关闭检查通过 |
 | 最终维护性检查、git diff --check | PASS |
 
-测试源码为 `tests/Phase00SmokeTest.cpp` 至 `tests/Phase07Test.cpp`（Phase 00 文件名含 Smoke）。旧 82 项保留，新增 Phase07 的 26 项，数据驱动子用例在各注册项内执行。本阶段旧测试仅适配 ProjectPage 的 cacheDirectory 构造参数，原断言未弱化。既有迁移 / FK / 事务回滚、六表不变、原值与顺序、Preview / Apply、图解析 / BFS / 一致快照、100000 规模及 GUI / worker 回归继续通过。
+测试源码为 tests/Phase00SmokeTest.cpp 至 tests/Phase08Test.cpp。既有 108 项注册测试不变，Phase 08 新增 20 项；limit contains * 修复扩展现有 limits 用例内部断言，因此总数仍为 128。新增覆盖 * / 1.* / future*、finite + infinity 两种顺序、invalid finite 保守 Unknown，同时保留 no limit / multiple finite / finite 边界。修复前回归已复现失败，修复后及本轮双配置完整回归通过。Phase 00—07 测试源码未因 Phase 08 改动；既有 schema / migration / FK / transaction / Apply / graph / GUI 回归继续通过。
 
 Phase07 使用 FakeNetwork / ControlledReply 离线覆盖错误、分页、token-only、重复 token、跨页去重、限额、取消及最小发送数据。缓存覆盖过期 / 未来时间戳、完整零结果、坏格式 / 键、原子写和清除边界；controller 覆盖状态分离、刷新失败保留历史、stale result、隐藏页切换与销毁。测试内以确定性线程池控制复现 read / parse / write 未结束时 cancel / clear 的边界，不给生产加入延迟或钩子。项目集成用真实 Preview / Apply 和 SQLite trigger 注入失败，验证回滚保留、重试成功及结果失效。100000 Components 表格与响应验证 HTTP=0；manualFixtures 仅生成公开包 / synthetic 文件于 ignored build 目录。普通 CTest 不访问公网；`liveSmoke` 不注册 CTest，且须显式按名字调用，历史 live 结果见第 11 节。
 
-文件选择自动测试仅在测试进程启用 AA_DontUseNativeDialogs；既有用例通过作用域恢复，Phase07 在独立测试进程初始化时设置。Phase 03 开发时自动快速开关原生框曾在 Qt Windows 平台线程出现崩溃，因此自动测试覆盖的是 Qt 控件文件框与导入入口连接，不覆盖原生框实现。生产程序仍使用原生框，其打开、取消、重新打开已由用户在 `15.md`、`17.md`、`19.md` 及 `21.md` 人工确认 PASS；尚不能据此声称所有原生框异步关闭场景均经自动验证。未用 QTimer / sleep 延迟补丁替代生命周期处理。
+Phase08 使用纯值规则测试及离线 Network / Reply 验证 cache / live 路径，确定性线程池控制取消、切换、重读、销毁和成功 / 失败 Apply；10000 candidates / 200000 events 验证后台派生和 GUI responsiveness。synthetic manual fixture 仅在数据库不存在时初始化，不覆盖用户已有人工验收数据。
 
-本轮 Debug / Release 的 Phase00—07 测试日志未发现 QWARN / QFATAL / FAIL。最终逐文件维护性与公开内容检查通过：身份规则集中，SQL 留在 repository，纯 Core 模型不依赖 Network，QObject / reply / worker 生命周期与 generation 边界清楚；无生产阻塞循环、TLS bypass、测试 endpoint、临时 debug 输出或无关重构。新增代码只含正式实现与公开 / synthetic 测试构造，运行时缓存、数据库、日志、真实 SBOM、截图和本机临时配置未纳入候选提交；staged 与待推送 commit 仍须按第 19.7 节复核。
+文件选择自动测试仅在测试进程启用 AA_DontUseNativeDialogs；既有用例通过作用域恢复，Phase07 / Phase08 在独立测试进程初始化时设置。Phase 03 开发时自动快速开关原生框曾在 Qt Windows 平台线程出现崩溃，因此自动测试覆盖的是 Qt 控件文件框与导入入口连接，不覆盖原生框实现。生产程序仍使用原生框，其打开、取消、重新打开已由用户在 `15.md`、`17.md`、`19.md` 及 `21.md` 人工确认 PASS；尚不能据此声称所有原生框异步关闭场景均经自动验证。未用 QTimer / sleep 延迟补丁替代生命周期处理。
+
+本轮 Debug / Release 的 Phase00—08 测试日志未发现 QWARN / QFATAL / FAIL。最终逐文件维护性与公开内容检查通过：身份规则集中，SQL 留在 repository，纯 Core 模型不依赖 Network，QObject / reply / worker 生命周期与 generation 边界清楚；无生产阻塞循环、TLS bypass、测试 endpoint、临时 debug 输出或无关重构。新增代码只含正式实现与公开 / synthetic 测试构造，运行时缓存、数据库、日志、真实 SBOM、截图和本机临时配置未纳入候选提交；staged 与待推送 commit 仍须按第 19.7 节复核。
 
 回归命令：`ctest --test-dir build-debug --output-on-failure` 和 `ctest --test-dir build-release --output-on-failure`，使用冻结 CMake 目录中的 ctest.exe。CTest 为子进程设置 Qt / MinGW DLL 搜索路径，不修改系统 PATH。
 
@@ -666,12 +695,21 @@ if ($LASTEXITCODE -ne 0) { throw 'Release tests failed' }
 
 **Phase 07 Release GUI：AUTOMATED ONLY。** 当前仅有 Release Build / CTest 自动验收，没有新增用户 Release GUI 人工验收结论。
 
+**Phase 08 Manual Acceptance：PASS。** 用户在 34.md 确认亲自完成 Debug GUI 全部人工验收；这是用户真实操作结果，不是 Codex 模拟或自动测试替代。
+
+- synthetic demo：8 Candidates / 4 Affected / 3 Unknown / 1 Excluded / 4 Findings。
+- ExplicitVersionMatch、SEMVER、fixed / last_affected 的 2.0.0 / 2.0.1 边界、ECOSYSTEM / GIT Unknown、ProviderEvidenceConflict、wildcard、Withdrawn / Excluded 均通过。
+- Fresh / Stale、重复查询不重复 Finding、component / project switch、reload / cancel、Empty SBOM Preview / Apply invalidation、Demo SBOM 恢复通过。
+- 正常 / 小窗口、evidence / Raw JSON 与稳定性通过；无崩溃、明显卡死、SQLite / DLL / Qt platform plugin 异常，无 Safe / 无风险 / 已安全 / 无漏洞错误结论。
+
+**Phase 08 Release GUI：AUTOMATED ONLY。** 未收到用户 Release GUI 人工验收结论。
+
 # 19. 当前重要技术决策
 
 - **唯一有效长期方向**为第 9 节 Foundation → Vulnerability → Risk → Validation / Presentation；Foundation 基本完成，后续重心转向漏洞风险核心，不无限扩大基础设施。旧 Phase 07—17 安排只属 Historical / Superseded Plan。
 - **大方向冻结 + 单 Phase 逐步冻结。** 长期冻结四层方向，未来数据模型、schema、repository、provider、API、service、UI、scoring formula 仅在对应 Phase 开始前正式设计和冻结。这样控制本科毕设复杂度、避免过度设计，根据真实实现结果调整后续方案，防止下一阶段建立在错误假设上，并降低 Codex 长上下文开发的错误假设风险。
-- 不得因为路线中未来存在功能，就提前创建对应 database table、domain model、repository、service / provider framework、UI 或评分公式。Phase 07 已按设计与开发授权完成，OSV-first 已跑通候选链；下一轮只先设计 Version Applicability / Finding，未授权 Phase 08 开发。
-- Applicability 是 Risk 前置门控；Affected 才可形成有效 Finding，Not Affected 不形成有效风险 Finding，Unknown 保留 Assessment Uncertain，不能输出确定 Risk。Risk 与 Assessment Confidence 分离，Quality 影响证据完整性及确定性而非直接增加 Risk；Risk Model 等真实 Affected Findings 与 enrichment 数据具备后再冻结，不提前设权重、公式、阈值或映射。
+- 不得因为路线中未来存在功能，就提前创建对应 database table、domain model、repository、service / provider framework、UI 或评分公式。Phase 08 已按冻结设计完成到 Finding；下一轮先设计基于 confirmed Findings 的 Risk 层，未授权 Phase 09 开发。
+- Applicability 是 Risk 前置门控；仅 Published Affected 形成 Finding。Local NotAffected 在当前 OSV package-version 查询来源下经 Provider Consistency Gate 转为 Unknown / ProviderEvidenceConflict，Unknown 不能输出确定 Risk。Risk 与 Assessment Confidence 分离，Quality 影响证据完整性及确定性而非直接增加 Risk；Risk Model 等真实 Affected Findings 与 enrichment 数据具备后再冻结，不提前设权重、公式、阈值或映射。
 - 工业工具比较与论文声明遵循第 8 节：承认成熟工具的覆盖、成熟度与生态优势，不以替代为目标；将候选工作称为主要工作 / 特色设计，经验证后再作有证据范围的结论，不声称已有创新算法或普遍领先。
 - **C++20 + Qt 是软件工程技术选型**，不是因为 C++ 天然比 Python 更适合漏洞分析。Qt 当前统一提供 Desktop GUI、JSON、SQLite、Concurrent 和本地处理，已支撑 SBOM Parse → Persistence → Background Analysis → GUI Presentation；Phase 07 已正式接入 Network 查询 OSV。Python 等生态在安全工具和快速原型方面更成熟。
 - 继续冻结现有 C++20、Qt、CMake、SQLite、Graphviz 工具环境；Graphviz 仅已有 Phase 00 冒烟验证，未来业务能力后移到辅助展示 / 解释，不构成下一 blocker；Network 已有实际职责，Svg 仍未链接，不安装无关新工具。
@@ -697,7 +735,10 @@ if ($LASTEXITCODE -ne 0) { throw 'Release tests failed' }
 - SQLite = business truth；组件、依赖与捕获状态统一原子替换且一致读取，Runtime Graph = derived invalidatable state。graph build once + BFS on demand，no all-pairs closure；self-loop direct 保留、transitive 排除起点，顺序不依赖 hash 迭代。
 - 后台 analysis / query 值捕获、worker 自有 DB connection、GUI 线程安装结果；Project ID / request generation 校验并 discard stale async result，不持久化 token、不另建业务 revision。
 - 100000 组件 / entries / targets 的自动及人工表现是当前机器证据，不是保证；真实 SBOM 的字段长度、数据库体积与机器负载变化需重新验证，包括仍在 GUI 线程读取的当前组件列表。
-- 真实 SBOM 属于 PRIVATE RUNTIME DATA；Phase 03—06 验收使用 synthetic 数据；Phase 07 自动验收使用 synthetic 数据，人工 / live 验收仅使用已审查公开包与 synthetic 数据。人工 JSON、数据库、日志、截图和构建产物均不纳入 Git；Phase 06 封版 staged 内容及待推送 commit 已通过 19.7 隐私审查。本轮 Phase 07 completion commit 及未来提交仍分别重新审查候选文件、staged diff 和待推送 commit，历史 PASS 不代替当前审查。
+- 真实 SBOM 属于 PRIVATE RUNTIME DATA；Phase 03—06 验收使用 synthetic 数据；Phase 07 / 08 自动验收使用 synthetic 数据，人工 / live 验收仅使用已审查公开包与 synthetic 数据。人工 JSON、数据库、日志、截图和构建产物均不纳入 Git；Phase 06 封版 staged 内容及待推送 commit 已通过 19.7 隐私审查。本轮 Phase 08 completion commit 及未来提交仍分别重新审查候选文件、staged diff 和待推送 commit，历史 PASS 不代替当前审查。
+
+- OSV Provider query 与 Local Applicability 分离；Candidate ≠ Finding，不以本地未命中反向推翻 provider version-query 证据。Exact versions 与 SEMVER precedence 分离，Unsupported evidence → Unknown，withdrawn → Excluded。
+- Finding derived in-memory，schema 4 不变；Cache raw / Derived result 分离。Snapshot + fetchedAt + component + generation 确定结果归属，整批后台计算后原子发布；PyPI normalization 复用单一规则，不把版本比较放入 Controller。
 
 **AI 分工：** ChatGPT 负责规划、Phase、Prompt、方案、审查及验收设计；Codex 负责读取真实工程、实现、编译、自动测试和 Git 检查；用户负责 GUI 操作、人工验收和决定是否进入下一 Phase。
 
@@ -707,7 +748,7 @@ ChatGPT 已真实连接 Read-Only MCP。标准业务 Phase 可在开始前核验
 
 **长期阶段闭环：** 设计 → 设计审查 / 冻结 → Codex 开发 → Build / 自动测试 → ChatGPT 审查 → 用户 GUI 人工验收 → 最终封版 → 更新 PROJECT-HANDOFF → 下一阶段设计；MCP 只增强 baseline 与 evidence verification，不替代 Codex、用户 GUI 验收或本文，不跨阶段预建完整系统。
 
-**具体执行与封版顺序：** 明确并设计当前 Phase → 读取真实工程 → 实现 → Build / 自动 Test → 用户人工验收 → 确认 PASS → 更新本文并完成最终回归、维护性及隐私审查 → 按授权 commit / push / tag → 核验远端与工作区 → 报告完成。本文随封版同步维护，Git 结果必须实查后报告；必要修正如实更新，不以预期代替完成。个别阶段有特殊顺序时，以具体授权为准。Phase 07 已按 `26.md` 封版；本轮 `30.md` 仅授权辅助 MCP 过时状态最小修正及必要回归、相关文档更新、正式仓库单一 Handoff docs commit 与 main 推送核验，不重跑正式 C++ 回归、不创建业务 tag，完成后停止。
+**具体执行与封版顺序：** 明确并冻结当前设计 → 实现 → Build / 自动测试 → ChatGPT 审查 → 用户 GUI 人工验收 → 最终回归、维护性 / 隐私审查与本文更新 → 按授权 commit / push / annotated tag → 核验远端与工作区 → 报告完成。具体授权优先；本轮 34.md 仅封版 Phase 08，完成后停止，不自动启动下一阶段设计或开发。
 
 ## 19.1 代码质量与职责边界
 
@@ -780,36 +821,35 @@ ChatGPT 已真实连接 Read-Only MCP。标准业务 Phase 可在开始前核验
 
 # 20. 当前待定事项
 
-- **下一核心设计问题：Version Applicability / Finding。** 基于已实现的 QueryIdentity、OSV Candidate、affected evidence、ecosystem 与 exact version 设计，不从 Candidate 直接计算 Risk。
-- **后续证据关联：** Current Components 与未持久化 Quality report 的关联方式、未来 Finding 的证据及持久化必要性须另行设计；不预建 schema / Repository / Provider 框架。
-- **后续 Applicability：** Phase 07 完成后依据真实 payload、ecosystem、version range 和 Component 数据，设计 Affected / Not Affected / Unknown、证据与 Finding 边界；不提前承诺所有生态、backport 或 vendor patch 支持。
-- **后续 Risk：** 在真实 Affected Findings 和所需 enrichment 数据基础上决定第一版风险模型、Confidence 规则、解释、缺失证据处理与验证；当前不冻结公式、权重、阈值或映射。
-- **实验：** Validation Experiment 的项目、生态、约 30–50 个 component-version 样本及判断依据；最终数据集与实验方法尚未冻结，结果声明须受证据范围约束。
-- NVD / EPSS / KEV 的实际 enrichment 需求、NVD API Key 历史 PENDING 状态与相应数据获取策略在未来对应阶段处理，不阻塞已完成的 OSV-first MVP。
-- CycloneDX 格式和质量规则扩展、跨扫描身份、快照 / 比较 / 报告必要范围、Graphviz 辅助展示、部署、全新电脑验证及 CI 按后续实际需求决定；当前共同字段子集仍为 1.4 / 1.5 / 1.6，质量规则仍为第 16 节已实现的 16 条。
+- **下一核心设计问题：Risk layer design based on confirmed Findings。** Finding 是输入前提，不从 Candidate 直接计算 Risk。
+- 待设计 Risk evidence inputs、CVSS / EPSS / KEV enrichment 的必要范围、Dependency Context、Quality Evidence、Assessment Confidence 与 Explanation；不提前冻结分数、权重、阈值、组合公式、缺失值规则或置信度公式。
+- Current Components 与未持久化 Quality report 的关联、Finding persistence 是否真正必要、跨导入身份与历史比较须依据下一阶段需求设计，不预建 schema / Repository / Provider Framework。
+- Validation Experiment 仍暂定约 30–50 个真实 component-version 样本，最终数据集、判断依据与方法未冻结，不作 General Benchmark 或普遍准确率声明。
+- ECOSYSTEM / PEP 440、GIT、其他生态 / backport / vendor patch 的扩展范围待实际需要再设计。
+- NVD API Key 历史 PENDING；未来 enrichment 需求明确时再处理，不阻塞已完成的 Phase 08。CycloneDX / SPDX、Graphviz、Dashboard / Report、部署、全新电脑验证与 CI 继续按后续阶段必要性决定。
 
-以上逐阶段决策，不是当前待实现清单；Graphviz 不作为下一 blocker，Dashboard / Report 不提升为当前优先目标。
+以上仅为方向，不是本轮开发清单，不提前实现或冻结 Phase 09。
 
 # 21. 当前已知问题 / 风险
 
-- **Phase 07 Blocker = None。** 最终双配置自动回归和用户 Debug 18/18 人工验收均 PASS；维护性、隐私、diff 及 Git 封版按本轮授权核验，精确 Git 结果见最终报告。未发现需新增功能或修改 schema 的封版问题。
+- **Phase 08 Blocker = None。** 本轮双配置 128/128 回归、ChatGPT 代码审查和用户 Debug GUI 人工验收均 PASS；维护性、隐私、diff 及 Git 封版按本轮授权核验，精确 Git 结果见最终报告。未发现需新增功能或修改 schema 的封版问题。
 - optional Vulkan Headers 缺失仍为 non-blocking warning，不影响当前 Qt Widgets 工程；无需据此安装额外组件。
-- 本轮核对未发现正式目录冲突或错误 origin；Phase 00—06 tag 保持原对象与 target，本轮 Phase 07 main / tag 独立核验。Qt Creator 本地配置和构建目录继续忽略并保留。
+- 本轮核对未发现正式目录冲突或错误 origin；Phase 00—07 tags 保持原对象与 target，本轮 Phase 08 main / tag 独立核验。Qt Creator 本地配置和构建目录继续忽略并保留。
 - Windows 原生文件框已有用户人工验收 PASS；自动快速关闭场景的测试限制见第 17 节，后续若修改文件框生命周期，应针对原生框重新验证。
-- 项目管理及 SBOM 导入 / 解析 / 只读预览 / 规则化质量诊断 / 当前组件与原始依赖持久化 / 依赖关系分析已实现；Component Identity 与 OSV 候选匹配已实现；适用性、Finding、风险及正式 Graphviz 业务仍未实现，不要把候选链与完整系统混同。
+- 项目管理及 SBOM 导入 / 解析 / 只读预览 / 规则化质量诊断 / 当前组件与原始依赖持久化 / 依赖关系分析已实现；Component Identity、OSV 候选、本地适用性与内存 Finding 已实现；Risk、Confidence 与正式 Graphviz 业务仍未实现，不要把 Finding MVP 与完整风险系统混同。
 - 真实 SBOM dependency 声明可能不完整；可靠依赖分析不等于 runtime reachability，空结果不能证明没有依赖或漏洞。100000 规模性能只是当前机器证据；Phase 05 组件列表仍在 GUI 线程读取，真实长字段及负载变化须重新评估。
-- 当前仅支持 PyPI/npm、仅 selected component 查询；OSV coverage / external availability、身份歧义及后续版本判断仍有限制。缓存仅为历史外部证据，未实现全局容量治理或跨进程协调；身份不明、查询失败或无候选均不能当成“安全”的证明。应在对应阶段验证实际支持范围和错误 / 不确定状态。
+- 当前仅支持 PyPI/npm、仅 selected component 查询；OSV coverage / external availability、身份歧义和 cache freshness 仍有限制。ECOSYSTEM / PEP 440 与 GIT commit graph 未实现，Unsupported evidence / Unknown 不能解释为安全；Findings 不持久化，重启或失效后必须重新派生。缓存仅为历史外部证据，未实现全局容量治理或跨进程协调；身份不明、查询失败或无候选均不能当成“安全”的证明。应在对应阶段验证实际支持范围和错误 / 不确定状态。
 - Quality evidence incomplete 可能使身份、版本适用性和依赖上下文缺少可靠依据；当前质量报告未持久化，不能假定历史 Current Components 自动带有完整报告。后续 risk model lack of evidence 可能造成伪精确结论，须依真实 Findings 和 enrichment 冻结及验证模型。
 - 真实大 SBOM 差异、跨导入身份和 scope creep 仍有风险；以单 Phase 逐步冻结控制范围，不无限扩展生态、同步平台、Provider 框架或基础设施。
 - 父目录旧资料包含重复版本；后续以本文当前状态和更高优先级实查证据为准。
 
 # 22. 下一步
 
-**PHASE 07 COMPLETE。READY FOR NEXT PHASE DESIGN。**
+**PHASE 08 COMPLETE。READY FOR NEXT PHASE DESIGN。**
 
-下一核心方向为 **Vulnerability continuation — Version Applicability / Finding design**。依据已有 QueryIdentity、真实 OSV Candidate / affected evidence 与支持生态设计；具体 Phase 名称、范围、算法与数据模型等下一轮正式设计再冻结。本轮封版后停止，不开始 Phase 08，不创建类 / schema，不执行 applicability 或风险计算，不新增 NVD / EPSS / KEV。
+下一步：**先进行 Risk layer 的需求 / 技术设计。** 以 confirmed Findings 为输入，依真实证据需求讨论 Risk / Confidence / Explanation；不提前冻结 Phase 09 详细名称、模型、公式或数据表。本轮封版后停止，不开始实现。
 
-**Auxiliary 已收口：** Read-Only MCP 真实 ChatGPT 连接、调用及 restart / reconnect 已 PASS，按需手动运行。MCP failure / offline 或 Tunnel 临时不可用不得阻塞产品开发，仍可通过 GitHub + 最新 PROJECT-HANDOFF + Codex 继续；下一正式业务方向仍为 Version Applicability / Finding design。本轮收口后停止，等待下一业务阶段设计授权。
+**Auxiliary 已收口：** Read-Only MCP 的真实 ChatGPT 连接、调用及重连验收已 PASS，按需手动运行；MCP / Tunnel 不可用不得阻塞产品开发，可继续使用 GitHub + 最新 PROJECT-HANDOFF + Codex。
 
 # 23. 新 Codex 接手规则
 
@@ -820,7 +860,7 @@ ChatGPT 已真实连接 Read-Only MCP。标准业务 Phase 可在开始前核验
 5. 实现后完成适当构建、测试及 19.6 的 diff／维护性检查，清楚记录结果与限制；阶段通过必须包含用户要求的人工验收。
 6. 未经允许不得 `reset --hard`、`clean -fd`、force push、rebase、删除 branch / tag、删除用户文件或重写 Git 历史；发现已有错误 remote 先报告，不自行覆盖。身份配置优先仓库级，冻结环境不无故变更。
 7. 完成阶段后按 19.6 就地更新本文，不另造动态管理文档，不追加重复状态或全过程日志。
-8. 长期工程规则持续生效；Phase 07 已按 `26.md` 封版，`phase-07-complete` 固定指向 `ad8c75274a2a8c4db275ab099f949a7c47fcecdb`，Phase 00—06 tags 同样不移动。本轮 `30.md` 的正式仓库修改仅为本文及普通 docs commit / main 推送；辅助 MCP 修正留在独立目录，不创建 Phase 07.5 tag、常驻服务、公网 endpoint 或 Phase 08 实现。精确新提交与 tag 对象按第 5 节实查。
+8. 长期工程规则持续生效；Phase 08 按 34.md 完成封版，以 phase-08-complete^{commit} 固定定位 completion commit。Phase 00—07 tags 不移动；精确新 SHA、tag object 与远端同步按第 5 节和最终报告实查。辅助 MCP 仍独立于产品，不创建 Phase 07.5 业务 tag。
 9. 任何 git add / commit / push 前均须按 19.7 审查候选／staged 文件及 privacy / sensitive information，push 同时检查待推送 commits；不得将真实 runtime database、SBOM、日志、用户数据、私有配置、API Key、token 或 credential 加入 Git。`12.md` / `13.md` 的隐私规则及 `.gitignore` 维护已独立提交并推送，其规则继续适用于本次及后续封版。
-10. 当前四层路线是唯一有效长期方向；旧 Phase 07—17 安排只属 Historical / Superseded Plan，不得据其自行启动开发。Phase 07 的 Component Identity + OSV-first Vulnerability Matching MVP 已 COMPLETE；下一轮先做 Vulnerability continuation 的需求与技术设计，不直接开发。
+10. 当前四层路线是唯一有效长期方向；旧 Phase 07—17 安排只属 Historical / Superseded Plan。Phase 08 Version Applicability & Finding MVP 已 COMPLETE；下一轮先进行 Risk layer 的需求与技术设计，不直接开发。
 11. 遵循“大方向冻结 + 单 Phase 逐步冻结”；未来详细 Phase 设计须在该阶段开始前、根据已完成成果逐步冻结，不提前创建未来表、领域模型、Repository、Service / Provider 框架、UI 或评分公式。Candidate 不等于 Affected Finding，Applicability gate、Risk / Confidence 分离和 Quality 证据原则持续生效；Risk Model 尚未冻结。

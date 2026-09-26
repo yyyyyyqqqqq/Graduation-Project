@@ -26,6 +26,8 @@ struct PackageIdentity
     bool nameNormalized = false;
     std::optional<QueryIdentity> query() const;
     static PackageIdentity resolve(const Component& component);
+    // Shared with affected-package comparison; nullopt means outside the frozen PyPI subset.
+    static std::optional<QString> canonicalPypiName(const QString& name);
     static constexpr qsizetype MaxPurlLength = 4096;
     static constexpr qsizetype MaxVersionLength = 256;
 };

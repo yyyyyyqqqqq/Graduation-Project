@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 
-project(SupplyChainRiskAssessment VERSION 0.8.0 LANGUAGES CXX)
+project(SupplyChainRiskAssessment VERSION 0.9.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -35,7 +35,8 @@ target_link_libraries(AppFoundation PUBLIC Qt6::Core Qt6::Sql)
 
 # Identity, response interpretation and cache format are Core-only.
 add_library(VulnerabilityCore STATIC src/PackageIdentity.h src/PackageIdentity.cpp
-    src/OsvResponseParser.h src/OsvResponseParser.cpp src/OsvCache.h src/OsvCache.cpp)
+    src/OsvResponseParser.h src/OsvResponseParser.cpp src/OsvCache.h src/OsvCache.cpp
+    src/Semver.h src/Semver.cpp src/VersionApplicability.h src/VersionApplicability.cpp)
 target_include_directories(VulnerabilityCore PUBLIC src)
 target_link_libraries(VulnerabilityCore PUBLIC Qt6::Core)
 add_library(OsvMatching STATIC src/OsvClient.h src/OsvClient.cpp
@@ -53,6 +54,7 @@ add_executable(SupplyChainRiskAssessment WIN32
     src/SbomImportDialog.h src/SbomImportDialog.cpp
 )
 target_link_libraries(SupplyChainRiskAssessment PRIVATE Qt6::Widgets Qt6::Concurrent AppFoundation SbomParsing DependencyAnalysis OsvMatching)
+target_compile_definitions(SupplyChainRiskAssessment PRIVATE APPLICATION_VERSION="${PROJECT_VERSION}")
 
 include(CTest)
 if(BUILD_TESTING)
@@ -132,6 +134,13 @@ if(BUILD_TESTING)
         src/VulnerabilityPage.h src/VulnerabilityPage.cpp src/SbomImportDialog.h src/SbomImportDialog.cpp)
     target_link_libraries(Phase07Test PRIVATE Qt6::Widgets Qt6::Test OsvMatching SbomParsing DependencyAnalysis)
 
+    add_executable(Phase08Test tests/Phase08Test.cpp
+        src/ProjectPage.h src/ProjectPage.cpp src/DependencyPage.h src/DependencyPage.cpp
+        src/VulnerabilityPage.h src/VulnerabilityPage.cpp src/SbomImportDialog.h src/SbomImportDialog.cpp)
+    target_link_libraries(Phase08Test PRIVATE Qt6::Widgets Qt6::Test OsvMatching SbomParsing DependencyAnalysis)
+    get_filename_component(phase08_compiler_bin "${CMAKE_CXX_COMPILER}" DIRECTORY)
+    target_compile_definitions(Phase08Test PRIVATE PHASE08_COMPILER_BIN="${phase08_compiler_bin}")
+
     function(add_qt_test phase target test_case)
         # File output retains Qt Test diagnostics even when Windows stdout is unavailable.
         add_test(NAME ${phase}.${test_case} COMMAND ${target} ${test_case}
@@ -180,6 +189,11 @@ if(BUILD_TESTING)
             cache cacheInvalid cacheAtomicClear controllerStates cacheRefresh staleResults
             clearLifecycle workerLifecycle hiddenProjectSwitch destruction ui projectIntegration largeInput manualFixtures)
         add_qt_test(Phase07 Phase07Test ${test_case})
+    endforeach()
+    foreach(test_case IN ITEMS semver exactVersions semverBoundaries invalidEvents eventOrdering limits
+            packageMatching wildcard aggregation providerGate withdrawn findings cacheAndLive lifecycle
+            cancellation destruction projectApply largeSnapshot ui manualFixtures)
+        add_qt_test(Phase08 Phase08Test ${test_case})
     endforeach()
 endif()
 
