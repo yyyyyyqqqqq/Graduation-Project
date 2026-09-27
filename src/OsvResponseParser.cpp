@@ -1,4 +1,5 @@
 #include "OsvResponseParser.h"
+#include "CveIdentity.h"
 #include <QHash>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -50,10 +51,9 @@ bool affectedValid(const QJsonValue& value)
 
 QStringList VulnerabilityCandidate::cveAliases() const
 {
-    static const QRegularExpression pattern(QStringLiteral("\\ACVE-[0-9]{4}-[0-9]{4,}\\z"));
     QStringList result;
     for (const auto& alias:record.value("aliases").toArray())
-        if (pattern.match(alias.toString()).hasMatch()) result.append(alias.toString());
+        if (validCveId(alias.toString())) result.append(alias.toString());
     return result;
 }
 bool OsvResponseParser::validTimestamp(const QString& value)

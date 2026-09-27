@@ -272,7 +272,19 @@ void Phase07Test::controllerStates() {
     QCOMPARE(controller.state(),QueryState::Failed);QCOMPARE(controller.error(),QueryError::RequestRejected);QCOMPARE(controller.rows()[0].identity.state,IdentityState::Resolved);QVERIFY(!controller.snapshot());
     controller.query(QueryMode::Refresh);QTRY_VERIFY(!controller.busy());QCOMPARE(controller.state(),QueryState::Success);QVERIFY(controller.snapshot()->candidates.isEmpty());
     controller.query(QueryMode::Refresh);QTRY_VERIFY(!controller.busy());QCOMPARE(controller.snapshot()->candidates.size(),1);QCOMPARE(consent.count(),2);
-    const auto log=read(c.dir.filePath("test.log"));for(const auto& secret:QList<QByteArray>{"synthetic-sensitive","pkg:pypi","private response","SYNTHETIC-1","1.0","page_token"})QVERIFY(!log.contains(secret));
+    const auto log=read(c.dir.filePath("test.log"));QVERIFY(!log.isEmpty());
+    // A valid timestamp such as 2026-09-26T09:21:01.001Z contains "1.0".
+    // Validate the fixed logger prefix, then check every payload byte for all
+    // the original sensitive values; clock digits are not a leaked version.
+    for(const auto& line:log.split('\n')) {
+        if(line.isEmpty())continue;
+        QVERIFY(line.size()>25);QCOMPARE(line[24],' ');
+        const auto stamp=QString::fromUtf8(line.left(24));
+        const auto parsed=QDateTime::fromString(stamp,Qt::ISODateWithMs);
+        QVERIFY(parsed.isValid());QCOMPARE(parsed.toUTC().toString(Qt::ISODateWithMs),stamp);
+        for(const auto& secret:QList<QByteArray>{"synthetic-sensitive","pkg:pypi","private response","SYNTHETIC-1","1.0","page_token"})
+            QVERIFY2(!line.mid(25).contains(secret),secret.constData());
+    }
 }
 void Phase07Test::cacheRefresh() {
     Context c;QVERIFY(c.open());const auto id=c.project();QVERIFY(c.apply(id));OsvCache cache(c.cache());

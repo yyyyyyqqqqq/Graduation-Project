@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 
-project(SupplyChainRiskAssessment VERSION 0.9.0 LANGUAGES CXX)
+project(SupplyChainRiskAssessment VERSION 0.10.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -34,15 +34,20 @@ target_include_directories(AppFoundation PUBLIC src)
 target_link_libraries(AppFoundation PUBLIC Qt6::Core Qt6::Sql)
 
 # Identity, response interpretation and cache format are Core-only.
-add_library(VulnerabilityCore STATIC src/PackageIdentity.h src/PackageIdentity.cpp
+add_library(VulnerabilityCore STATIC src/CveIdentity.h src/CveIdentity.cpp src/PackageIdentity.h src/PackageIdentity.cpp
     src/OsvResponseParser.h src/OsvResponseParser.cpp src/OsvCache.h src/OsvCache.cpp
     src/Semver.h src/Semver.cpp src/VersionApplicability.h src/VersionApplicability.cpp)
 target_include_directories(VulnerabilityCore PUBLIC src)
 target_link_libraries(VulnerabilityCore PUBLIC Qt6::Core)
+add_library(RiskEvidenceCore STATIC src/RiskEvidence.h src/RiskEvidence.cpp)
+target_link_libraries(RiskEvidenceCore PUBLIC VulnerabilityCore DependencyAnalysis)
+add_library(RiskEvidenceServices STATIC src/RiskEvidenceCache.h src/RiskEvidenceCache.cpp
+    src/EvidenceClients.h src/EvidenceClients.cpp src/RiskEvidenceController.h src/RiskEvidenceController.cpp)
+target_link_libraries(RiskEvidenceServices PUBLIC RiskEvidenceCore AppFoundation Qt6::Network Qt6::Concurrent)
 add_library(OsvMatching STATIC src/OsvClient.h src/OsvClient.cpp
     src/VulnerabilityController.h src/VulnerabilityController.cpp)
 target_include_directories(OsvMatching PUBLIC src)
-target_link_libraries(OsvMatching PUBLIC VulnerabilityCore AppFoundation Qt6::Network Qt6::Concurrent)
+target_link_libraries(OsvMatching PUBLIC VulnerabilityCore RiskEvidenceServices AppFoundation Qt6::Network Qt6::Concurrent)
 
 add_executable(SupplyChainRiskAssessment WIN32
     src/main.cpp
@@ -141,6 +146,12 @@ if(BUILD_TESTING)
     get_filename_component(phase08_compiler_bin "${CMAKE_CXX_COMPILER}" DIRECTORY)
     target_compile_definitions(Phase08Test PRIVATE PHASE08_COMPILER_BIN="${phase08_compiler_bin}")
 
+    add_executable(Phase09Test tests/Phase09Test.cpp src/VulnerabilityPage.h src/VulnerabilityPage.cpp
+        src/ProjectPage.h src/ProjectPage.cpp src/DependencyPage.h src/DependencyPage.cpp
+        src/SbomImportDialog.h src/SbomImportDialog.cpp)
+    target_link_libraries(Phase09Test PRIVATE Qt6::Widgets Qt6::Test OsvMatching SbomParsing DependencyAnalysis)
+    target_compile_definitions(Phase09Test PRIVATE PHASE09_COMPILER_BIN="${phase08_compiler_bin}")
+
     function(add_qt_test phase target test_case)
         # File output retains Qt Test diagnostics even when Windows stdout is unavailable.
         add_test(NAME ${phase}.${test_case} COMMAND ${target} ${test_case}
@@ -156,6 +167,15 @@ if(BUILD_TESTING)
             )
         endif()
     endfunction()
+    foreach(test_case IN ITEMS ownership requestLookupScale kevCveBoundaries severityScopes severityValidation epssChunks epssEnvelope epssRows
+            epssCache kevValidation kevCache dependencyStates transport privacy cacheOnly consent liveAtomic
+            partialChunks fallback cancellation lifecycle staleDependency destruction ui scale manualFixtures providerFailures projectApply)
+        add_qt_test(Phase09 Phase09Test ${test_case})
+    endforeach()
+    if(WIN32)
+        add_qt_test(Phase09 Phase09Test epssCacheTransientRename)
+        add_qt_test(Phase09 Phase09Test epssCachePermanentRenameDenial)
+    endif()
     foreach(test_case IN ITEMS qtCppSmoke sqliteReadWrite graphvizSvg)
         add_qt_test(Phase00 Phase00SmokeTest ${test_case})
     endforeach()
