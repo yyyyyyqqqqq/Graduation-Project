@@ -1,6 +1,7 @@
 #pragma once
 #include "EvidenceClients.h"
 #include "RiskEvidenceCache.h"
+#include "RiskPriority.h"
 #include <atomic>
 #include <memory>
 class AppLogger;
@@ -25,6 +26,8 @@ public:
     quint64 generation() const { return m_generation; }
     EvidenceOperationState state() const { return m_state; }
     const std::optional<RiskEvidenceProfile>& profile() const { return m_profile; }
+    const std::optional<RiskPriorityAssessment>& assessment() const { return m_assessment; }
+    const QString& assessmentText() const { return m_assessmentText; }
     const QString& displayText() const { return m_display; }
     QString cacheRoot() const { return m_cacheRoot; }
 signals:
@@ -50,13 +53,23 @@ private:
     void stop(EvidenceOperationState, QueryError error=QueryError::None);
     void persistCompleted(const Batch&, quint64 generation);
     void releaseStopped();
+    void clearPublished();
+    void evaluatePublished();
+    void stopAssessmentTimer();
+    void scheduleAssessmentExpiry();
     QString m_cacheRoot;
     AppLogger& m_logger;
     EpssClient m_epss;
     KevClient m_kev;
     QTimer m_deadline;
+    QTimer m_assessmentTimer;
+    QMetaObject::Connection m_assessmentTimerConnection;
+    // Published-profile timer lifetime is independent of in-flight refresh generation.
+    quint64 m_assessmentTimerGeneration = 0;
     std::optional<RiskEvidenceRequest> m_request;
     std::optional<RiskEvidenceProfile> m_profile;
+    std::optional<RiskPriorityAssessment> m_assessment;
+    QString m_assessmentText;
     std::optional<Batch> m_batch;
     QString m_display;
     QList<QStringList> m_chunks;

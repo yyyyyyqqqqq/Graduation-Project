@@ -3,10 +3,15 @@
 #include "CveIdentity.h"
 #include "AppLogger.h"
 #include <QtConcurrentRun>
+#include <limits>
 
 RiskEvidenceController::RiskEvidenceController(QString root,AppLogger& logger,QObject* parent,QNetworkAccessManager* transport)
     :QObject(parent),m_cacheRoot(std::move(root)),m_logger(logger),m_epss(this,transport),m_kev(this,transport)
 {
+    m_assessmentTimer.setObjectName("assessmentFreshnessTimer");
+    m_assessmentTimer.setParent(this);
+    m_assessmentTimer.setSingleShot(true);
+    m_assessmentTimer.setTimerType(Qt::PreciseTimer);
     m_deadline.setSingleShot(true);m_deadline.setInterval(180000);
     connect(&m_deadline,&QTimer::timeout,this,[this]{stop(EvidenceOperationState::Failed,QueryError::Timeout);});
     connect(&m_epss,&EpssClient::finished,this,[this](const EpssChunkResult& result){
@@ -22,6 +27,7 @@ RiskEvidenceController::RiskEvidenceController(QString root,AppLogger& logger,QO
 }
 RiskEvidenceController::~RiskEvidenceController()
 {
+    stopAssessmentTimer();
     if(m_cancelled)m_cancelled->store(true);
     // Child clients abort replies; value workers never reference this controller.
 }
@@ -32,7 +38,7 @@ void RiskEvidenceController::setRequest(std::optional<RiskEvidenceRequest> reque
 }
 void RiskEvidenceController::invalidate()
 {
-    ++m_generation;m_cacheWarning=QueryError::None;m_request.reset();m_profile.reset();m_display.clear();
+    ++m_generation;m_cacheWarning=QueryError::None;m_request.reset();clearPublished();
     stop(EvidenceOperationState::NotStarted);
 }
 void RiskEvidenceController::stop(EvidenceOperationState state,QueryError error)
@@ -83,7 +89,7 @@ void RiskEvidenceController::load(EvidenceLoadMode mode)
 void RiskEvidenceController::localReady(Batch batch,quint64 generation,EvidenceLoadMode mode)
 {
     if(generation!=m_generation)return;
-    if(batch.stale){m_profile.reset();m_display.clear();stop(EvidenceOperationState::Stale);return;}
+    if(batch.stale){clearPublished();stop(EvidenceOperationState::Stale);return;}
     if(batch.localError!=QueryError::None){stop(EvidenceOperationState::Failed,batch.localError);return;}
     const auto now=QDateTime::currentDateTimeUtc();
     if(mode!=EvidenceLoadMode::CacheOnly) {
@@ -141,10 +147,13 @@ void RiskEvidenceController::finalize()
     connect(watcher,&QFutureWatcher<Batch>::finished,this,[this,watcher,generation]{
         auto batch=watcher->result();watcher->deleteLater();m_worker=false;
         if(m_stopped || generation!=m_generation){releaseStopped();return;}
-        if(batch.stale){m_profile.reset();m_display.clear();stop(EvidenceOperationState::Stale);return;}
+        if(batch.stale){clearPublished();stop(EvidenceOperationState::Stale);return;}
         if(batch.localError!=QueryError::None){stop(EvidenceOperationState::Failed,batch.localError);return;}
-        if(!m_request || batch.profile.key!=m_request->key()){stop(EvidenceOperationState::Stale);return;}
+        if(!m_request || batch.profile.key!=m_request->key()){clearPublished();stop(EvidenceOperationState::Stale);return;}
+        stopAssessmentTimer();
         m_profile=std::move(batch.profile);m_display=std::move(batch.text);
+        // No signal/event-loop reentry between installing the complete profile and its assessment.
+        evaluatePublished();
         m_busy=false;m_batch.reset();m_deadline.stop();m_state=EvidenceOperationState::Complete;
         m_logger.write(AppLogger::Level::Info,QStringLiteral("Risk evidence operation completed; EPSS rows=%1, KEV rows=%2")
             .arg(m_profile->epss.size()).arg(m_profile->kev.size()));
@@ -189,6 +198,53 @@ void RiskEvidenceController::finalize()
         }
         batch.profile.generatedAt=now;batch.text=RiskEvidence::profileText(batch.profile);return batch;
     }));
+}
+
+void RiskEvidenceController::stopAssessmentTimer()
+{
+    ++m_assessmentTimerGeneration;
+    m_assessmentTimer.stop();
+    disconnect(m_assessmentTimerConnection);
+    m_assessmentTimerConnection = {};
+}
+
+void RiskEvidenceController::clearPublished()
+{
+    stopAssessmentTimer();
+    m_profile.reset();
+    m_assessment.reset();
+    m_display.clear();
+    m_assessmentText.clear();
+}
+
+void RiskEvidenceController::evaluatePublished()
+{
+    if (!m_profile) return;
+    // QTimer is only a trigger. Late delivery/resume uses actual UTC, never the planned expiry.
+    auto assessment = RiskPriorityEvaluator::evaluate(*m_profile, QDateTime::currentDateTimeUtc());
+    auto text = priorityExplanation(assessment);
+    m_assessment = std::move(assessment);
+    m_assessmentText = std::move(text);
+    scheduleAssessmentExpiry();
+}
+
+void RiskEvidenceController::scheduleAssessmentExpiry()
+{
+    stopAssessmentTimer();
+    if (!m_profile || !m_assessment || !m_assessment->nextFreshnessExpiryUtc) return;
+    const auto timerGeneration = m_assessmentTimerGeneration;
+    const auto key = m_profile->key;
+    const auto generatedAt = m_profile->generatedAt;
+    m_assessmentTimerConnection = connect(&m_assessmentTimer, &QTimer::timeout, this,
+        [this, timerGeneration, key, generatedAt] {
+            if (timerGeneration != m_assessmentTimerGeneration || !m_profile || !m_request
+                || m_profile->key != key || m_request->key() != key || m_profile->generatedAt != generatedAt) return;
+            // Pure local computation only: no provider, consent, SQL, graph or cache work.
+            evaluatePublished();
+            emit changed();
+        }, Qt::QueuedConnection);
+    const auto remaining = QDateTime::currentDateTimeUtc().msecsTo(*m_assessment->nextFreshnessExpiryUtc);
+    m_assessmentTimer.start(int(qBound(qint64(1), remaining, qint64(std::numeric_limits<int>::max()))));
 }
 
 void RiskEvidenceController::persistCompleted(const Batch& batch,quint64 generation)

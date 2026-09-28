@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 
-project(SupplyChainRiskAssessment VERSION 0.10.0 LANGUAGES CXX)
+project(SupplyChainRiskAssessment VERSION 0.11.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -39,7 +39,7 @@ add_library(VulnerabilityCore STATIC src/CveIdentity.h src/CveIdentity.cpp src/P
     src/Semver.h src/Semver.cpp src/VersionApplicability.h src/VersionApplicability.cpp)
 target_include_directories(VulnerabilityCore PUBLIC src)
 target_link_libraries(VulnerabilityCore PUBLIC Qt6::Core)
-add_library(RiskEvidenceCore STATIC src/RiskEvidence.h src/RiskEvidence.cpp)
+add_library(RiskEvidenceCore STATIC src/RiskEvidence.h src/RiskEvidence.cpp src/RiskPriority.h src/RiskPriority.cpp)
 target_link_libraries(RiskEvidenceCore PUBLIC VulnerabilityCore DependencyAnalysis)
 add_library(RiskEvidenceServices STATIC src/RiskEvidenceCache.h src/RiskEvidenceCache.cpp
     src/EvidenceClients.h src/EvidenceClients.cpp src/RiskEvidenceController.h src/RiskEvidenceController.cpp)
@@ -152,6 +152,10 @@ if(BUILD_TESTING)
     target_link_libraries(Phase09Test PRIVATE Qt6::Widgets Qt6::Test OsvMatching SbomParsing DependencyAnalysis)
     target_compile_definitions(Phase09Test PRIVATE PHASE09_COMPILER_BIN="${phase08_compiler_bin}")
 
+    add_executable(Phase10Test tests/Phase10Test.cpp src/VulnerabilityPage.h src/VulnerabilityPage.cpp)
+    target_link_libraries(Phase10Test PRIVATE Qt6::Widgets Qt6::Test OsvMatching)
+    target_compile_definitions(Phase10Test PRIVATE PHASE10_COMPILER_BIN="${phase08_compiler_bin}")
+
     function(add_qt_test phase target test_case)
         # File output retains Qt Test diagnostics even when Windows stdout is unavailable.
         add_test(NAME ${phase}.${test_case} COMMAND ${target} ${test_case}
@@ -167,6 +171,12 @@ if(BUILD_TESTING)
             )
         endif()
     endfunction()
+    foreach(test_case IN ITEMS priorityRules unavailableEvidence freshnessBoundaries temporalInvalidity
+            staleFallback naturalExpiry corroborationExpiry multiCveDeterminism supportCoverage provenance
+            reasonsAndExplanation contextIsolation defensiveInputs timerExpiry timerCorroboration refreshOverlap
+            publication timerInvalidation staleTimerGeneration lateTimer destruction ui scale manualFixtures)
+        add_qt_test(Phase10 Phase10Test ${test_case})
+    endforeach()
     foreach(test_case IN ITEMS ownership requestLookupScale kevCveBoundaries severityScopes severityValidation epssChunks epssEnvelope epssRows
             epssCache kevValidation kevCache dependencyStates transport privacy cacheOnly consent liveAtomic
             partialChunks fallback cancellation lifecycle staleDependency destruction ui scale manualFixtures providerFailures projectApply)

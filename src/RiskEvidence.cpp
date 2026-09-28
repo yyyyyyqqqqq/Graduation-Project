@@ -263,11 +263,12 @@ QString RiskEvidence::profileText(const RiskEvidenceProfile& p)
             :"Implicit Home Database\nRecord: "+e.recordId+"\n";
     }
     text+="\nEPSS probability 是未来 30 天观察到在野利用活动的模型概率，不是综合风险评分；本页只展示 Provider Evidence。\n";
+    text+="Freshness below is at Profile Generation. Current decision freshness is shown in the Priority assessment.\n";
     for(const auto& e:p.epss) {
         QString status;
         switch(e.status) {case EpssStatus::Available:status="Available";break;case EpssStatus::NotScored:status="NotScored";break;
         case EpssStatus::Failed:status="Failed";break;case EpssStatus::InvalidResponse:status="InvalidResponse";break;default:status="NotQueryable";}
-        text+=QString("\nEPSS %1: %2 | %3 | %4\nProbability: %5 | Percentile: %6 | Score Date: %7\nProvider version: %8 | fetchedAt: %9\nError: %10 | Cache: %11\n")
+        text+=QString("\nEPSS %1: %2 | %3 | %4\nProbability: %5 | Percentile: %6 | Score Date: %7\nFIRST API Version: %8 | fetchedAt: %9\nError: %10 | Cache: %11\n")
             .arg(e.cve,status,freshText(e.freshness),acquisitionText(e.acquisition),
                  e.probability?QString::number(*e.probability,'g',12):"Unavailable",
                  e.percentile?QString::number(*e.percentile,'g',12):"Unavailable",
