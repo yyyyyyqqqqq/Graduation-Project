@@ -1,6 +1,6 @@
 # 毕业设计项目总交接文档
 
-更新日期：2026-09-28（Asia/Shanghai；46.md 授权的 Phase 10 最终封版）
+更新日期：2026-09-30（Asia/Shanghai；Qt Creator 组件更新后的环境对齐，Phase 10 封版状态不变）
 
 本文是项目唯一的长期动态交接文档。每个阶段结束后，更新当前状态、代码结构、Git、测试、人工验收、技术决策和下一步，避免另建多套状态文件。
 
@@ -8,7 +8,7 @@
 
 Phase 07.5-AUX 已按 28.md / 29.md / 30.md 完成本地只读 MCP 实验、采用与真实 ChatGPT 连接验收，保留为辅助基础设施，不属于产品业务 Phase。当前业务范围已推进到 RiskEvidenceProfile → Exploit-Signal Priority Assessment → Decision Evidence Support → Deterministic Explanation；未实现 numeric Risk Score / Risk Level / predictive Assessment Confidence。
 
-依据：各阶段设计、开发、验收与封版授权（04.md—46.md）、当前真实代码、直接验证证据及 Git / GitHub 核验。46.md 本轮重新执行 Debug / Release Build 与完整 CTest，各 182/182 PASS；仅更新本文，不修改已验收的源码、测试或构建配置。GUI 证据来自 45.md 执行及 46.md 用户接受，不把自动测试改称人工验收。
+依据：各阶段设计、开发、验收与封版授权（04.md—46.md）、当前真实代码、直接验证证据及 Git / GitHub 核验。2026-09-28 按 46.md 重新执行 Debug / Release Build 与完整 CTest，各 182/182 PASS。2026-09-30 的环境对齐仅更新本文，核验范围见第 6、17 节，不修改已验收的源码、测试或构建配置。GUI 证据来自 45.md 执行及 46.md 用户接受，不把自动测试改称人工验收。
 
 **真实性优先级：实际运行结果 > 当前真实代码 > 当前 Git 状态 > 当前 GitHub 状态 > 已验证环境审计 > 历史项目资料 > 推测。** 当前阶段授权以用户最新具体指令为准。
 
@@ -81,14 +81,14 @@ Phase 10 最终封版起点为 main / origin/main，HEAD `f88ef484e03c2187434461
 
 # 6. 正式环境基线
 
-下表为**此前真实工具链集成审计冻结的基线**。Phase 00 已在正式工程复验 CMake 3.30.5、Ninja 1.12.1、MinGW GCC 13.1.0 x86_64、C++20、Qt 6.11.2 运行时及 Graphviz 16.1.0；其余环境项目仍以历史审计为依据。
+下表记录**正式工具链基线及已核验的 IDE 更新**。Phase 00 已在正式工程复验 CMake 3.30.5、Ninja 1.12.1、MinGW GCC 13.1.0 x86_64、C++20、Qt 6.11.2 运行时及 Graphviz 16.1.0；2026-09-30 的核验范围见下文，其余环境项目仍以历史审计为依据。
 
 | 技术 | 版本 / 职责 |
 | --- | --- |
 | Windows | Windows 11 x64，Build 26200 |
 | C++ | C++20，正式核心实现语言 |
 | Qt | Qt 6.11.2 MinGW 64-bit；Qt Widgets 为主界面 |
-| Qt Creator | 20.0.0；Kit：Desktop Qt 6.11.2 MinGW 64-bit |
+| Qt Creator | 20.0.2（2026-09-30 从 20.0.0 更新）；Kit：Desktop Qt 6.11.2 MinGW 64-bit |
 | 编译器 | MinGW-w64 13.1.0 x86_64 |
 | CMake / Ninja | 3.30.5 / 1.12.1，配置与构建 |
 | SQLite / Qt Sql / QSQLITE | 本地持久化 |
@@ -99,7 +99,9 @@ Phase 10 最终封版起点为 main / origin/main，HEAD `f88ef484e03c2187434461
 | windeployqt | 历史环境已验证；当前正式应用尚未完成最终部署包验收 |
 | Git / GitHub CLI | 历史版本 2.54.0.windows.1 / 2.96.0；本次使用 Git 核对状态，未重新验证 CLI 版本或 gh 可用性 |
 
-关键历史工具路径：
+2026-09-30 环境对齐：用户提供的 Qt Maintenance Tool 更新记录显示 Qt Creator 20.0.2、SDKTool、Telemetry plugin，以及随 Creator 分发的 jom / wininterrupt 已更新完成；安装组件清单与 qtcreator.exe 文件版本确认 Creator 为 20.0.2。这是 IDE 及其辅助组件更新。实查 qmake 为 Qt 6.11.2、g++ 为 13.1.0 / x86_64-w64-mingw32、CMake 为 3.30.5、Ninja 为 1.12.1；Creator 的 6.11.2 MinGW Kit 仍在，Debug / Release CMakeCache 仍指向原 Qt / MinGW / Ninja 路径。正式工程使用 Ninja，不因 Creator 内置 jom 更新而切换生成器；无需调整 CMakeLists.txt、源码、App 0.11.0 或 schema 4。未重新进行 Creator GUI 操作验收或完整环境审计。
+
+关键工具路径：
 
 ```text
 Qt       D:\program\Qt\6.11.2\mingw_64
@@ -671,7 +673,9 @@ RiskPriorityEvaluator 是纯 Core/value evaluator：读取不可变 RiskEvidence
 
 # 17. 当前自动测试状态
 
-**Original Phase 00—09 regression：158/158 PASS。Phase 10 Automated Acceptance：24/24 PASS。Debug / Release 均 182/182 PASS，0 FAIL。**
+**最近一次全量验证（2026-09-28）：Original Phase 00—09 regression 158/158 PASS，Phase 10 Automated Acceptance 24/24 PASS；Debug / Release 均 182/182 PASS，0 FAIL。**
+
+2026-09-30 Qt Creator 更新后，Debug / Release 增量 Build 均 PASS（no work to do）；两种配置各运行 Phase00 基础冒烟 3/3 PASS，覆盖 Qt 6.11.2 / C++20 / Widgets、SQLite / QSQLITE 和 Graphviz SVG。本次没有重跑 182 项全量回归，也没有新增人工 GUI 验收结论。核验日志留在 ignored `build-debug/qtcreator-update-check-20260930/`；下表继续保留 Phase 10 封版时的全量结果。
 
 下表来自 **2026-09-28 的 46.md 本轮最终封版验证**，不是复用 43.md—45.md 旧日志。Debug 09:11:17—09:12:44、Release 09:12:44—09:13:53（Asia/Shanghai）；两种增量构建均为 no work to do。验证后仅修改交接文档，生产源码、测试及构建配置以 SHA-256 对照封版起点保持不变；不将其表述为提交后再次测试。GUI 验收来源单列第 18 节。
 
