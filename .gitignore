@@ -53,3 +53,5 @@ credentials.json
 *.sqlite3-shm
 
 **/cache/risk-evidence-v1/
+# Replayed Phase 11 experiment output; the public frozen input is tracked separately.
+phase11-validation-result.json

@@ -9,7 +9,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-MainWindow::MainWindow(QWidget* projectPage, QWidget* parent, const QString& initialPage)
+MainWindow::MainWindow(QWidget* projectPage, QWidget* parent, const QString& initialPage, QWidget* validationPage)
     : QMainWindow(parent)
 {
     setWindowTitle(QStringLiteral("软件供应链漏洞风险评估系统"));
@@ -67,11 +67,12 @@ MainWindow::MainWindow(QWidget* projectPage, QWidget* parent, const QString& ini
                            "当前已提供项目创建、查看与删除，以及 CycloneDX SBOM 预览、质量诊断、组件与依赖持久化、依赖关系分析、PyPI/npm 组件身份、OSV 漏洞候选查询及本地版本适用性解释与 Finding，以及 Severity、EPSS、KEV 与依赖上下文证据。\n\n"
                            "已支持 Rules v1 利用信号优先级与决策证据支持度；它是利用信号子模型，不是综合业务风险模型。"));
     addPage(projectPage, QStringLiteral("projects"), QStringLiteral("项目"));
+    if (validationPage) addPage(validationPage, QStringLiteral("validation"), QStringLiteral("方法验证"));
     addTextPage(QStringLiteral("settings"), QStringLiteral("设置"),
             QStringLiteral("页面偏好\n\n应用自动保存最后访问的页面，并在下次启动时恢复。\n\n"
                            "验证方法：停留在本页，正常关闭程序后再次启动，应回到“设置”。"));
     navigationLayout->addStretch();
-    auto* stage = new QLabel(QStringLiteral("Phase 10 · 利用信号优先级"), sidebar);
+    auto* stage = new QLabel(QStringLiteral("Phase 11 · 方法验证"), sidebar);
     stage->setWordWrap(true);
     navigationLayout->addWidget(stage);
     layout->addWidget(sidebar);

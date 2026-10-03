@@ -1,0 +1,5 @@
+#pragma once
+#define VALIDATION_APP_VERSION "@PROJECT_VERSION@"
+#define VALIDATION_SOURCE_COMMIT "@validation_source_commit@"
+#define VALIDATION_SOURCE_DIRTY @validation_source_dirty@
+#define VALIDATION_SOURCE_SHA256 "@validation_source_hash@"

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 
-project(SupplyChainRiskAssessment VERSION 0.11.0 LANGUAGES CXX)
+project(SupplyChainRiskAssessment VERSION 0.12.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -41,6 +41,53 @@ target_include_directories(VulnerabilityCore PUBLIC src)
 target_link_libraries(VulnerabilityCore PUBLIC Qt6::Core)
 add_library(RiskEvidenceCore STATIC src/RiskEvidence.h src/RiskEvidence.cpp src/RiskPriority.h src/RiskPriority.cpp)
 target_link_libraries(RiskEvidenceCore PUBLIC VulnerabilityCore DependencyAnalysis)
+add_library(ValidationCore STATIC src/ValidationDataset.h src/ValidationDataset.cpp
+    src/ValidationSelection.h src/ValidationSelection.cpp
+    src/ValidationExperiment.h src/ValidationExperiment.cpp src/ValidationSynthetic.cpp)
+target_link_libraries(ValidationCore PUBLIC RiskEvidenceCore Qt6::Core)
+execute_process(COMMAND git rev-parse HEAD WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    OUTPUT_VARIABLE validation_source_commit OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(COMMAND git status --porcelain WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    OUTPUT_VARIABLE validation_source_status OUTPUT_STRIP_TRAILING_WHITESPACE)
+set(validation_source_dirty 0)
+if(validation_source_status)
+    set(validation_source_dirty 1)
+endif()
+if(NOT validation_source_commit)
+    set(validation_source_commit "unknown")
+endif()
+# Bind an uncommitted implementation to its actual source, in addition to its base commit.
+file(GLOB validation_source_files CONFIGURE_DEPENDS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+    "src/*.h" "src/*.cpp" "src/*.in" "tools/*.cpp" "tools/*.py" "tests/*.cpp")
+list(APPEND validation_source_files CMakeLists.txt)
+list(SORT validation_source_files)
+set(validation_source_fingerprints "")
+foreach(source_file IN LISTS validation_source_files)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${source_file}")
+    file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/${source_file}" source_file_hash)
+    string(APPEND validation_source_fingerprints "${source_file}:${source_file_hash}\n")
+endforeach()
+string(SHA256 validation_source_hash "${validation_source_fingerprints}")
+configure_file(src/ValidationBuildInfo.h.in generated/ValidationBuildInfo.h @ONLY)
+target_include_directories(ValidationCore PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
+add_library(ValidationWidgets STATIC src/ValidationPage.h src/ValidationPage.cpp)
+target_link_libraries(ValidationWidgets PUBLIC ValidationCore Qt6::Widgets Qt6::Concurrent)
+add_executable(ValidationReplay tools/ValidationReplay.cpp)
+target_link_libraries(ValidationReplay PRIVATE ValidationCore)
+
+# The product carries only the final Dataset. Tests retain the full research audit.
+function(add_validation_resources target full_audit)
+    set(validation_files validation/phase11-validation-dataset-v1.json
+        validation/phase11-validation-dataset-v1.json.sha256)
+    if(full_audit)
+        list(APPEND validation_files validation/candidate-pool-manifest-v1.json
+            validation/candidate-pool-manifest-v1.json.sha256
+            validation/candidate-selection-index-v1.json validation/candidate-selection-index-v1.json.sha256)
+    endif()
+    qt_add_resources(${target} "validation_files_${target}" BIG_RESOURCES PREFIX "/validation" BASE "validation"
+        FILES ${validation_files})
+endfunction()
+
 add_library(RiskEvidenceServices STATIC src/RiskEvidenceCache.h src/RiskEvidenceCache.cpp
     src/EvidenceClients.h src/EvidenceClients.cpp src/RiskEvidenceController.h src/RiskEvidenceController.cpp)
 target_link_libraries(RiskEvidenceServices PUBLIC RiskEvidenceCore AppFoundation Qt6::Network Qt6::Concurrent)
@@ -59,7 +106,18 @@ add_executable(SupplyChainRiskAssessment WIN32
     src/SbomImportDialog.h src/SbomImportDialog.cpp
 )
 target_link_libraries(SupplyChainRiskAssessment PRIVATE Qt6::Widgets Qt6::Concurrent AppFoundation SbomParsing DependencyAnalysis OsvMatching)
+target_link_libraries(SupplyChainRiskAssessment PRIVATE ValidationWidgets)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/validation/phase11-validation-dataset-v1.json")
+    add_validation_resources(SupplyChainRiskAssessment FALSE)
+endif()
 target_compile_definitions(SupplyChainRiskAssessment PRIVATE APPLICATION_VERSION="${PROJECT_VERSION}")
+
+# Research preparation is opt-in and has no product GUI entry point.
+option(BUILD_VALIDATION_PREPARATION "Build the explicit Phase 11 public fixture preparation utility" OFF)
+if(BUILD_VALIDATION_PREPARATION)
+    add_executable(ValidationPrepare tools/ValidationPrepare.cpp)
+    target_link_libraries(ValidationPrepare PRIVATE ValidationCore RiskEvidenceServices)
+endif()
 
 include(CTest)
 if(BUILD_TESTING)
@@ -156,6 +214,12 @@ if(BUILD_TESTING)
     target_link_libraries(Phase10Test PRIVATE Qt6::Widgets Qt6::Test OsvMatching)
     target_compile_definitions(Phase10Test PRIVATE PHASE10_COMPILER_BIN="${phase08_compiler_bin}")
 
+    add_executable(Phase11Test tests/Phase11Test.cpp src/MainWindow.h src/MainWindow.cpp)
+    target_link_libraries(Phase11Test PRIVATE ValidationWidgets Qt6::Test)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/validation/phase11-validation-dataset-v1.json")
+        add_validation_resources(Phase11Test TRUE)
+    endif()
+
     function(add_qt_test phase target test_case)
         # File output retains Qt Test diagnostics even when Windows stdout is unavailable.
         add_test(NAME ${phase}.${test_case} COMMAND ${target} ${test_case}
@@ -171,6 +235,16 @@ if(BUILD_TESTING)
             )
         endif()
     endfunction()
+    foreach(test_case IN ITEMS sharedEvaluator synthetic explanation profileCodec contractFailures
+            hashContract timeContract provenanceContract duplicateSamples coverageGate aliasShared aliasPrimary
+            aliasTransitive aliasPackageScope aliasRelations aliasOrder exactVersions productionVersionValidity frozenIdentityCompatibility representativeDeterminism
+            noAliasEnrichment duplicateAdvisory strataFailures orderingContract frozenDataset sensitivity replay exportArtifact ui uiRejected uiLifetime
+            captureAttempts failureAuditConsistency failedCandidateMetadata successCandidateMetadata
+            coverageN29 coverageMissingS4 coverageMissingS5 runtimeLoader runtimeContract)
+        add_qt_test(Phase11 Phase11Test ${test_case})
+        # Contract mutation cases repeatedly validate the complete public construction audit.
+        set_tests_properties(Phase11.${test_case} PROPERTIES TIMEOUT 180)
+    endforeach()
     foreach(test_case IN ITEMS priorityRules unavailableEvidence freshnessBoundaries temporalInvalidity
             staleFallback naturalExpiry corroborationExpiry multiCveDeterminism supportCoverage provenance
             reasonsAndExplanation contextIsolation defensiveInputs timerExpiry timerCorroboration refreshOverlap

@@ -53,12 +53,19 @@ struct RiskPriorityAssessment {
     QDateTime kevFetchedAt;
     QList<DecisionEvidenceFreshness> evidenceFreshness;
     QList<PriorityReason> reasons;
+    bool operator==(const RiskPriorityAssessment&) const = default;
 };
+
+struct ExperimentalPriorityOptions { double epssPercentileThreshold = 0.90; };
 
 // Pure Core/value interpretation. The caller owns the clock and the profile lifecycle.
 class RiskPriorityEvaluator final {
 public:
     static RiskPriorityAssessment evaluate(const RiskEvidenceProfile&, QDateTime evaluationTimeUtc);
+    // Only the three frozen sensitivity thresholds are accepted; no other rule is configurable.
+    static std::optional<RiskPriorityAssessment> evaluate(const RiskEvidenceProfile&, QDateTime, ExperimentalPriorityOptions);
+private:
+    static RiskPriorityAssessment evaluateAtThreshold(const RiskEvidenceProfile&, QDateTime, double);
 };
 QString priorityClassText(PriorityClass);
 QString decisionEvidenceSupportText(DecisionEvidenceSupport);

@@ -7,6 +7,7 @@
 #include "ProjectRepository.h"
 #include "ComponentRepository.h"
 
+#include "ValidationPage.h"
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QMessageBox>
@@ -77,7 +78,7 @@ int main(int argc, char* argv[])
         // Destroy pages/dialogs and their repository before closing the shared connection.
         ProjectRepository projects(database, logger);
         ComponentRepository components(database);
-        MainWindow window(new ProjectPage(projects, components, logger, paths.osvCacheDirectory()), nullptr, initialPage);
+        MainWindow window(new ProjectPage(projects, components, logger, paths.osvCacheDirectory()), nullptr, initialPage, new ValidationPage);
         if (window.currentPageId() != initialPage) {
             logger.write(AppLogger::Level::Warning, QStringLiteral("Unknown last navigation page; using overview"));
         }
