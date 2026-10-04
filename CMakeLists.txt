@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 
-project(SupplyChainRiskAssessment VERSION 0.13.0 LANGUAGES CXX)
+project(SupplyChainRiskAssessment VERSION 0.14.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -51,6 +51,8 @@ else()
 endif()
 add_library(PresentationWidgets STATIC src/RiskPresentationView.h src/RiskPresentationView.cpp)
 target_link_libraries(PresentationWidgets PUBLIC PresentationCore Qt6::Widgets)
+add_library(FindingReportCore STATIC src/FindingReport.h src/FindingReport.cpp)
+target_link_libraries(FindingReportCore PUBLIC PresentationCore)
 add_library(ValidationCore STATIC src/ValidationDataset.h src/ValidationDataset.cpp
     src/ValidationSelection.h src/ValidationSelection.cpp
     src/ValidationExperiment.h src/ValidationExperiment.cpp src/ValidationSynthetic.cpp)
@@ -118,6 +120,7 @@ add_executable(SupplyChainRiskAssessment WIN32
 )
 target_link_libraries(SupplyChainRiskAssessment PRIVATE Qt6::Widgets Qt6::Concurrent AppFoundation SbomParsing DependencyAnalysis OsvMatching)
 target_link_libraries(SupplyChainRiskAssessment PRIVATE ValidationWidgets PresentationWidgets)
+target_link_libraries(SupplyChainRiskAssessment PRIVATE FindingReportCore)
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/validation/phase11-validation-dataset-v1.json")
     add_validation_resources(SupplyChainRiskAssessment FALSE)
 endif()
@@ -239,6 +242,17 @@ if(BUILD_TESTING)
     add_validation_resources(Phase12Test FALSE)
     target_compile_definitions(Phase12Test PRIVATE PHASE12_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
+    add_executable(Phase13Test tests/Phase13Test.cpp
+        src/ProjectPage.h src/ProjectPage.cpp src/DependencyPage.h src/DependencyPage.cpp
+        src/VulnerabilityPage.h src/VulnerabilityPage.cpp src/SbomImportDialog.h src/SbomImportDialog.cpp)
+    target_link_libraries(Phase13Test PRIVATE FindingReportCore PresentationWidgets Qt6::Test OsvMatching SbomParsing)
+    target_compile_definitions(Phase13Test PRIVATE PHASE13_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
+    foreach(target IN ITEMS Phase02Test Phase03Test Phase05Test Phase06Test Phase07Test Phase08Test Phase09Test Phase12Test Phase13Test)
+        target_link_libraries(${target} PRIVATE FindingReportCore)
+        target_compile_definitions(${target} PRIVATE APPLICATION_VERSION="${PROJECT_VERSION}")
+    endforeach()
+
     foreach(target IN ITEMS Phase00SmokeTest Phase01Test Phase02Test Phase03Test Phase05Test Phase06Test Phase11Test Phase12Test)
         target_link_libraries(${target} PRIVATE AppFoundation PresentationCore)
         target_compile_definitions(${target} PRIVATE APPLICATION_VERSION="${PROJECT_VERSION}")
@@ -262,6 +276,11 @@ if(BUILD_TESTING)
             )
         endif()
     endfunction()
+    foreach(test_case IN ITEMS semantics presentationConsistency multiCve noCve freshness htmlSafety privacy
+            staticTime provenance candidateCapture eligibility retainedRisk ownership projectFailure
+            saveCancel saveSnapshot singleFlight workerLifetime fileSafety noSideEffects resolvedPath scale architecture)
+        add_qt_test(Phase13 Phase13Test ${test_case})
+    endforeach()
     foreach(test_case IN ITEMS vocabulary exactThreshold forbiddenSemantics acquisition kevNotQueryable
             freshnessDrift statusFreshness cveJoin noCve missingAssociation multiCvePartial
             selectionOwnership initialSynchronization projectSwitch createDelete successfulApply

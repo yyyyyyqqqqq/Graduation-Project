@@ -5,6 +5,13 @@
 #include "DependencyPage.h"
 #include "VulnerabilityPage.h"
 #include "VulnerabilityController.h"
+#include "RiskEvidenceController.h"
+#include "AppDatabase.h"
+#include "AppLogger.h"
+#include <QFileDialog>
+#include <QFutureWatcher>
+#include <QThread>
+#include <QtConcurrentRun>
 
 #include <QDateTime>
 #include <QAbstractTableModel>
@@ -76,7 +83,7 @@ private:
     QList<Component> m_rows;
 };
 
-ProjectPage::ProjectPage(ProjectRepository& repository, ComponentRepository& components, AppLogger& logger, const QString& cacheDirectory, QWidget* parent)
+ProjectPage::ProjectPage(ProjectRepository& repository, ComponentRepository& components, AppLogger& logger, const QString& cacheDirectory, QWidget* parent, QNetworkAccessManager* transport)
     : QWidget(parent), m_repository(repository), m_components(components), m_logger(logger)
 {
     auto* layout = new QVBoxLayout(this);
@@ -150,10 +157,16 @@ ProjectPage::ProjectPage(ProjectRepository& repository, ComponentRepository& com
     m_tabs->addTab(componentPage, QStringLiteral("当前组件"));
     m_dependencies = new DependencyPage(m_components.databaseFilePath(),m_tabs);
     m_tabs->addTab(m_dependencies,QStringLiteral("依赖关系"));
-    auto* vulnerabilityController = new VulnerabilityController(m_components.databaseFilePath(),cacheDirectory,m_logger,this);
+    auto* vulnerabilityController = new VulnerabilityController(m_components.databaseFilePath(),cacheDirectory,m_logger,this,transport,transport);
+    m_vulnerabilityController = vulnerabilityController;
     m_vulnerabilities = new VulnerabilityPage(*vulnerabilityController,m_tabs);
     m_tabs->addTab(m_vulnerabilities,QStringLiteral("漏洞匹配"));
     layout->addWidget(m_tabs, 2);
+
+    connect(m_vulnerabilities, &VulnerabilityPage::reportExportRequested, this, &ProjectPage::exportFindingReport, Qt::DirectConnection);
+    connect(m_vulnerabilities, &VulnerabilityPage::reportSelectionChanged, this, &ProjectPage::updateReportAvailability);
+    connect(vulnerabilityController, &VulnerabilityController::changed, this, &ProjectPage::updateReportAvailability);
+    connect(&vulnerabilityController->riskEvidence(), &RiskEvidenceController::changed, this, &ProjectPage::updateReportAvailability);
 
     connect(create, &QPushButton::clicked, this, &ProjectPage::showCreateDialog);
     connect(m_remove, &QPushButton::clicked, this, &ProjectPage::confirmRemoval);
@@ -170,6 +183,113 @@ QString ProjectPage::selectedId() const
 }
 
 QString ProjectPage::currentProjectId() const { return selectedId(); }
+
+ReportError ProjectPage::reportInput(qsizetype candidateIndex, Project& project, std::optional<RiskEvidenceRequest>& request) const
+{
+    Q_ASSERT(QThread::currentThread() == thread());
+    const auto id = currentProjectId();
+    if (id.isEmpty()) return ReportError::NoAnalysis;
+    if (!m_repository.findById(id, project).ok()) return ReportError::ProjectRead;
+    const auto& v = *m_vulnerabilityController;
+    if (!v.loaded() || v.loading() || v.busy() || v.evaluating() || v.state() != QueryState::Success
+        || !v.snapshot() || !v.applicability()) return ReportError::NoAnalysis;
+    request = v.riskEvidenceRequest(candidateIndex);
+    if (!request) return ReportError::StateChanged;
+    const auto& risk = v.riskEvidence();
+    if (!risk.hasRequest() || risk.busy() || risk.state() != EvidenceOperationState::Complete
+        || !risk.profile() || !risk.assessment()) return ReportError::NoAnalysis;
+    if (request->projectId() != id || request->key() != risk.profile()->key
+        || request->key() != risk.assessment()->key || risk.assessment()->profileGeneratedAt != risk.profile()->generatedAt)
+        return ReportError::StateChanged;
+    return ReportError::None;
+}
+
+ReportCaptureResult ProjectPage::captureFindingReport(qsizetype candidateIndex) const
+{
+    Project project;
+    std::optional<RiskEvidenceRequest> request;
+    const auto error = reportInput(candidateIndex, project, request);
+    if (error != ReportError::None) return {{}, error};
+    const auto& finding = request->finding();
+    const auto& a = finding.applicability;
+    QString summary = applicabilityReasonCode(a.reason) + "\n" + applicabilityReasonText(a.reason)
+        + QStringLiteral("\nQuery version：%1\nApplicability Rules：v%2").arg(a.queryVersion).arg(a.rulesVersion);
+    // Supported evidence summary only: never serialize raw provider detail or the request.
+    for (const auto& row : a.evidence) {
+        summary += QStringLiteral("\naffected[%1], range[%2]：%3 / %4\n%5")
+            .arg(row.affectedIndex).arg(row.rangeIndex).arg(applicabilityStateText(row.state),
+                applicabilityReasonCode(row.reason), applicabilityReasonText(row.reason));
+        if (row.wildcard) summary += QStringLiteral("\nOSV wildcard affected-package evidence (*)");
+    }
+    QString acquisition;
+    switch (m_vulnerabilityController->source()) {
+    case ResultSource::Live: acquisition = "Live"; break;
+    case ResultSource::FreshCache: acquisition = "Fresh Cache"; break;
+    case ResultSource::StaleCache: acquisition = "Stale Cache"; break;
+    case ResultSource::None: return {{}, ReportError::StateChanged};
+    }
+    const auto& risk = m_vulnerabilityController->riskEvidence();
+    // No event-loop return between selection, validation and these value copies.
+    FindingReportContext context{project.name, project.description, finding.queryIdentity, finding.osvId,
+        finding.cveAliases, summary, acquisition, finding.fetchedAt, *risk.profile(), *risk.assessment(),
+        QDateTime::currentDateTimeUtc(), QStringLiteral(APPLICATION_VERSION), AppDatabase::SchemaVersion};
+    return {std::move(context), ReportError::None};
+}
+
+void ProjectPage::updateReportAvailability()
+{
+    Project project;
+    std::optional<RiskEvidenceRequest> request;
+    const bool eligible = !m_reportExporting
+        && reportInput(m_vulnerabilities->currentCandidateIndex(), project, request) == ReportError::None;
+    m_vulnerabilities->setReportExportState(eligible, m_reportExporting);
+}
+
+void ProjectPage::exportFindingReport(qsizetype candidateIndex)
+{
+    if (m_reportExporting) return;
+    const auto captured = captureFindingReport(candidateIndex);
+    if (!captured.context) { m_vulnerabilities->setReportMessage(FindingReport::userMessage(captured.error)); return; }
+    m_reportExporting = true;
+    updateReportAvailability();
+    m_vulnerabilities->setReportMessage({});
+    // Context is fixed before the dialog; its callbacks never reread controllers for report data.
+    auto* dialog = new QFileDialog(this, QStringLiteral("保存当前漏洞项报告"));
+    dialog->setObjectName("saveFindingReport");
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->setAcceptMode(QFileDialog::AcceptSave);
+    dialog->setFileMode(QFileDialog::AnyFile);
+    dialog->setNameFilter(QStringLiteral("HTML 报告 (*.html)"));
+    dialog->setDefaultSuffix("html");
+    dialog->selectFile("current-finding-report.html");
+    // Default QFileDialog overwrite confirmation remains enabled.
+    connect(dialog, &QDialog::rejected, this, [this] {
+        m_reportExporting = false;
+        m_vulnerabilities->setReportMessage({});
+        updateReportAvailability();
+    });
+    connect(dialog, &QDialog::accepted, this, [this, dialog, context = *captured.context] {
+        const auto paths = dialog->selectedFiles();
+        if (paths.isEmpty()) { m_reportExporting = false; updateReportAvailability(); return; }
+        m_vulnerabilities->setReportMessage(QStringLiteral("正在生成并保存已捕获的报告快照…"));
+        auto* watcher = new QFutureWatcher<ReportWriteResult>(this);
+        connect(watcher, &QFutureWatcher<ReportWriteResult>::finished, this, [this, watcher] {
+            const auto result = watcher->result();
+            watcher->deleteLater();
+            m_reportExporting = false;
+            m_vulnerabilities->setReportMessage(FindingReport::userMessage(result.error));
+            m_logger.write(result.error == ReportError::None ? AppLogger::Level::Info : AppLogger::Level::Warning,
+                result.error == ReportError::None ? QStringLiteral("Report export succeeded")
+                    : QStringLiteral("Report export failed: %1").arg(FindingReport::errorCode(result.error)));
+            updateReportAvailability();
+            emit reportExportFinished(result);
+        });
+        watcher->setFuture(QtConcurrent::run([context, destination = paths.first()] {
+            return FindingReport::write(context, destination);
+        }));
+    });
+    dialog->open();
+}
 
 void ProjectPage::reload(const QString& preferredId)
 {
