@@ -21,6 +21,11 @@ class ProjectPage final : public QWidget
 
 public:
     explicit ProjectPage(ProjectRepository& repository, ComponentRepository& components, AppLogger& logger, const QString& cacheDirectory, QWidget* parent = nullptr);
+    QString currentProjectId() const;
+
+signals:
+    void currentProjectChanged(const QString& projectId);
+    void currentProjectStateChanged(const QString& projectId);
 
 private:
     QString selectedId() const;
@@ -29,6 +34,8 @@ private:
     void showCreateDialog();
     void confirmRemoval();
     void showSbomImport();
+    // Notification bookkeeping only; selection is always read from m_list.
+    QString m_lastNotifiedProjectId;
 
     ProjectRepository& m_repository;
     ComponentRepository& m_components;

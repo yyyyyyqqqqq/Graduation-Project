@@ -1,14 +1,14 @@
 # 毕业设计项目总交接文档
 
-更新日期：2026-10-03（Asia/Shanghai；Phase 11 封版后全篇审查，代码结构、Git 完成态与测试 / 验收来源已对齐）
+更新日期：2026-10-04（Asia/Shanghai；Phase 12 第二次源码审查 PASS，GUI / Comprehension Acceptance 为 PASS WITH NON-BLOCKING UNVERIFIED ITEMS；按 58.md 执行 Final Seal，采用单 completion commit 约定）
 
 本文是项目唯一的长期动态交接文档。每个阶段结束后，更新当前状态、代码结构、Git、测试、人工验收、技术决策和下一步，避免另建多套状态文件。
 
 本文保留 Phase 00—11 已完成事实及长期规则。Phase 09 按 35.md—42.md 完成证据 enrichment 与缓存可靠性修复封版；Phase 10 按 43.md—46.md 完成 Frozen Design、实现、ChatGPT Code Review、用户授权 GUI 验收及最终封版。Phase 10 是 Exploit-Signal Prioritization MVP，不是完整综合风险模型；Phase 11 已完成冻结验证实验与阈值敏感性分析并封版。Phase 01—11 的 Release GUI 为 AUTOMATED ONLY；Phase 00 的用户 Release GUI 验收 PASS 作为历史事实保留。
 
-Phase 07.5-AUX 已按 28.md / 29.md / 30.md 完成本地只读 MCP 实验、采用与真实 ChatGPT 连接验收，保留为辅助基础设施，不属于产品业务 Phase。当前业务范围已推进到 RiskEvidenceProfile → Exploit-Signal Priority Assessment → Decision Evidence Support → Deterministic Explanation，并已完成独立的冻结 Validation Experiment；Presentation 需求与设计待授权。未实现 numeric Risk Score / Risk Level / predictive Assessment Confidence。
+Phase 07.5-AUX 已按 28.md / 29.md / 30.md 完成本地只读 MCP 实验、采用与真实 ChatGPT 连接验收，保留为辅助基础设施，不属于产品业务 Phase。当前业务范围已推进到 RiskEvidenceProfile → Exploit-Signal Priority Assessment → Decision Evidence Support → Deterministic Explanation，并已完成独立的冻结 Validation Experiment。52.md 已授权并冻结 Phase 12 Presentation & Explainability MVP；首次 ChatGPT 审查为 CHANGES REQUIRED，五项修复已按 54.md 实现，55.md 完成历史 UI 测试导航兼容修复及完整自动回归。第二次独立审查 PASS，GUI 验收已收口为 PASS WITH NON-BLOCKING UNVERIFIED ITEMS，58.md 授权正式 Final Seal。未实现 numeric Risk Score / Risk Level / predictive Assessment Confidence。
 
-依据：各阶段授权（04.md—51.md）、当前真实代码与直接验证证据。47.md 完成 Phase 11 实现与公开数据冻结，48.md 准备审查材料，49.md 完成首次审查两个 Must Fix / 两个 Should Fix 修复，50.md 完成 Codex 自动回归与 GUI 验证。51.md 提供第二次 ChatGPT 独立源码审查 PASS 和用户 Test 18/19 PASS；用户于 2026-10-03 进一步纠正并确认 Test 17 由其亲自执行且 PASS。Phase 11 验收及封版均已闭环，固定标识见第 5 节，不继承 Phase 10 的验收结论。本次按用户要求审查并更新整份交接文档，仅作独立文档维护提交；未重跑 Build、CTest 或 GUI 验收。
+依据：各阶段授权（04.md—58.md）、当前真实代码与直接验证证据。47.md 完成 Phase 11 实现与公开数据冻结，48.md 准备审查材料，49.md 完成首次审查两个 Must Fix / 两个 Should Fix 修复，50.md 完成 Codex 自动回归与 GUI 验证。51.md 提供第二次 ChatGPT 独立源码审查 PASS 和用户 Test 18/19 PASS；用户于 2026-10-03 进一步纠正并确认 Test 17 由其亲自执行且 PASS。Phase 11 验收及封版均已闭环，固定标识见第 5 节，不继承 Phase 10 的验收结论。其后的独立文档维护提交为 Phase 12 起点 d8a588a。52.md 完成开发与自动验收，53.md 只读准备审查材料；54.md 完成五项修复后因历史 Phase10.ui 导航假设失效而按要求停止，未运行 Replay 或更新本文；55.md 独立确认原因并授权极窄测试导航修复，现已完成双配置全量回归与 Replay。真实结果见第 17 节，自动截图不代替人工验收。
 
 **真实性优先级：实际运行结果 > 当前真实代码 > 当前 Git 状态 > 当前 GitHub 状态 > 已验证环境审计 > 历史项目资料 > 推测。** 当前阶段授权以用户最新具体指令为准。
 
@@ -22,29 +22,37 @@ Phase 07.5-AUX 已按 28.md / 29.md / 30.md 完成本地只读 MCP 实验、采�
 
 # 2. 当前一句话状态
 
-Phase 11 Validation & Threshold Sensitivity Experiment MVP 已完成实现、首次审查修复、第二次 ChatGPT 独立源码审查 PASS 与 GUI / Acceptance 20/20 PASS。生产默认 0.90、App 0.12.0、schema 4 和冻结 40 样本不变；当前为 PHASE 11 COMPLETE / FINAL SEAL PASS，使用 phase-11-complete^{commit} 固定定位 completion commit。
+Phase 12 Presentation & Explainability MVP 已完成实现和首次审查五项修复，第二次 ChatGPT Source-level Code Review PASS。GUI / Comprehension Acceptance：PASS WITH NON-BLOCKING UNVERIFIED ITEMS（26 PASS / 0 Confirmed FAIL / 0 BLOCKED / 1 NOT VERIFIED）；Test 20 为 NOT VERIFIED / NON-BLOCKING。App 0.13.0、schema 4、Rules v1 / 0.90 不变。PHASE 12 COMPLETE / READY FOR FINAL SEAL；最终 Git 完成态以 Final Seal Report 与实时 Git 为证据。
 
 # 3. 当前阶段
 
-**CURRENT PHASE: PHASE 11 COMPLETE / FINAL SEAL PASS**
+**CURRENT PHASE: PHASE 12 COMPLETE / READY FOR FINAL SEAL**
 
-**NEXT: READY FOR NEXT PHASE REQUIREMENTS / DESIGN**
+**NEXT: 完成本轮授权 Final Seal 后，等待下一阶段 REQUIREMENTS / DESIGN；不自动启动 Phase 13。**
 
-51.md 的最终核验、唯一 completion commit、普通 push main 及 annotated tag 已完成并核验 PASS。Phase 11 completion 为 `d41a82a7060a8b29b8365a92dc7bd21ca9528b94`，由不可变 `phase-11-complete` 固定定位；后续文档提交可推进 main，不改变封版代码与 tag。验收执行来源为 Codex Test 1–16、20 与用户 Test 17–19，见第 18 节。当前授权仅为交接文档审查、更新、提交与推送，不启动下一 Phase。
+52.md 为冻结开发授权，54.md 为首次审查五项修复，55.md 为历史 Phase10.ui 导航兼容，56.md 为验收执行，57.md 为 Test 16/19 最小呈现修复，58.md 给出第二次 Review PASS、人工验收收口事实与正式 Final Seal 授权。仅在全部新验证 gates PASS 后，提交既有正式实现及本文，普通 push main，再创建并 push annotated phase-12-complete；不修改业务源码或测试。Phase 11 completion 仍为 `d41a82a7060a8b29b8365a92dc7bd21ca9528b94`，其历史来源为 Codex Test 1–16、20 与用户 Test 17–19，与 Phase 12 用户 Test 16/19/20 独立。
 
 # 4. 正式项目目录
 
 唯一正式根目录：`D:\codex\Graduation Project\project`。
 
-后续源码、CMake、测试、项目文档和 Git 均围绕此目录组织。不维护多个正式工程副本；父目录的 01.md—34.md 为既有准备、设计、开发、封版及辅助 MCP 依据，35.md—42.md 为 Phase 09 依据，43.md—46.md 为 Phase 10 依据；47.md 是 Phase 11 已冻结设计下的正式开发授权；48.md 为审查材料准备，49.md 为首次 Code Review 修复授权，50.md 为自动与 GUI 验证，51.md 为 Phase 11 最终封版授权。
+后续源码、CMake、测试、项目文档和 Git 均围绕此目录组织。不维护多个正式工程副本；父目录的 01.md—34.md 为既有准备、设计、开发、封版及辅助 MCP 依据，35.md—42.md 为 Phase 09 依据，43.md—46.md 为 Phase 10 依据；47.md 是 Phase 11 已冻结设计下的正式开发授权；48.md 为审查材料准备，49.md 为首次 Code Review 修复授权，50.md 为自动与 GUI 验证，51.md 为 Phase 11 最终封版授权，52.md 为 Phase 12 冻结设计、正式开发及自动验收授权，53.md 为只读审查材料准备，54.md 为首次审查五项修复，55.md 为历史 UI 测试导航兼容修复及重新自动验证，56.md 为验收执行，57.md 为 Test 16/19 最小修复，58.md 为最终验收收口与 Final Seal 授权。
 
 `D:\codex\SupplyChainRiskAssessment` 是历史环境验证目录，不是正式项目；本轮未检查或修改其内容。
 
 # 5. Git / GitHub 当前状态
 
-## 5.1 Phase 11 已完成封版与当前 Git 基线
+52.md 开发起点为 `main`，HEAD = main = origin/main = remote main = `d8a588a4f5cd553bc24d145dd8ad2d6a48aad2f6`，ahead/behind=0/0，staged=0、tracked clean、formal untracked=0。开发前核对十二个 annotated tags 的本地 / 远端 object 和 peeled target，均与下表一致。
 
-Phase 11 于 2026-10-03 完成最终回归、维护性 / 隐私审查、completion commit、main push 和 annotated tag push；最终核验时间为 `2026-10-03T06:51:25.420189Z`。本次文档审查开始时重新查询本地与远端，HEAD=main=origin/main=remote main 仍为下列 completion commit，ahead/behind=0/0，工作区干净。
+58.md Final Seal 起点：main，HEAD = main = origin/main = remote main = `d8a588a4f5cd553bc24d145dd8ad2d6a48aad2f6`，ahead/behind=0/0；staged=0、tracked modified=18、formal untracked=7，共 25 个正式候选文件。100 个正式文件与 57.md 验收后快照逐字节一致。七个新增文件为 OverviewPage、PresentationText、RiskPresentationView 各 .h/.cpp 与 tests/Phase12Test.cpp；本轮仅就地更新本文，不修改已验收实现。
+
+采用 single completion commit convention：本文在 commit 前记为 PHASE 12 COMPLETE / READY FOR FINAL SEAL，不嵌入尚未生成的 completion SHA。最终 completion SHA、parent、remote main、annotated tag object / peeled target 和 clean 工作区，以 ignored `build-debug/phase12-final-seal/Phase12-Final-Seal-Report.md` 及实时 Git 为最终证据。commit 后不为补写 SHA 再改本文或创建第二个 documentation commit。历史 phase-00-complete 至 phase-11-complete 不得移动。
+
+证据目录均 ignored：52.md `build-debug/phase12-development/`；53.md `phase12-code-review/`；54.md `phase12-code-review-fixes/`；55.md `phase12-ui-compatibility-55/`；56.md `phase12-test-execution-56/`；57.md `phase12-minimal-fix-57/`；58.md `phase12-final-seal/`（以上后六项均位于 build-debug）。保留历史失败与后续修复记录；构建、回放、审查、截图及 manual runtime 不纳入 Git，不因封版删除。
+
+## 5.1 Phase 11 历史封版与固定标识
+
+Phase 11 于 2026-10-03 完成最终回归、维护性 / 隐私审查、completion commit、main push 和 annotated tag push；最终核验时间为 `2026-10-03T06:51:25.420189Z`。随后独立文档维护开始时曾确认 HEAD=main=origin/main=remote main 为下列 completion commit、ahead/behind=0/0、工作区干净；该维护提交已推进至本轮起点 d8a588a，不能把下表的历史 main 等式视为当前 HEAD。
 
 | 项目 | 已核验的 Phase 11 固定封版标识 |
 | --- | --- |
@@ -59,7 +67,7 @@ Phase 11 于 2026-10-03 完成最终回归、维护性 / 隐私审查、completi
 
 封版前基线为 `b2af74d813828b7cc120b00e953c69923b21c831`；与 50.md 测试后快照核对的 93 个正式文件逐字节一致。封版期间只更新本文，已验收实现连同本文共 28 个文件形成唯一 completion commit：`.gitignore`、`CMakeLists.txt`、本文、MainWindow/RiskPriority/main 的改动、Validation 源码与测试、三个准备 / 重放工具和第 16.1 节六个公开冻结输入。所有 gates PASS，main 与 tag 分别普通推送并完成远端核验。
 
-**区分不可变封版与可前进的 main。** 用户现已另行授权全篇文档维护及提交推送；该独立 docs commit 只更新本文，不是第二个 Phase 11 completion commit，不 amend 或移动任何 tag。维护提交后 main 可以领先 `phase-11-complete^{commit}`；接手时以 `git log`、`git status` 和 `git ls-remote` 读取实时状态，不将封版时的 main 等式套用到后续提交。
+**区分不可变封版与可前进的 main。** Phase 11 后的独立 docs commit 只更新本文，不是第二个 Phase 11 completion commit，没有 amend 或移动任何 tag。当前 main 已领先 `phase-11-complete^{commit}`；52.md 当时禁止 Git 写操作，58.md 已明确授权本轮 Phase 12 Final Seal。接手时以 `git log`、`git status` 和 `git ls-remote` 读取实时状态，不将封版时的 main 等式套用到后续提交。
 
 封版直接证据保留于 ignored `build-debug/phase11-final-seal-51/`：`final-seal-verification.json`、`Phase11-Final-Seal-Report.md` 记录 Git / tag / 远端完成态，`final-verification.json` 及相关日志记录第 17 节回归。构建目录内归档、采集记录、截图、结果 artifact、review patch、启动脚本和隔离 runtime 均不提交也不删除。结果 artifact 的 base commit / dirty 是构建期注入信息；第 17 节正式源码指纹关联实际受测实现，不能把 base commit 当作 completion commit。
 
@@ -126,7 +134,7 @@ Phase 10 已按审查并提交十个正式文件 → 普通 push main → 创建
 | windeployqt | 历史环境已验证；当前正式应用尚未完成最终部署包验收 |
 | Git / GitHub CLI | 历史版本 2.54.0.windows.1 / 2.96.0；本次使用 Git 核对状态，未重新验证 CLI 版本或 gh 可用性 |
 
-2026-09-30 环境对齐：用户提供的 Qt Maintenance Tool 更新记录显示 Qt Creator 20.0.2、SDKTool、Telemetry plugin，以及随 Creator 分发的 jom / wininterrupt 已更新完成；安装组件清单与 qtcreator.exe 文件版本确认 Creator 为 20.0.2。这是 IDE 及其辅助组件更新。实查 qmake 为 Qt 6.11.2、g++ 为 13.1.0 / x86_64-w64-mingw32、CMake 为 3.30.5、Ninja 为 1.12.1；Creator 的 6.11.2 MinGW Kit 仍在，Debug / Release CMakeCache 仍指向原 Qt / MinGW / Ninja 路径。正式工程使用 Ninja，不因 Creator 内置 jom 更新而切换生成器；该 IDE 更新无需调整 CMakeLists.txt、源码、当时的 App 0.11.0 或 schema 4；当前应用已由 Phase 11 升至 0.12.0。未重新进行 Creator GUI 操作验收或完整环境审计。
+2026-09-30 环境对齐：用户提供的 Qt Maintenance Tool 更新记录显示 Qt Creator 20.0.2、SDKTool、Telemetry plugin，以及随 Creator 分发的 jom / wininterrupt 已更新完成；安装组件清单与 qtcreator.exe 文件版本确认 Creator 为 20.0.2。这是 IDE 及其辅助组件更新。实查 qmake 为 Qt 6.11.2、g++ 为 13.1.0 / x86_64-w64-mingw32、CMake 为 3.30.5、Ninja 为 1.12.1；Creator 的 6.11.2 MinGW Kit 仍在，Debug / Release CMakeCache 仍指向原 Qt / MinGW / Ninja 路径。正式工程使用 Ninja，不因 Creator 内置 jom 更新而切换生成器；该 IDE 更新无需调整 CMakeLists.txt、源码、当时的 App 0.11.0 或 schema 4。应用随后由 Phase 11 升至 0.12.0，本轮 Phase 12 升至 0.13.0；工具链未变。未重新进行 Creator GUI 操作验收或完整环境审计。
 
 关键工具路径：
 
@@ -140,7 +148,7 @@ Graphviz C:\Program Files\Graphviz\bin\dot.exe
 
 历史最终结论：**FULLY READY**。审计曾真实验证编译链、C++20 / Qt、SQLite、HTTPS / JSON / NVD / EPSS / KEV、Qt Concurrent、Graphviz / SVG、Qt Test / CTest、Debug / Release、windeployqt、独立运行及端到端集成。
 
-历史结论证明当时工具链集成可用。正式工程的 Phase 00 原位最小复验已通过，后续 Phase 01—11 延续同一冻结工具链；CMakeCache、编译命令及运行结果均确认 Qt 6.11.2，未混入 6.11.1，没有重装或替换工具链。
+历史结论证明当时工具链集成可用。正式工程的 Phase 00 原位最小复验已通过，后续 Phase 01—12 延续同一冻结工具链；CMakeCache、编译命令及运行结果均确认 Qt 6.11.2，未混入 6.11.1，没有重装或替换工具链。
 
 # 7. 环境已知提醒
 
@@ -151,7 +159,7 @@ Graphviz C:\Program Files\Graphviz\bin\dot.exe
 - 历史 `LongPathsEnabled=0`，保持浅目录；正式路径含空格，命令必须正确引用。
 - 历史 optional Vulkan Headers / DX12 compiler 提示不阻塞当前 Qt Widgets 工程；正式应用尚未链接 Qt Svg，不能将历史 SVG 环境验证当作已接入产品展示。Qt 导入配置及 Debug 可用性以既有构建证据为准，不据此重装。
 - 历史独立部署验证是在当前电脑排除开发路径后完成，尚不等同于全新 Windows 电脑验收。
-- **截至 Phase 11 封版无已知环境 Blocker。** 51.md 完成 Debug / Release Build 与 Phase 00—11 全量回归，沿用冻结工具链；这不是完整环境重新审计。本次文档审查未改变或重验工具链。
+- **截至 Phase 12 自动验收无已知环境 Blocker。** 52.md 完成 Debug / Release Build 与 Phase 00—12 全量回归，沿用冻结工具链；这不是完整环境重新审计。本轮未改变系统 PATH、代理、DNS、证书、防火墙或网络连接状态。
 
 # 8. 系统核心目标
 
@@ -178,7 +186,7 @@ Trivy、Grype、Dependency-Track、OSV-Scanner、cve-bin-tool 等成熟工具在
 | Layer 1 — Foundation | SBOM → Component → Quality → Dependency | 基本完成；Phase 00—06 已建立标准化供应链输入、CycloneDX 解析、组件模型、质量诊断、SQLite / Current Components / Raw Dependencies 持久化及依赖分析，为漏洞分析提供可追溯输入与项目上下文 |
 | Layer 2 — Vulnerability | Component Identity → Candidate Matching → Version Applicability → Finding | MVP 已完成：Identity、OSV Candidate、本地 Applicability、Provider Consistency Gate 与内存 Finding；支持范围及 Unknown 边界见第 16 节 |
 | Layer 3 — Risk | RiskEvidenceProfile → Exploit-Signal Priority → Decision Evidence Support → Explanation | Phase 10 MVP COMPLETE；Rules v1 与 0.90 research percentile threshold 已冻结；不是完整综合风险模型 |
-| Layer 4 — Validation / Presentation | Validation / Calibration → Presentation | Phase 11 验证与阈值敏感性实验、审查修复和验收已完成；Presentation 需求与设计待另行授权 |
+| Layer 4 — Validation / Presentation | Validation / Calibration → Presentation | Phase 11 已封版；Phase 12 COMPLETE / READY FOR FINAL SEAL，GUI 收口含 1 项 non-blocking NOT VERIFIED |
 
 缺失数据保留诊断或不确定状态，不能解释成无漏洞、无风险。第 13 节只将这条主线映射为已完成阶段、下一阶段定位和后续方向，不另设并行正式路线。
 
@@ -191,9 +199,9 @@ Trivy、Grype、Dependency-Track、OSV-Scanner、cve-bin-tool 等成熟工具在
 | Foundation | 项目创建 / 列表 / 详情 / 删除、CycloneDX JSON 1.4 / 1.5 / 1.6 共同字段子集解析与只读预览、issue-based 质量诊断、当前组件及原始依赖事务持久化、精确引用解析、直接 / 反向及按需传递查询均已实现；无总体质量分或自动修复 |
 | Vulnerability | 已实现 PyPI/npm 最小身份与所选组件 OSV 候选查询、原始证据、文件缓存和隐私确认；本地版本适用性、Provider Consistency Gate、内存 Finding 与解释 UI 已实现 |
 | Risk | 已实现内存 RiskEvidenceProfile 与纯 Core RiskPriorityAssessment；Controller 本地到期重评估，UI 展示 Priority / Support / provenance / 确定性解释；无 numeric Risk Score / Risk Level / predictive confidence |
-| Validation / Presentation | Phase 11 已通过冻结验证实验呈现 Rules v1 与阈值敏感性；Dashboard / Report / Graphviz presentation 尚未实现，须另行授权需求与设计 |
+| Validation / Presentation | Phase 11 冻结实验及阈值敏感性；Phase 12 Current Project 概览与共享结果解释。Dashboard / 业务 Report / Graphviz presentation 尚未实现，须另行授权需求与设计 |
 
-Project / projects 与 Component / components 已实现正式持久化；SbomDocument、SbomComponent、SbomDependency、SbomQualityIssue、SbomQualityReport 仍为导入或诊断内存模型。DependencySnapshot 表达一致读取结果，DependencyGraph 为可失效的内存派生图；原始依赖已持久化。PackageIdentity / QueryIdentity、VulnerabilityCandidate / OsvSnapshot、ApplicabilityResult / CandidateAssessment / ApplicabilitySnapshot / VulnerabilityFinding、RiskEvidenceProfile 和 RiskPriorityAssessment 为内存值模型。完整成功 OSV / EPSS / KEV 查询另有外部证据文件缓存；没有正式 identity / vulnerability / finding / risk / profile 表，缓存不是第二业务数据库。未持久化 Finding / Profile / Assessment / Quality；截至 Phase 11 仍无 numeric Risk Score / Risk Level / predictive confidence、批量扫描或面向用户项目的业务报告导出。ValidationReplay 已能导出实验结果 JSON，属于研究验证 artifact，不等于业务报告功能。
+Project / projects 与 Component / components 已实现正式持久化；SbomDocument、SbomComponent、SbomDependency、SbomQualityIssue、SbomQualityReport 仍为导入或诊断内存模型。DependencySnapshot 表达一致读取结果，DependencyGraph 为可失效的内存派生图；原始依赖已持久化。PackageIdentity / QueryIdentity、VulnerabilityCandidate / OsvSnapshot、ApplicabilityResult / CandidateAssessment / ApplicabilitySnapshot / VulnerabilityFinding、RiskEvidenceProfile 和 RiskPriorityAssessment 为内存值模型。完整成功 OSV / EPSS / KEV 查询另有外部证据文件缓存；没有正式 identity / vulnerability / finding / risk / profile 表，缓存不是第二业务数据库。未持久化 Finding / Profile / Assessment / Quality；截至 Phase 12 仍无 numeric Risk Score / Risk Level / predictive confidence、批量扫描或面向用户项目的业务报告导出。ValidationReplay 已能导出实验结果 JSON，属于研究验证 artifact，不等于业务报告功能。
 
 # 11. 漏洞数据源定位
 
@@ -204,7 +212,7 @@ Project / projects 与 Component / components 已实现正式持久化；SbomDoc
 - **EPSS**：Phase 09 已接入 FIRST exploit likelihood evidence，不能证明版本适用性，也不是综合风险评分。
 - **CISA KEV**：Phase 09 已接入公共完整目录；NotListed 只针对所用完整目录，不等于没有风险。
 
-OSV 已正式接入：固定 HTTPS https://api.osv.dev/v1/query，仅查询所选 PyPI/npm 组件，支持完整分页、错误分类、取消和 AppData 文件缓存。Phase 09 新增 FIRST EPSS https://api.first.org/data/v1/epss（仅发送经确认的 CVE ID）与 CISA KEV 官方 kev-data 公共完整目录 `https://raw.githubusercontent.com/cisagov/kev-data/develop/known_exploited_vulnerabilities.json`（不发送组件信息）。NVD 尚未接入。Phase 07 历史真实 Qt Network smoke 于 2026-09-18T09:57:04Z 查询公开 PyPI six 1.17.0 成功（当时 0 candidates，约 2.3 秒）；该数量不是永久保证。最新 51.md 封版 CTest 使用 synthetic / fake transport 及公开冻结输入离线回归，不重跑实时服务 smoke；实验 Replay 也不查询 live providers。
+OSV 已正式接入：固定 HTTPS https://api.osv.dev/v1/query，仅查询所选 PyPI/npm 组件，支持完整分页、错误分类、取消和 AppData 文件缓存。Phase 09 新增 FIRST EPSS https://api.first.org/data/v1/epss（仅发送经确认的 CVE ID）与 CISA KEV 官方 kev-data 公共完整目录 `https://raw.githubusercontent.com/cisagov/kev-data/develop/known_exploited_vulnerabilities.json`（不发送组件信息）。NVD 尚未接入。Phase 07 历史真实 Qt Network smoke 于 2026-09-18T09:57:04Z 查询公开 PyPI six 1.17.0 成功（当时 0 candidates，约 2.3 秒）；该数量不是永久保证。历史 51.md 封版及最新 55.md CTest 均使用 synthetic / fake transport 及公开冻结输入离线回归，不重跑实时服务 smoke；实验 Replay 也不查询 live providers。
 
 # 12. 风险评估原则
 
@@ -220,7 +228,7 @@ Stale evidence 仅作历史上下文；future timestamp 是 Ineligible，不混�
 
 # 13. Phase 路线
 
-以下是第 9 节唯一长期路线的阶段状态。Phase 00—10 历史封版保持不变；Phase 11 已完成实现、两轮独立审查闭环及验收，已按 51.md 完成最终封版；不提前定义下一 Phase。
+以下是第 9 节唯一长期路线的阶段状态。Phase 00—11 历史封版保持不变；Phase 12 已完成实现、首次审查修复、第二次审查及 GUI 验收收口，按 58.md 完成唯一 Final Seal；下一阶段需求与设计须另行授权。
 
 | Phase | 名称与主要目标 | 当前状态 |
 | --- | --- | --- |
@@ -236,7 +244,8 @@ Stale evidence 仅作历史上下文；future timestamp 是 Ineligible，不混�
 | 09 | Risk Evidence Enrichment MVP | COMPLETE |
 | 10 | Exploit-Signal Prioritization MVP | COMPLETE |
 | 11 | Validation & Threshold Sensitivity Experiment MVP | COMPLETE / FINAL SEAL PASS；completion 定位见第 5.1 节 |
-| 后续 | Presentation 需求与技术设计 | 待用户另行授权；具体阶段逐步设计和冻结 |
+| 12 | Presentation & Explainability MVP | COMPLETE / READY FOR FINAL SEAL；最终 commit / remote / tag 以 Final Seal Report 与实时 Git 为准 |
+| 后续 | 下一阶段 REQUIREMENTS / DESIGN | 等待新授权；不自动进入 Phase 13 |
 
 **Historical / Superseded Plan：** Phase 00—06 开发期间使用的旧 Phase 07—17 未来安排已被 `22.md` 路线决策取代，旧表从正式路线中移除，历史可由 Git 查询；不得据其启动开发。Graphviz 仅为后续辅助展示与解释能力，不是 Phase 07 任务。
 
@@ -286,7 +295,7 @@ Git 仅受限只读查询，SQLite 使用真正 read-only connection，仅支持
 
 用户在 `30.md` 确认真实链路 ChatGPT → OpenAI Secure MCP Tunnel → tunnel-client → localhost Read-Only MCP 已建立；ChatGPT MCP App 已连接，恰好 7 个工具发现 PASS，get_project_status / get_git_status / get_handoff_outline 实际调用 PASS，23 个一级章节 outline 读取成功，停止并重启本地服务后的 reconnect / invocation 也 PASS。这是实际用户 / ChatGPT 验收，不是 Codex 模拟或仅由 Inspector 推断。此前 READY FOR CHATGPT CONNECTION TEST 已完成验收；当前 **PHASE 07.5-AUX: COMPLETE**、**READ-ONLY MCP: OPERATIONAL**。
 
-get_project_status 的 auxiliary_task_status 从本文明确的连接验收标记派生，表示已记录的验收结论，不是实时 Tunnel 健康探测；本次文档审查没有启动或检查 MCP / Tunnel 运行状态。MCP 与 tunnel-client 仍需用户手动启动，用毕 Ctrl+C 停止；两进程关闭后 ChatGPT 无法继续访问。仅 localhost MCP 与出站 Secure MCP Tunnel，无公网 MCP 入站 endpoint、常驻服务或自动启动；不改变产品工程，不构成新业务阶段的开发授权。
+get_project_status 的 auxiliary_task_status 从本文明确的连接验收标记派生，表示已记录的验收结论，不是实时 Tunnel 健康探测；本轮 Phase 12 Final Seal 没有启动或检查 MCP / Tunnel 运行状态。MCP 与 tunnel-client 仍需用户手动启动，用毕 Ctrl+C 停止；两进程关闭后 ChatGPT 无法继续访问。仅 localhost MCP 与出站 Secure MCP Tunnel，无公网 MCP 入站 endpoint、常驻服务或自动启动；不改变产品工程，不构成新业务阶段的开发授权。
 
 # 14. 已完成 Phase
 
@@ -392,7 +401,7 @@ get_project_status 的 auxiliary_task_status 从本文明确的连接验收标�
 - RiskEvidenceProfile 保留各 provider fact、freshness、acquisition 与错误状态，Quality 为 UnavailableForPersistedCurrentState；无风险等级、综合评分或置信度算法。
 - Windows cache atomic replacement 修复只在 commit 返回 false 且 RenameError 时有限重试，总尝试 3 次、等待 25/75 ms；每次新建 QSaveFile、复查路径并完整写入。非 Windows 单次尝试，永久失败返回 CacheIo 并保留旧缓存。
 - 调查确认原偶发失败位于覆盖已有文件时的 QSaveFile::commit，Qt RenameError / Windows ERROR_ACCESS_DENIED (5)；精确外部触发源仍未定位。确定性文件占用测试与压力回归证明本修复的恢复和保留语义，不代表已识别某个外部进程或根除所有 CacheIo。
-- 41.md 修复验证：确定性 transient / permanent denial PASS；Debug / Release 原 epssCache stress 各 200/200 PASS、0 FAIL，耗时 14.35 / 12.78 s。42.md 历史封版 Debug / Release 各 158/158 PASS；Phase 10 历史及最新 Phase 11 完整回归见第 17 节。
+- 41.md 修复验证：确定性 transient / permanent denial PASS；Debug / Release 原 epssCache stress 各 200/200 PASS、0 FAIL，耗时 14.35 / 12.78 s。42.md 历史封版 Debug / Release 各 158/158 PASS；后续历史及最新 Phase 12 完整回归见第 17 节。
 - 用户 Debug GUI 人工验收为 PASS WITH NON-BLOCKING UNVERIFIED ITEMS，Confirmed FAIL：0；Release GUI 为 AUTOMATED ONLY。三个未验证项永久如实保留于第 18 节。
 
 **Phase 10 —— COMPLETE。**
@@ -411,9 +420,15 @@ get_project_status 的 auxiliary_task_status 从本文明确的连接验收标�
 - GUI / Acceptance 20/20 PASS；Codex 执行 / 验证 Test 1–16、20，用户亲自执行 Test 17–19。Release GUI 为 AUTOMATED ONLY，完整来源见第 18 节。
 - App 0.12.0 / schema 4；唯一 completion commit 已推送，annotated `phase-11-complete` 已推送并核验，固定标识见第 5 节。
 
+**Phase 12 —— COMPLETE / READY FOR FINAL SEAL。**
+
+- 按 52.md 增加 Current Project 概览、共享中文结果解释、明确的 evidence / freshness / CVE 关联语义与只读方法元数据；App 0.13.0，schema 4、Rules v1、生产阈值 0.90 不变。
+- 新增 26 项注册测试，历史 222 项保留，Debug / Release 各 248/248 PASS；Phase 11 冻结字节与全部实验科学字段一致。
+- First ChatGPT Source-level Code Review：CHANGES REQUIRED（Blocker=0 / Must Fix=3 / Should Fix=2）；五项 fixes implemented。Phase10.ui 历史导航已兼容，未降低断言。Second ChatGPT Source-level Code Review：PASS（Blocker=0 / Must Fix=0 / Should Fix=0 / Confirmed Functional FAIL=0 / Frozen Design Deviation=0 / Scope Creep=0）。GUI 为 PASS WITH NON-BLOCKING UNVERIFIED ITEMS；Test 20 保持 NOT VERIFIED / NON-BLOCKING。
+
 # 15. 当前真实工程结构
 
-Phase 11 新增 `src/ValidationDataset.h/.cpp`、`ValidationSelection.h/.cpp`、`ValidationExperiment.h/.cpp`、`ValidationSynthetic.cpp`、`ValidationPage.h/.cpp`、`ValidationBuildInfo.h.in`、`tests/Phase11Test.cpp`；准备工具为 `tools/prepare_validation_snapshots.py` 与 opt-in `tools/ValidationPrepare.cpp`，正式离线重放入口为 `tools/ValidationReplay.cpp`。公开输入位于 `validation/`，六个文件见第 16.1 节；下方为包含 Phase 11 的完整正式文件树。
+Phase 11 新增 `src/ValidationDataset.h/.cpp`、`ValidationSelection.h/.cpp`、`ValidationExperiment.h/.cpp`、`ValidationSynthetic.cpp`、`ValidationPage.h/.cpp`、`ValidationBuildInfo.h.in`、`tests/Phase11Test.cpp`；准备工具为 `tools/prepare_validation_snapshots.py` 与 opt-in `tools/ValidationPrepare.cpp`，正式离线重放入口为 `tools/ValidationReplay.cpp`。Phase 12 新增 `OverviewPage.h/.cpp`、`PresentationText.h/.cpp`、`RiskPresentationView.h/.cpp` 和 `tests/Phase12Test.cpp`。公开输入位于 `validation/`，六个冻结文件见第 16.1 节；下方为当前正式文件树。
 
 正式源码结构：
 
@@ -425,6 +440,9 @@ D:\codex\Graduation Project\project\
 ├─ src\
 │  ├─ main.cpp
 │  ├─ MainWindow.h / .cpp
+│  ├─ OverviewPage.h / .cpp
+│  ├─ PresentationText.h / .cpp
+│  ├─ RiskPresentationView.h / .cpp
 │  ├─ AppPaths.h / .cpp
 │  ├─ AppLogger.h / .cpp
 │  ├─ AppSettings.h / .cpp
@@ -484,7 +502,8 @@ D:\codex\Graduation Project\project\
    ├─ Phase08Test.cpp
    ├─ Phase09Test.cpp
    ├─ Phase10Test.cpp
-   └─ Phase11Test.cpp
+   ├─ Phase11Test.cpp
+   └─ Phase12Test.cpp
 ```
 
 `.git` 为版本元数据；本地 `build-debug/`、`build-release/`、Qt Creator 的 `build/` 和 `.qtcreator/` 均被忽略，不进入正式提交。运行时数据库、日志和配置位于应用数据目录，不属于正式源码；测试数据库位于临时目录，截图和构建日志留在被忽略的构建目录。
@@ -497,7 +516,7 @@ D:\codex\Graduation Project\project\
 
 Phase 07 的 public / large / empty / invalid SBOM、cache fixture、launch 脚本、人工验收说明、截图、manual DB / logs、live smoke 记录均留在 ignored 构建目录；`phase07-manual-data` 不提交、不覆盖或删除。测试源码仅包含公开包或 synthetic 构造数据，不提交运行时 response dump。`.gitignore` 另覆盖 `**/cache/osv-v1/`。
 
-当前应用版本为 **0.12.0**，唯一来源是 CMake project VERSION，经 APPLICATION_VERSION 传入 QApplication::setApplicationVersion，日志复用 applicationVersion()。schema_version 保持 **4**，现有六张表（app_meta 元数据表 + 五张业务表）及迁移未改动。
+当前应用版本为 **0.13.0**，唯一来源是 CMake project VERSION，经 APPLICATION_VERSION 传入 QApplication::setApplicationVersion、设置页和回放构建信息，日志复用 applicationVersion()。schema_version 保持 **4**，现有六张表（app_meta 元数据表 + 五张业务表）及迁移未改动。
 
 | CMake target | 当前职责与依赖边界 |
 | --- | --- |
@@ -506,20 +525,22 @@ Phase 07 的 public / large / empty / invalid SBOM、cache fixture、launch 脚�
 | AppFoundation | 路径、日志、设置、数据库与 Project / Component repositories；Qt Core / Sql |
 | VulnerabilityCore | CveIdentity、PackageIdentity、OSV response / cache、Semver、VersionApplicability；Qt Core |
 | RiskEvidenceCore | 证据值模型、校验、纯值 RiskPriorityEvaluator 与解释；VulnerabilityCore / DependencyAnalysis，不依赖 Widgets、Network 或 Sql |
+| PresentationCore | PresentationText 的确定性中文标签与解释片段；仅 RiskEvidenceCore / Qt Core，不依赖 Widgets / Sql / Network，不计算规则或新鲜度 |
+| PresentationWidgets | RiskPresentationView 组合结果、原因、驱动、关键证据与边界；PresentationCore / Widgets，复用于漏洞与方法验证页面 |
 | ValidationCore | Profile 编解码、数据契约、准备期去重、共享 evaluator 实验与合成规范；只依赖 RiskEvidenceCore / Qt Core，无 Widgets / Network / Sql |
-| ValidationWidgets | 方法验证页面；ValidationCore / Widgets / Concurrent；首次显示时后台校验，失败不运行实验 |
+| ValidationWidgets | 方法验证页面；ValidationCore / PresentationWidgets / Widgets / Concurrent；首次显示时后台校验，失败不运行实验 |
 | ValidationReplay | 无网络离线重放与 ignored JSON artifact；只依赖 ValidationCore |
 | ValidationPrepare | 显式 opt-in research fixture preparation；复用现有 EPSS/KEV transport/parser，不是 GUI 用户功能 |
 | RiskEvidenceServices | EPSS / KEV clients、原子缓存、后台协调及本地 assessment freshness timer；RiskEvidenceCore / AppFoundation / Network / Concurrent |
 | OsvMatching | OsvClient、VulnerabilityController；继续拥有 Finding，向 RiskEvidenceController 发出不可变请求 |
-| SupplyChainRiskAssessment | Widgets 应用与页面组合；应用自身未链接 Qt Svg |
-| Phase00SmokeTest—Phase11Test | 自动回归；Graphviz 仅用于 Phase00 smoke，详细数量见第 17 节 |
+| SupplyChainRiskAssessment | Widgets 应用与页面组合，main 连接 ProjectPage 权威选择与 OverviewPage；直接链接 ValidationWidgets 与 PresentationWidgets，未链接 Qt Svg |
+| Phase00SmokeTest—Phase12Test | 自动回归；Graphviz 仅用于 Phase00 smoke，详细数量见第 17 节 |
 
 Phase 09 / 10 fixtures、审查包 / review patch、调查与验收日志、生成的 cmd / checklist / JSON、缓存、数据库及截图留在 ignored build 目录，不进入正式提交；`.gitignore` 覆盖 `**/cache/risk-evidence-v1/`。
 
 # 16. 当前已经实现的功能
 
-当前已经建立 **Phase 00 工程基础 + Phase 01 Application Foundation + Phase 02 Project Management + Phase 03 CycloneDX SBOM Import + Phase 04 SBOM Quality Diagnosis + Phase 05 Component Persistence + Phase 06 Dependency Analysis + Phase 07 Component Identity / OSV Candidate Matching + Phase 08 Version Applicability / Finding + Phase 09 Risk Evidence Enrichment + Phase 10 Exploit-Signal Prioritization + Phase 11 Validation & Threshold Sensitivity Experiment**。业务链见第 9 节；预览文档、质量报告、Finding、Profile 与 Assessment 仍在内存中，当前组件、原始依赖及 Captured State 在明确 Apply 后统一持久化。
+当前已经建立 **Phase 00 工程基础 + Phase 01 Application Foundation + Phase 02 Project Management + Phase 03 CycloneDX SBOM Import + Phase 04 SBOM Quality Diagnosis + Phase 05 Component Persistence + Phase 06 Dependency Analysis + Phase 07 Component Identity / OSV Candidate Matching + Phase 08 Version Applicability / Finding + Phase 09 Risk Evidence Enrichment + Phase 10 Exploit-Signal Prioritization + Phase 11 Validation & Threshold Sensitivity Experiment + Phase 12 Presentation & Explainability**。业务链见第 9 节；预览文档、质量报告、Finding、Profile 与 Assessment 仍在内存中，当前组件、原始依赖及 Captured State 在明确 Apply 后统一持久化。
 
 默认运行目录由 `QStandardPaths::AppDataLocation` 决定，Windows 通常为 `%APPDATA%/GraduationProject/SupplyChainRiskAssessment`：数据库 `data/supply_chain_risk.db`、日志 `logs/application.log`、配置 `settings.ini`。可用 `--data-dir <绝对路径>` 指定隔离数据根目录，空路径或相对路径会被拒绝。应用自行保存的 UI 配置仅含 `ui/lastNavigationPage`，启动及切换时保存，重启时恢复，未知页面回退概览。
 
@@ -789,9 +810,116 @@ RiskPriorityEvaluator 是纯 Core/value evaluator：读取不可变 RiskEvidence
 
 直接证据在ignored `build-debug/phase11-review-fixes/`：verification-summary.json、phase11-review-fixes.patch、fixes-report.md、fixture前后哈希、注册目录、build/CTest/replay日志及性能观察。源码修复仅涉及CMake、ValidationDataset、ValidationSelection、ValidationPage与Phase11Test；工具/生产规则保持不变，另更新本文。
 
+## 16.3 Phase 12 Presentation & Explainability MVP（52.md）
+
+**职责边界：Assessment 决定结论，Profile 提供 evidence facts，Presentation 负责表达。** 本阶段没有新风险算法、Score、schema、provider、批量扫描、业务报告、Dashboard 或 Graphviz 业务功能；没有新的 QSettings key 或业务持久化。
+
+- **Current Project 单一权威：** ProjectPage 的实际列表选择是唯一 UI 权威；`currentProjectId()` 读取该选择。`currentProjectChanged` 只在身份变化时发出，成功 Apply 后发出 `currentProjectStateChanged`；通知用的 last ID 仅抑制重复通知，不供其他模块作为选择来源。main 组合页面，OverviewPage::follow 连接上述信号后显式读取当前 accessor，同步连接建立前已发生的初始 reload；Overview 不自选首个 / 最新项目、不另存 current ID、不改 AppSettings。
+- **窄聚合摘要：** ComponentRepository::readOverviewSummary 使用一条参数化 SELECT，以 projects 行校验项目存在，相关子查询 `COUNT(*) WHERE project_id=p.id AND source_role=Component(1)` 排除 metadata root，并用 `EXISTS(dependency_capture WHERE project_id=p.id)` 表达捕获状态。没有组件逐行物化、完整 DependencySnapshot 或图重建；项目不存在 / 数据库错误单独返回，Overview 显示“读取失败”，不伪装成 0。Captured Empty 与 Not Captured 仍可区分。
+- **Overview 四区：** 项目名称 / 描述 / 本地创建时间；普通组件数 / 依赖捕获状态；OSV、PyPI/npm、选定组件按需分析、本地适用性、FIRST EPSS / CISA KEV 能力；Phase 11 已完成的方法状态及其限制入口。明确“当前系统不提供项目级批量漏洞统计”。管理项目、进入项目分析、查看方法验证三按钮只导航，不导入、不分析、不查询 provider。
+- **共享元数据：** RiskPriority.h 的只读 `ProductionRulesVersion=1`、`ProductionEpssPercentileThreshold=0.90` 被生产 evaluator、默认 options / assessment、原技术解释及设置页实际复用；没有平行可编辑配置。PackageIdentity::supportedEcosystems 与 resolver 共用 PyPI/npm 名称来源。App 版本来自 CMake，schema 来自 AppDatabase::SchemaVersion。
+- **PresentationCore：** PresentationText 是小型无副作用标签 / 文本片段 API，不是整份报告生成器。对 Priority、Support、Driver、reason、acquisition、provider status、freshness、severity、dependency、quality 逐枚举显式映射中文与可追溯英文；无 default 原始枚举兜底。GCC switch / switch-enum 警告按错误处理（MSVC 对应 4061 / 4062），测试核对映射，使新增枚举值不能静默遗漏。Core 不依赖 Widgets / Sql / Network，无 clock、evaluator 调用或 CVE normalization。
+- **Freshness 两层：** 主视图当前决策新鲜度只取 Assessment 的 driverFreshness / evidenceFreshness；Profile.freshness 仅在技术详情明确标记“Profile 生成时新鲜度”。获取来源与新鲜度分开：StaleFallback 固定为“在线刷新失败后使用缓存 (Stale Fallback)”，不称“过期缓存回退”。缓存未满 24h 的失败回退仍遵守已有 Stale 规则，future 为 Ineligible；呈现层不重新推算。
+- **CVE join 与缺口：** DecisionFreshnessLookup 按 exact canonical CVE 建索引、分别读取同一行的 epss / kev，不依赖数组位置；合法 CVE 缺行或重复关联显示“关联信息不可用（呈现一致性异常）”，绝不回退到 Profile.freshness。复用既有 validCveId 判定；空 / invalid CVE 且 provider 为 NotQueryable 时显示“无可关联项”，不把正常 No-CVE 当成契约缺行，也不产生第二套身份规范化。KEV NotQueryable 固定为“无可用于 KEV 目录匹配的合法 CVE (NotQueryable)”，解释为在已获取目录中无法本地匹配。
+- **六层结果呈现：** 共享 RiskPresentationView 表达结论、为什么、驱动、关键证据、结论边界；页面保留第六层技术详情及原 priorityExplanation / profileText、code 和 provenance。主视图拒绝 Profile / Assessment key 或生成时刻不一致的组合。所有动态内容 HTML 转义，链接不打开；Overview 动态 QLabel 使用 PlainText。多 CVE 所有成功、失败、缺口行完整保留，展示 Partial 原因，不制造 coverage score。Severity / Dependency / Quality 仅 context，明确 Support ≠ confidence、percentile ≠ probability、Below ≠ safe、NotListed ≠ 从未利用、path ≠ runtime reachability。
+- **页面与生命周期：** VulnerabilityPage 保留选组件、候选、Applicability、Finding、加载 / 刷新 / CacheOnly / 取消及原 controller 连接；订阅既有 changed 更新或清空呈现，不引入网络请求或 timer。ValidationPage 共用同一呈现组件，样本和实验阈值切换读取原实验结果，旧技术详情仍可查看。设置页仅增加只读 app/schema/rules/生产阈值，侧栏为“Phase 12 · 结果呈现”。Overview、设置及漏洞页面保持小窗口滚动路径；测试覆盖反复切换、销毁和转义。
+
+57.md 最小修复只扩展现有 boundaryText：通用说明完整公开 KEV catalog 的获取与本地匹配，明确不逐 CVE 向 CISA 查询；Below 只表示未达研究百分位阈值，所有 Priority 结果均说明 Below ≠ Safe / Low Risk / Not Exploitable。现有四个 Phase12 测试扩展断言，未改算法、provider 或 fixture。
+
+## 16.4 Phase 12 首次审查修复与历史测试兼容（54.md / 55.md）
+
+**First ChatGPT Source-level Code Review：CHANGES REQUIRED；Blocker=0、Must Fix=3、Should Fix=2、Confirmed Functional FAIL=0、Scope Creep=0。** 下列五项 fixes implemented，历史首次审查不改写为 PASS。58.md 确认 Second ChatGPT Source-level Code Review：PASS；Blocker=0、Must Fix=0、Should Fix=0、Confirmed Functional FAIL=0、Frozen Design Deviation=0、Scope Creep=0。
+
+1. **Must Fix — Stale wording：** Effective Stale 标签改为“当前决策证据为 Stale 上下文 (Stale)”，解释“不作为 Fresh 决策驱动；可能因为超过刷新窗口，也可能因为在线刷新失败后使用缓存”。Profile snapshot Stale 为“Profile 生成时新鲜度：Stale（当时未满足 Fresh 条件）”。StaleKevContextOnly 等呈现文案不再推断必为超时；真实 evaluator 的 1h EPSS / 2h KEV StaleFallback 测试确认 effective Stale，完整主视图不含“已过刷新窗口”。未修改 domain enums 或 evaluator。
+2. **Must Fix — Key Evidence Fetched At：** EPSS / KEV 每行显示已有 fetchedAt，格式为 UTC + Qt::ISODateWithMs，invalid 显示“不可用 (Unavailable)”。不生成当前时间、不改变原 timestamp；测试用确定的不同时间、+08:00 输入及 invalid 两行验证完整主视图。
+3. **Must Fix — Technical Details 隔离：** VulnerabilityPage 的 riskViews 为三个独立页签：“结果解释”（仅 RiskPresentationView）、“技术详情 / Priority”（原 riskPriorityAssessment）、“技术详情 / Provider Snapshot”（原 riskEvidence）。默认人类解释与技术详情隔离，原 priorityExplanation / profileText 未修改，完整文本和切换可达性由 Phase12.vulnerabilityPresentation 验证。ValidationPage 保持已有两页签结构。
+4. **Should Fix — 版本测试：** Phase12Test::settingsInfo 读取 APPLICATION_VERSION，不硬编码 0.13.0；实际 App 版本仍为 0.13.0。
+5. **Should Fix — 显式依赖：** SupplyChainRiskAssessment 直接链接 PresentationWidgets，同时保留 ValidationWidgets，不改变 target 架构。
+
+54.md targeted 26/26 和双配置 Build PASS，但 full CTest 各 247/248；唯一失败为旧 Phase10.ui 在技术 Priority 页签未选中时检查其滚动条。按该次 mandatory gate STOP 停止，没有运行 Replay、修改历史测试或更新本文。此失败记录保留于原目录，不覆盖。
+
+55.md 的独立判定为 **HISTORICAL UI TEST NAVIGATION ASSUMPTION OBSOLETE**，并明确授权极窄兼容修复。实际只在 Phase10.ui 增加六行：查找 riskViews、断言技术文本非默认页、`indexOf(text)` 得到非负索引、切换、处理事件、确认 currentWidget。没有硬编码新页签序号；移除这六行后测试文件与修改前全文一致，原 technical text、Rules v1 / 0.90、EPSS / KEV / reason / provenance、Provider Snapshot、双层滚动、小窗口可达性、截图、Known Exploited、stale、future / Ineligible、selection clear 全部断言保留，无 timeout 变更、跳过或降级。55.md 未修改产品源码、CMake、Phase11 / Phase12 测试或 frozen files。
+
 # 17. 当前自动测试状态
 
-**最近一次完整自动验证为 51.md Final Seal（2026-10-03）：Debug / Release build、全量 CTest 与 frozen Replay 全部 PASS；各注册 / 执行 / 通过 222 项，失败 0，无失败重试。** 以下记录该次真实执行，不是本次文档维护重新测试。本次只更新本文；源码、测试、构建配置及冻结输入保持封版内容，验证范围为文档一致性、文件 / Git / 证据核对和 diff 检查。
+## 58.md Final Seal 自动验证
+
+2026-10-04 本轮按授权顺序新执行双配置构建、完整 CTest 和离线 Replay，全部通过；没有失败重试，没有改产品源码或测试。
+
+| 本轮命令 | exit | registered / executed / passed / failed | 进程耗时 s |
+| --- | ---: | --- | ---: |
+| build-debug | 0 | N/A | 1.34 |
+| build-release | 0 | N/A | 0.157 |
+| ctest-debug | 0 | 248 / 248 / 248 / 0 | 212.079 |
+| ctest-release | 0 | 248 / 248 / 248 / 0 | 191.981 |
+| replay-debug | 0 | N/A | 6.368 |
+| replay-release | 0 | N/A | 4.823 |
+
+Debug / Release 均注册 248 项，历史 222 个 test names 全部存在，disabled=0，failed names=[]。六个 frozen files exact bytes/SHA256 与第 16.1 节完全一致。两次 Replay 相对 57.md 的所有科学字段（含逐样本 assessment / explanation、分布与合成结果）不变，仅 runTimestampUtc 变化。N=40，S1–S6=6/6/6/8/8/6；0.85、0.90、0.95 四类 Priority 分别为 6/22/6/6、6/14/14/6、6/6/22/6；Support=34/0/6；Driver=28/6/6；Sensitive=16；Synthetic=54/0；all invariants PASS。
+
+受测 source input count=92；sourceInputsSHA256=`38eca77447d881016bff3fd131957395f531965a23f747b1235f21f90a2c207f`；sourceGitCommit=`d8a588a4f5cd553bc24d145dd8ad2d6a48aad2f6`，sourceWorkingTreeDirty=true。按现有 CMake exact-byte 算法重算与 Debug / Release 注入指纹均一致；PROJECT-HANDOFF.md 不属于 source inputs。commit 前再次核对源码哈希，确保提交的是本轮受测实现。此 base SHA 不是随后生成的 completion SHA。
+
+完整命令、exit、时间戳、耗时与原始日志保存在 ignored `build-debug/phase12-final-seal/`：verification-summary、registration-audit、frozen-check、replay-comparison、source-fingerprint。未执行 live provider query、Validation Prepare、重新采集、GUI 复验或网络设置变更。正式封版结果以该目录 Phase12-Final-Seal-Report.md + remote main + phase-12-complete peeled commit 为准；本文遵守单 completion commit 约定。
+
+## 55.md 历史导航兼容自动回归
+
+**历史完整自动验证为 55.md（2026-10-03）：历史 UI 导航兼容修复后，全部指定 gates PASS。** 本文在 Debug / Release Phase10.ui、Phase12 targeted、双配置 Build / Full CTest / Replay 全部通过后更新。
+
+| 55.md 检查（按授权顺序） | exit | 实际结果 | 耗时 |
+| --- | ---: | --- | ---: |
+| Debug Phase10.ui | 0 | 1/1 PASS | 1.57s CTest real |
+| Release Phase10.ui | 0 | 1/1 PASS | 0.85s CTest real |
+| Debug Phase12 targeted | 0 | 26/26 PASS | 2.58s CTest real |
+| Debug Build | 0 | PASS | 21.177s 进程 |
+| Release Build | 0 | PASS | 5.024s 进程 |
+| Debug Full CTest | 0 | registered/executed/passed=248/248/248；failed=0 | 222.51s CTest real；222.595s 进程 |
+| Release Full CTest | 0 | registered/executed/passed=248/248/248；failed=0 | 207.51s CTest real；207.592s 进程 |
+| Debug ValidationReplay | 0 | N=40；Synthetic=54/0；all invariants PASS | 5.650s 进程 |
+| Release ValidationReplay | 0 | N=40；Synthetic=54/0；all invariants PASS | 4.750s 进程 |
+
+单项执行前分别构建对应 Phase10Test，再依次执行 Debug / Release `ctest --test-dir <build-dir> -R '^Phase10\.ui$' --output-on-failure`；随后 Phase12 targeted、双配置全量构建、`ctest --test-dir <build-dir> --output-on-failure --parallel 2`；仅在两个 full CTest PASS 后执行各配置离线 `ValidationReplay.exe validation <ignored-result-path>`。历史 222 个 test names 全部存在，无 disabled tests，总数仍为各 248。未进行 live OSV / EPSS / KEV、断网或网络设置操作；测试使用 offline / synthetic / fake network / frozen data。
+
+六个 Phase 11 frozen files exact bytes 均与开发前基线一致。两个 Replay 的核心结果一致：N=40；S1—S6=6/6/6/8/8/6；0.85 / 0.90 / 0.95 四类 Priority 分别为 [6,22,6,6] / [6,14,14,6] / [6,6,22,6]；三组 Support（Complete/Partial/Insufficient）均为 34/0/6，Driver（EPSS/KEV/None）均为 28/6/6；Sensitive=16，Synthetic=54/0，all invariants PASS。
+
+Debug / Release 完整 JSON 仅 runTimestampUtc 不同；相对 52.md 结果只有 runTimestampUtc、sourceInputsSHA256 不同；相对 Phase 11 封版结果只有 applicationVersion、runTimestampUtc、sourceGitCommit、sourceInputsSHA256 不同，逐样本 assessment、原技术解释及全部科学字段一致。55.md 历史 sourceInputsSHA256=`56f1a367a07bb7fc5f972a3c76057929291a6c7fd8d00df295c0c51b18cb8b53`，sourceGitCommit=`d8a588a4f5cd553bc24d145dd8ad2d6a48aad2f6`、dirty=true；表示基线之上的实际受测源码，不是 completion commit，本文不属于指纹输入。
+
+55.md 直接证据位于 ignored `build-debug/phase12-ui-compatibility-55/`：before.json（修改前 Git / 正式文件哈希）、navigation-only-check.json、各配置单项 / targeted / build / full / replay 日志、registration-check / frozen-check / replay-comparison / verification-summary、compatibility-report.md 及最终完整 v2 patch。54.md 失败停止证据和 52.md 历史 PASS 继续保留；新结果不覆盖历史失败。计时受并行负载影响，不作性能承诺；自动 Qt 截图不构成人工 GUI 验收。
+
+## 52.md 首次开发自动验收（历史）
+
+**历史 52.md Phase 12 开发验收（2026-10-03）：双配置 Build、CTest 与 frozen Replay 全部 PASS。** 下表为首次开发完成时的结果，55.md 修复后历史结果见上文；均不代表人工 GUI PASS。
+
+| 52.md 历史检查 | exit | 注册 / 执行 / 通过 / 失败 | 耗时 |
+| --- | ---: | --- | ---: |
+| Debug Build | 0 | 完整构建成功 | 111.646s 进程计时 |
+| Release Build | 0 | 完整构建成功 | 121.488s 进程计时 |
+| Debug Phase12 targeted CTest | 0 | 26 / 26 / 26 / 0 | 3.63s CTest real |
+| Debug Full CTest | 0 | 248 / 248 / 248 / 0 | 221.73s CTest real；221.901s 进程 |
+| Release Full CTest | 0 | 248 / 248 / 248 / 0 | 209.01s CTest real；209.189s 进程 |
+| Debug frozen Replay | 0 | N=40；Synthetic=54/0；invariants PASS | 5.847s 进程 |
+| Release frozen Replay | 0 | N=40；Synthetic=54/0；invariants PASS | 4.903s 进程 |
+
+命令为既有工具链的 `cmake --build build-debug --parallel 4`（Release 对应 build-release）、`ctest --test-dir build-debug --output-on-failure --parallel 2`，targeted 增加 `-R '^Phase12\.'`，Replay 为各配置 `ValidationReplay.exe validation <ignored-result-path>`。PATH 只在子进程补入原 Qt / MinGW 路径。全量注册审计确认历史 222 个名字全部保留、无禁用项；仅 Phase11.exportArtifact 的硬编码 0.12.0 断言改为当前 APPLICATION_VERSION，所有科学结果断言保留。计时受并行负载影响，不作性能承诺。
+
+Phase12 共 26 个注册项（下列每项统一带 `Phase12.` 前缀）：
+
+```text
+vocabulary exactThreshold forbiddenSemantics acquisition kevNotQueryable
+freshnessDrift statusFreshness cveJoin noCve missingAssociation multiCvePartial
+selectionOwnership initialSynchronization projectSwitch createDelete successfulApply
+overviewSummary largeSummary summaryError overviewNavigation settingsInfo validationVocabulary
+uiLifetime markupSafety structuralContract vulnerabilityPresentation
+```
+
+测试使用 QTemporaryDir、synthetic data、隔离路径和 fake network manager；未进行真实在线 OSV / EPSS / KEV 请求，未改网络连接状态、未运行在线准备工具或重采冻结输入。Overview 覆盖未选项目、创建 / 删除 / 切换、成功 Apply、metadata root 排除、Captured Empty、错误不冒充零及大摘要；呈现覆盖枚举穷尽、0.90 等号、source/freshness 独立、No-CVE、乱序 join、关联缺行、Multi-CVE Partial、两页面一致词汇、按钮与清空、对象生命周期、HTML 转义及小窗口自动截图。
+
+Phase 11 六文件 SHA256 均与开发前基线一致；新 Replay 与 51.md 封版 artifact 的全部科学字段（含逐样本 assessment、原解释字符串、排序、分布、敏感性与 synthetic 结果）全等。实际变化字段仅 applicationVersion、runTimestampUtc、sourceGitCommit、sourceInputsSHA256；sourceWorkingTreeDirty 同为 true。Debug / Release 新结果仅 runTimestampUtc 不同。N=40，阈值 0.85 / 0.90 / 0.95 的四类分布分别为 [6,22,6,6] / [6,14,14,6] / [6,6,22,6]，Sensitive=16、Synthetic=54/0。
+
+52.md 历史受测 sourceInputsSHA256=`46a531f1029f0d574f1aa6046650d4b216d5e7f9d56d948ae7722ff59ea376b6`；build-injected sourceGitCommit=`d8a588a4f5cd553bc24d145dd8ad2d6a48aad2f6`、dirty=true，表示该基线之上的当时未提交源码，并非新 completion commit。本文不属于源码指纹输入。52.md 直接证据在 ignored `build-debug/phase12-development/` 的 baseline / registration / frozen / replay comparison JSON、双配置构建 / CTest / Replay 日志；自动 UI 截图仅作布局检查证据。
+
+## Phase 11 封版的历史自动验收
+
+**历史 51.md Final Seal（2026-10-03）：Debug / Release build、全量 CTest 与 frozen Replay 全部 PASS；各注册 / 执行 / 通过 222 项，失败 0，无失败重试。** 下表仅记录该次执行；本轮 Phase 12 的新验证结果见上文，不覆盖或复用历史日志冒充新结果。
 
 | 最终检查 | exit | 实际结果 | 进程耗时 | 完成时间 UTC |
 | --- | ---: | --- | ---: | --- |
@@ -846,7 +974,7 @@ Debug / Release Replay 除 runTimestampUtc 外完整结果全等：N=40，S1—S
 | GUI smoke | PASS；真实程序隔离启动和关闭、项目与导航回归、只读组件与质量预览、正常 / 最小尺寸 / 超长字段、失败保留旧结果、10000 组件预览 / 500000 问题行及异步关闭检查通过 |
 | 最终维护性检查、git diff --check | PASS |
 
-Phase 10 封版时测试源码为 tests/Phase00SmokeTest.cpp 至 tests/Phase10Test.cpp；当前已增加 tests/Phase11Test.cpp。原 Phase 00—08 的 128 项注册用例保持，Phase 09 新增 30 项（含两项 Windows-specific atomic replacement 测试），加上 Phase 10 的 24 项，Windows 总计 182。原 epssCache 保留 Fresh/Stale × Available/NotScored 四种同路径连续覆盖，不以测试重试掩盖生产错误。Win32 no-delete-sharing handle 制造真实拒绝，目录通知确认失败临时文件清理后释放句柄，验证生产重试；持续占用覆盖三次失败、CacheIo、旧字节及合法快照不变，释放后独立正常写入成功。KEV 增加完整 catalog / entries / fetchedAt 回读断言。非 Windows 配置不注册这两项 Windows 专用测试：Phase 10 静态数量为 180，当前 Phase 11 CMake 静态数量为 220。最新各 222/222 与历史各 182/182 的实测结论均来自 Windows，不代表 Linux / macOS 已构建或验收。
+Phase 10 封版时测试源码为 tests/Phase00SmokeTest.cpp 至 tests/Phase10Test.cpp；当前已增加 tests/Phase11Test.cpp 与 tests/Phase12Test.cpp。原 Phase 00—08 的 128 项注册用例保持，Phase 09 新增 30 项（含两项 Windows-specific atomic replacement 测试），加上 Phase 10 的 24 项，Windows 总计 182。原 epssCache 保留 Fresh/Stale × Available/NotScored 四种同路径连续覆盖，不以测试重试掩盖生产错误。Win32 no-delete-sharing handle 制造真实拒绝，目录通知确认失败临时文件清理后释放句柄，验证生产重试；持续占用覆盖三次失败、CacheIo、旧字节及合法快照不变，释放后独立正常写入成功。KEV 增加完整 catalog / entries / fetchedAt 回读断言。非 Windows 配置不注册这两项 Windows 专用测试：Phase 10 / 11 历史静态数量为 180 / 220。最新各 248/248 与历史各 222/222、182/182 的实测结论均来自 Windows，不代表 Linux / macOS 已构建或验收。
 
 Phase07 使用 FakeNetwork / ControlledReply 离线覆盖错误、分页、token-only、重复 token、跨页去重、限额、取消及最小发送数据。缓存覆盖过期 / 未来时间戳、完整零结果、坏格式 / 键、原子写和清除边界；controller 覆盖状态分离、刷新失败保留历史、stale result、隐藏页切换与销毁。测试内以确定性线程池控制复现 read / parse / write 未结束时 cancel / clear 的边界，不给生产加入延迟或钩子。项目集成用真实 Preview / Apply 和 SQLite trigger 注入失败，验证回滚保留、重试成功及结果失效。100000 Components 表格与响应验证 HTTP=0；manualFixtures 仅生成公开包 / synthetic 文件于 ignored build 目录。普通 CTest 不访问公网；`liveSmoke` 不注册 CTest，且须显式按名字调用，历史 live 结果见第 11 节。
 
@@ -858,7 +986,7 @@ Phase08 使用纯值规则测试及离线 Network / Reply 验证 cache / live �
 
 Phase 10 自动测试覆盖 exact 24h boundary、未来时间戳 Ineligible、stale exclusion、KEV precedence、最大 EPSS / tie-break、Partial / NotScored、context isolation、queued timer、refresh / cancel overlap、late callback 的实际 UTC、失效与销毁、UI renderer 和规模。未来时间戳、精确边界与竞态覆盖属于 AUTOMATED ONLY，不记录为人工 GUI PASS。
 
-Phase 10 最终封版日志：`build-debug/phase10-final-seal-20260928-091102/`，含 Debug / Release build / full CTest 与验证元数据。Phase 09 历史封版日志为 `build-debug/phase42-final-seal-20260927-161208/`，缓存压力日志为 `build-debug/phase41-cache-reliability-20260927-160435/`；200/200 stress 是历史 41.md 结果，46.md、51.md 封版与本次文档维护均未重跑该压力循环。上述目录均 ignored，不要求克隆后存在；历史 PASS 不证明后续修改通过。
+Phase 10 最终封版日志：`build-debug/phase10-final-seal-20260928-091102/`，含 Debug / Release build / full CTest 与验证元数据。Phase 09 历史封版日志为 `build-debug/phase42-final-seal-20260927-161208/`，缓存压力日志为 `build-debug/phase41-cache-reliability-20260927-160435/`；200/200 stress 是历史 41.md 结果，46.md、51.md 封版以及 52.md 和本轮 58.md 均未重跑该压力循环。上述目录均 ignored，不要求克隆后存在；历史 PASS 不证明后续修改通过。
 
 回归命令：`ctest --test-dir build-debug --output-on-failure` 和 `ctest --test-dir build-release --output-on-failure`，使用冻结 CMake 目录中的 ctest.exe。CTest 为子进程设置 Qt / MinGW DLL 搜索路径，不修改系统 PATH。
 
@@ -880,6 +1008,20 @@ if ($LASTEXITCODE -ne 0) { throw 'Release tests failed' }
 
 # 18. 当前人工验收状态
 
+## Phase 12 — PASS WITH NON-BLOCKING UNVERIFIED ITEMS
+
+58.md 提供最终验收收口及执行来源：Total=27；PASS=26；Confirmed FAIL=0；BLOCKED=0；NOT VERIFIED=1。Test 1–19、21–27 PASS；Test 20 为 NOT VERIFIED / NON-BLOCKING。57.md 已补齐公开完整 KEV 目录获取 / 本地 CVE 匹配 / 不逐 CVE 向 CISA 查询的说明，以及所有 Priority 结果的通用 Below 边界；本轮不重做 GUI 验收。
+
+| Execution provenance | Tests | 最终结果 |
+| --- | --- | --- |
+| User-operated manual verification | 16、19 | PASS |
+| User-operated manual verification | 20 | NOT VERIFIED / NON-BLOCKING |
+| Codex GPT-6 Astra Ultra operated / verified | 1–15、17–18、21–27 | PASS |
+
+Test 20：用户本人检查现有 Phase 10 A–G synthetic fixtures 后，Dependency Root 均无法提供正向路径前置条件（实际 Root Missing）。Reason: existing A–G synthetic fixtures do not provide a valid positive resolved dependency-path manual scenario。已验证 **Dependency Path ≠ Runtime Reachability**；未验证 **positive ResolvedPathFound GUI scenario**。这不是产品功能 FAIL、不是 BLOCKED，也不阻塞 Final Seal；不得记录为 PASS。没有为此修改 fixture、SBOM、database、dependency graph、产品代码或测试环境。
+
+Second ChatGPT Source-level Code Review：PASS；Blocker=0、Must Fix=0、Should Fix=0、Confirmed Functional FAIL=0、Frozen Design Deviation=0、Scope Creep=0。First Review 的 CHANGES REQUIRED 与五项 fixes implemented 历史保留在第 16.4 节。不得写“用户完成全部 27 项”“Codex 完成全部 27 项”或“27/27 PASS”。Phase 11 的用户 Test 17–19 归属仅适用于下方历史阶段。
+
 ## Phase 11 — Acceptance Closure PASS
 
 **PHASE 11 GUI / ACCEPTANCE TESTS — PASS：Test 1–20 共 20/20 PASS；Confirmed FAIL=0、BLOCKED=0、NOT VERIFIED=0。** Execution provenance is mixed，不将所有项目归为用户操作，也不将用户操作归为 Codex。
@@ -893,7 +1035,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Release tests failed' }
 
 51.md 将 Test 17 归属 Codex 的文字已由用户于 2026-10-03 纠正；最终记录以该直接澄清为准。Do NOT classify all 20 tests as user-operated. 不写“USER-CONFIRMED 20/20”，也不写“Codex 执行 Test 17”。
 
-50.md 原始报告保留当时的真实状态：Test 17 USER-RESERVED，Test 18/19 NOT VERIFIED；51.md 及用户补充确认使三项闭环，不回改历史测试记录。Codex GUI 证据位于 ignored `build-debug/phase11-test-execution-50/`。51.md Final Seal 沿用上述验收证据，未重做 GUI、改变网络状态或重新采集 provider 数据；本次文档维护也未新增 GUI 验收结论。
+50.md 原始报告保留当时的真实状态：Test 17 USER-RESERVED，Test 18/19 NOT VERIFIED；51.md 及用户补充确认使三项闭环，不回改历史测试记录。Codex GUI 证据位于 ignored `build-debug/phase11-test-execution-50/`。51.md Final Seal 沿用上述验收证据，未重做 GUI、改变网络状态或重新采集 provider 数据；后续文档维护和 52.md 当轮也未新增 Phase 11 人工 GUI 验收结论。
 
 第二次 ChatGPT 独立 Source-level Code Review PASS 与零遗留项见第 16.2 节。人工入口仍为 ignored `build-debug/phase11-manual.cmd`，使用独立 `phase11-manual-data`；既有 Phase00—10 验收事实继续保留如下。
 
@@ -1011,9 +1153,10 @@ future timestamp Ineligible、queued timer、refresh / cancel / destruction race
 
 # 19. 当前重要技术决策
 
-- **唯一有效长期方向**为第 9 节 Foundation → Vulnerability → Risk → Validation / Presentation；Foundation、Vulnerability / Risk MVP 和 Phase 11 验证实验已完成，下一步为待授权的 Presentation 需求与设计，不无限扩大基础设施。旧 Phase 07—17 安排只属 Historical / Superseded Plan。
+- **唯一有效长期方向**为第 9 节 Foundation → Vulnerability → Risk → Validation / Presentation。Phase 12 实现、首次审查修复、第二次 Code Review PASS 与 GUI 验收收口已完成；58.md 只授权 Final Seal，不引入新业务能力。下一阶段须先授权 REQUIREMENTS / DESIGN；旧 Phase 07—17 安排仍属 Historical / Superseded Plan。
 - **大方向冻结 + 单 Phase 逐步冻结。** 长期冻结四层方向，未来数据模型、schema、repository、provider、API、service、UI、scoring formula 仅在对应 Phase 开始前正式设计和冻结。这样控制本科毕设复杂度、避免过度设计，根据真实实现结果调整后续方案，防止下一阶段建立在错误假设上，并降低 Codex 长上下文开发的错误假设风险。
-- 不得因为路线中未来存在功能，就提前创建对应 database table、domain model、repository、service / provider framework、UI 或评分公式。Phase 11 按 47.md—51.md 完成共享 Rules v1 实验、审查与验收闭环及封版；下一业务方向仅为另行授权后的 Presentation 需求与设计，不扩大生产风险模型。
+- 不得因为路线中未来存在功能，就提前创建对应 database table、domain model、repository、service / provider framework、UI 或评分公式。Phase 11 按 47.md—51.md 完成共享 Rules v1 实验、审查与验收闭环及封版；Phase 12 呈现层只表达已有事实，不扩大生产风险模型。
+- **Phase 12 呈现契约：** ProjectPage 保持 Current Project 唯一 UI 权威，Overview 只做 observer，初始连接后显式同步；summary 以 COUNT / EXISTS 读取已存在状态，不隐式分析。Priority / Support / Why / Driver / 当前 freshness 来自 Assessment，provider facts 来自 Profile；No-CVE 正常不可关联与合法 CVE 关联缺行严格区分，exact CVE + provider join，不按数组位置或快照 freshness fallback。只读生产规则元数据和生态列表复用领域来源，详见第 16.3 节。
 - Applicability 是 Risk 前置门控；仅 Published Affected 形成 Finding。Local NotAffected 在当前 OSV package-version 查询来源下经 Provider Consistency Gate 转为 Unknown / ProviderEvidenceConflict，Unknown 不能输出确定 Risk。Phase 10 Priority 与 Decision Evidence Support 分离，Support 不等于 predictive confidence；Quality 不直接增加风险，当前 Quality Unavailable 不降低 Support。Rules v1 与 0.90 percentile research threshold 已冻结，但完整风险模型、权重、分数映射不在本阶段范围。
 - 工业工具比较与论文声明遵循第 8 节：承认成熟工具的覆盖、成熟度与生态优势，不以替代为目标；将候选工作称为主要工作 / 特色设计，经验证后再作有证据范围的结论，不声称已有创新算法或普遍领先。
 - **C++20 + Qt 是软件工程技术选型**，不是因为 C++ 天然比 Python 更适合漏洞分析。Qt 当前统一提供 Desktop GUI、JSON、SQLite、Concurrent 和本地处理，已支撑 SBOM Parse → Persistence → Background Analysis → GUI Presentation；Phase 07 已正式接入 Network 查询 OSV。Python 等生态在安全工具和快速原型方面更成熟。
@@ -1126,12 +1269,15 @@ ChatGPT 已真实连接 Read-Only MCP。标准业务 Phase 可在开始前核验
 
 # 20. 当前待定事项
 
-- **Phase 11 审查、验收及封版均已闭环，无待执行的封版步骤。** 唯一 completion commit、main push 和 annotated tag 已完成；准确执行归属见第 18 节，不可变定位见第 5.1 节。下一阶段的需求与设计仍待用户另行授权。
+- **Phase 12 COMPLETE / READY FOR FINAL SEAL。** 第二次审查 PASS；GUI 为 PASS WITH NON-BLOCKING UNVERIFIED ITEMS。58.md 授权在全部新验证通过后创建唯一 completion commit、普通 push main 与 annotated phase-12-complete。最终状态查 Final Seal Report + 实时 Git；随后只等待下一阶段需求与设计。
+- **Phase 11 审查、验收及封版均已闭环，无待执行的 Phase 11 封版步骤。** 准确执行归属见第 18 节，不可变定位见第 5.1 节。
 - 40 个真实样本为分层目的性验证集，真实 multi-CVE Finding=0、Partial=0；multi-CVE / max / Partial / stale / future / 24h 边界由 54 个独立合成用例覆盖，不夸大真实数据覆盖。
 - 本轮不启动其他 Phase。现有缺失能力不自动构成后续开发授权。
 
 # 21. 当前已知问题 / 风险
 
+- **Phase 12：Confirmed Functional FAIL=0、Blocker=0。** 第二次独立 Code Review PASS；GUI 为 26 PASS / 0 Confirmed FAIL / 0 BLOCKED / 1 NOT VERIFIED。唯一限制为 Test 20 的 positive ResolvedPathFound GUI scenario：existing A–G synthetic fixtures do not provide a valid positive resolved dependency-path manual scenario，实际 Root Missing；状态 NOT VERIFIED / NON-BLOCKING，不是已知产品缺陷。自动测试覆盖 dependency states，人工已确认 Dependency Path ≠ Runtime Reachability 边界，不能扩大为整个 Dependency Path 功能未验证。
+- Phase 12 只新增语言映射和 UI 表达，不改善冻结数据的代表性或扩大 provider coverage。已通过 exact-byte 与 Replay 全字段比较确认 Phase 11 科学结果不变；后续 Review 若需变更核心规则、schema 或冻结输入，应停止并重新确认阶段范围，不能作为呈现修复悄悄引入。
 - **Phase 11 第二次独立 Code Review PASS，GUI / Acceptance 20/20 PASS，Confirmed Functional FAIL=0。** 首次审查修复已闭环；执行来源混合，不能称为用户操作全部 20 项。
 - v1 仅 PyPI/npm、matching affected.versions 的确定性 exact version；不从 ranges / 注册表 / 自然语言补版本。正式冻结输入可离线重放，后续在线获取不能保证字节相同，也不保证同样分层或 N。
 - 全量公开审计仍保留约79.8MB Manifest、76.9MB Index，供Full Audit CLI、准备验证与测试使用；正式GUI仅嵌入约1.66MB Dataset及sidecar。Runtime不重新验证完整选择历史，此责任保留在Full Audit。worker不访问UI/DB/网络，关闭时已启动工作仍需结束；工程观察见第16.2节，不作性能承诺。
@@ -1149,9 +1295,9 @@ ChatGPT 已真实连接 Read-Only MCP。标准业务 Phase 可在开始前核验
 
 # 22. 下一步
 
-**PHASE 11 COMPLETE / FINAL SEAL PASS。** completion commit 与 annotated tag 已推送并核验；固定标识、文档维护与 main 的关系见第 5.1 节。
+**PHASE 12 COMPLETE / READY FOR FINAL SEAL。** App 0.13.0 / schema 4 / Rules v1 / 0.90；第二次源码审查 PASS，GUI / Comprehension Acceptance 为 PASS WITH NON-BLOCKING UNVERIFIED ITEMS。最终封版证据见第 5 / 17 节及 Final Seal Report。
 
-**READY FOR NEXT PHASE REQUIREMENTS / DESIGN。** 下一业务方向：Presentation 需求与技术设计，待用户另行授权；本轮不定义 Phase 12 Frozen Design、不创建模块、不开始开发。
+按 58.md 顺序完成所有新验证及审计后，仅创建一个 completion commit，再普通推送 main 和 annotated phase-12-complete；commit 后不修改本文补 SHA。封版后 **READY FOR NEXT PHASE REQUIREMENTS / DESIGN**，等待用户下一阶段需求与设计授权；不开始 Phase 13。Test 20 保持 NOT VERIFIED / NON-BLOCKING，不为其增加 fixture 或修改环境。
 
 **Auxiliary 已收口：** Read-Only MCP 的真实 ChatGPT 连接、调用及重连验收已 PASS，按需手动运行；MCP / Tunnel 不可用不得阻塞产品开发，可继续使用 GitHub + 最新 PROJECT-HANDOFF + Codex。
 
@@ -1164,7 +1310,7 @@ ChatGPT 已真实连接 Read-Only MCP。标准业务 Phase 可在开始前核验
 5. 实现后完成适当构建、测试及 19.6 的 diff／维护性检查，清楚记录结果与限制；阶段通过必须包含用户要求的人工验收。
 6. 未经允许不得 `reset --hard`、`clean -fd`、force push、rebase、删除 branch / tag、删除用户文件或重写 Git 历史；发现已有错误 remote 先报告，不自行覆盖。身份配置优先仓库级，冻结环境不无故变更。
 7. 完成阶段后按 19.6 就地更新本文，不另造动态管理文档，不追加重复状态或全过程日志。
-8. 长期工程规则持续生效；Phase 11 已按 51.md 完成封版，以 `phase-11-complete^{commit}` 固定定位 completion commit。Phase 00—11 tags 均不移动；后续授权文档维护提交可推进 main，不重做 completion commit 或移动 tag。固定 SHA / tag object 见第 5 节，接手时重新核验实时 Git / remote 状态。辅助 MCP 仍独立于产品，不创建 Phase 07.5 业务 tag。
+8. 长期工程规则持续生效；Phase 11 以 `phase-11-complete^{commit}` 固定定位。Phase 00—11 tags 不得移动。Phase 12 按 58.md 采用单 completion commit 约定，本文 commit 前状态为 COMPLETE / READY FOR FINAL SEAL；最终以 Final Seal Report、remote main 与 `phase-12-complete^{commit}` 核验。不要为回填最终 SHA 再改本文或新建 commit。接手时重新读取真实 Git / remote，保留 ignored evidence；辅助 MCP 独立于产品。
 9. 任何 git add / commit / push 前均须按 19.7 审查候选／staged 文件及 privacy / sensitive information，push 同时检查待推送 commits；不得将真实 runtime database、SBOM、日志、用户数据、私有配置、API Key、token 或 credential 加入 Git。`12.md` / `13.md` 的隐私规则及 `.gitignore` 维护已独立提交并推送，其规则继续适用于本次及后续封版。
-10. 当前四层路线是唯一有效长期方向；旧 Phase 07—17 安排只属 Historical / Superseded Plan。Phase 00—11 已封版；Phase 11 已完成实现、首次审查修复、第二次独立 Review、混合来源验收及最终回归；固定定位及核验按第 5.1 节，不自动进入其他 Phase。
+10. 当前四层路线是唯一有效长期方向；旧 Phase 07—17 安排仅属 Historical / Superseded Plan。Phase 12 第二次 Review PASS、GUI 收口为 PASS WITH NON-BLOCKING UNVERIFIED ITEMS；保留 Test 20 NOT VERIFIED / NON-BLOCKING。完成 58.md Final Seal 后只等待下一阶段 REQUIREMENTS / DESIGN，不自动进入其他 Phase。
 11. 遵循“大方向冻结 + 单 Phase 逐步冻结”；未来详细 Phase 设计须在该阶段开始前、根据已完成成果逐步冻结，不提前创建未来表、领域模型、Repository、Service / Provider 框架、UI 或评分公式。Candidate 不等于 Affected Finding，Applicability gate、Priority / Decision Evidence Support 分离和 Quality 证据原则持续生效；Phase 10 Rules v1 已冻结，不能扩大为完整风险模型或预测置信度。

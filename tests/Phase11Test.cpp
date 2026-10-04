@@ -772,7 +772,7 @@ void Phase11Test::exportArtifact()
         QJsonDocument::fromJson(readFile(tmp.filePath("phase11-validation-result.json"))).object();
     QVERIFY(out["runTimestampUtc"].isString());
     QCOMPARE(out["sourceGitCommit"].toString().size(), 40);
-    QCOMPARE(out["applicationVersion"].toString(), QString("0.12.0"));
+    QCOMPARE(out["applicationVersion"].toString(), QStringLiteral(APPLICATION_VERSION));
     QCOMPARE(out["schemaVersion"].toInt(), 4);
 }
 void Phase11Test::ui()

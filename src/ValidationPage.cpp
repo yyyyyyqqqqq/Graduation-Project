@@ -1,4 +1,7 @@
 #include "ValidationPage.h"
+#include "RiskPresentationView.h"
+#include "PresentationText.h"
+#include <QTabWidget>
 #include <QComboBox>
 #include <QFutureWatcher>
 #include <QLabel>
@@ -41,13 +44,19 @@ ValidationPage::ValidationPage(QWidget *parent, const QString &directory)
     detailLayout->addWidget(m_samples);
     m_threshold = new QComboBox(bottom);
     m_threshold->setObjectName("validationThreshold");
-    m_threshold->addItems({"0.85 — Experimental", "0.90 — Production default", "0.95 — Experimental"});
+    m_threshold->addItems({"0.85 — Experimental",
+        QString("%1 — Production default").arg(ProductionEpssPercentileThreshold, 0, 'f', 2), "0.95 — Experimental"});
     m_threshold->setCurrentIndex(1);
     detailLayout->addWidget(m_threshold);
-    m_detail = new QTextBrowser(bottom);
+    auto* details = new QTabWidget(bottom);
+    m_presentation = new RiskPresentationView(details);
+    m_presentation->setObjectName("validationPresentation");
+    details->addTab(m_presentation, QStringLiteral("结果解释"));
+    m_detail = new QTextBrowser(details);
     m_detail->setObjectName("validationDetail");
     m_detail->setOpenExternalLinks(false);
-    detailLayout->addWidget(m_detail, 1);
+    details->addTab(m_detail, QStringLiteral("技术详情 / Technical Details"));
+    detailLayout->addWidget(details, 1);
     m_samples->setEnabled(false);
     m_threshold->setEnabled(false);
     split->setSizes({300, 300});
@@ -102,6 +111,7 @@ void ValidationPage::showSample()
     const auto &a = m_threshold->currentIndex() == 0   ? m_experiment.lower[i]
                     : m_threshold->currentIndex() == 2 ? m_experiment.upper[i]
                                                        : m_experiment.baseline[i];
+    m_presentation->showResult(s.profile, a);
     QString text =
         QStringLiteral("含义：当前证据下的利用信号优先级；不是综合风险评分、预测置信度或安全结论。\n缺失值不"
                        "等于零；KEV NotListed 不证明不存在利用；依赖路径不证明运行时可达。\n\n");
@@ -111,5 +121,9 @@ void ValidationPage::showSample()
             "\nCluster IDs (deduplication only): " + s.clusterIds.join(", ");
     text += "\nPrimary stratum: " + s.stratum + "\n\n" + priorityExplanation(a) + "\n\n" +
             RiskEvidence::profileText(s.profile);
+    for (const auto& row : s.profile.epss)
+        text += "\nEPSS " + row.cve + " · " + PresentationText::profileSnapshotFreshnessLabel(row.freshness);
+    for (const auto& row : s.profile.kev)
+        text += "\nKEV " + row.cve + " · " + PresentationText::profileSnapshotFreshnessLabel(row.freshness);
     m_detail->setPlainText(text);
 }

@@ -12,7 +12,8 @@ class MainWindow final : public QMainWindow
 public:
     // Takes ownership of the supplied project page through QStackedWidget.
     explicit MainWindow(QWidget* projectPage, QWidget* parent = nullptr,
-                        const QString& initialPage = QStringLiteral("overview"), QWidget* validationPage = nullptr);
+                        const QString& initialPage = QStringLiteral("overview"), QWidget* validationPage = nullptr,
+                        QWidget* overviewPage = nullptr);
     QString currentPageId() const;
     bool selectPage(const QString& pageId);
 

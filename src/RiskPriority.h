@@ -2,6 +2,9 @@
 
 #include "RiskEvidence.h"
 
+inline constexpr int ProductionRulesVersion = 1;
+inline constexpr double ProductionEpssPercentileThreshold = 0.90;
+
 enum class PriorityClass {
     KnownExploited,
     AboveResearchPercentileThreshold,
@@ -38,9 +41,9 @@ struct RiskPriorityAssessment {
     DecisionEvidenceSupport support = DecisionEvidenceSupport::Insufficient;
     PriorityDriverKind driverKind = PriorityDriverKind::None;
     QString driverCve;
-    int rulesVersion = 1;
+    int rulesVersion = ProductionRulesVersion;
     // Research Default for relative percentile; neither probability nor an official FIRST threshold.
-    double epssPercentileThreshold = 0.90;
+    double epssPercentileThreshold = ProductionEpssPercentileThreshold;
     QDateTime evaluatedAt;
     std::optional<QDateTime> nextFreshnessExpiryUtc;
     EvidenceAcquisition driverAcquisition = EvidenceAcquisition::None;
@@ -56,7 +59,7 @@ struct RiskPriorityAssessment {
     bool operator==(const RiskPriorityAssessment&) const = default;
 };
 
-struct ExperimentalPriorityOptions { double epssPercentileThreshold = 0.90; };
+struct ExperimentalPriorityOptions { double epssPercentileThreshold = ProductionEpssPercentileThreshold; };
 
 // Pure Core/value interpretation. The caller owns the clock and the profile lifecycle.
 class RiskPriorityEvaluator final {

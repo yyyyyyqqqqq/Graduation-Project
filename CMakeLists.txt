@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 
-project(SupplyChainRiskAssessment VERSION 0.12.0 LANGUAGES CXX)
+project(SupplyChainRiskAssessment VERSION 0.13.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -41,6 +41,16 @@ target_include_directories(VulnerabilityCore PUBLIC src)
 target_link_libraries(VulnerabilityCore PUBLIC Qt6::Core)
 add_library(RiskEvidenceCore STATIC src/RiskEvidence.h src/RiskEvidence.cpp src/RiskPriority.h src/RiskPriority.cpp)
 target_link_libraries(RiskEvidenceCore PUBLIC VulnerabilityCore DependencyAnalysis)
+add_library(PresentationCore STATIC src/PresentationText.h src/PresentationText.cpp)
+target_link_libraries(PresentationCore PUBLIC RiskEvidenceCore Qt6::Core)
+# Every mapped enum must remain exhaustive when a domain enum grows.
+if(MSVC)
+    target_compile_options(PresentationCore PRIVATE /we4061 /we4062)
+else()
+    target_compile_options(PresentationCore PRIVATE -Werror=switch-enum -Werror=switch)
+endif()
+add_library(PresentationWidgets STATIC src/RiskPresentationView.h src/RiskPresentationView.cpp)
+target_link_libraries(PresentationWidgets PUBLIC PresentationCore Qt6::Widgets)
 add_library(ValidationCore STATIC src/ValidationDataset.h src/ValidationDataset.cpp
     src/ValidationSelection.h src/ValidationSelection.cpp
     src/ValidationExperiment.h src/ValidationExperiment.cpp src/ValidationSynthetic.cpp)
@@ -71,7 +81,7 @@ string(SHA256 validation_source_hash "${validation_source_fingerprints}")
 configure_file(src/ValidationBuildInfo.h.in generated/ValidationBuildInfo.h @ONLY)
 target_include_directories(ValidationCore PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
 add_library(ValidationWidgets STATIC src/ValidationPage.h src/ValidationPage.cpp)
-target_link_libraries(ValidationWidgets PUBLIC ValidationCore Qt6::Widgets Qt6::Concurrent)
+target_link_libraries(ValidationWidgets PUBLIC ValidationCore PresentationWidgets Qt6::Widgets Qt6::Concurrent)
 add_executable(ValidationReplay tools/ValidationReplay.cpp)
 target_link_libraries(ValidationReplay PRIVATE ValidationCore)
 
@@ -100,13 +110,14 @@ add_executable(SupplyChainRiskAssessment WIN32
     src/main.cpp
     src/MainWindow.h
     src/MainWindow.cpp
+    src/OverviewPage.h src/OverviewPage.cpp
     src/ProjectPage.h src/ProjectPage.cpp
     src/DependencyPage.h src/DependencyPage.cpp
     src/VulnerabilityPage.h src/VulnerabilityPage.cpp
     src/SbomImportDialog.h src/SbomImportDialog.cpp
 )
 target_link_libraries(SupplyChainRiskAssessment PRIVATE Qt6::Widgets Qt6::Concurrent AppFoundation SbomParsing DependencyAnalysis OsvMatching)
-target_link_libraries(SupplyChainRiskAssessment PRIVATE ValidationWidgets)
+target_link_libraries(SupplyChainRiskAssessment PRIVATE ValidationWidgets PresentationWidgets)
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/validation/phase11-validation-dataset-v1.json")
     add_validation_resources(SupplyChainRiskAssessment FALSE)
 endif()
@@ -220,6 +231,22 @@ if(BUILD_TESTING)
         add_validation_resources(Phase11Test TRUE)
     endif()
 
+    add_executable(Phase12Test tests/Phase12Test.cpp
+        src/MainWindow.h src/MainWindow.cpp src/OverviewPage.h src/OverviewPage.cpp
+        src/ProjectPage.h src/ProjectPage.cpp src/DependencyPage.h src/DependencyPage.cpp
+        src/VulnerabilityPage.h src/VulnerabilityPage.cpp src/SbomImportDialog.h src/SbomImportDialog.cpp)
+    target_link_libraries(Phase12Test PRIVATE ValidationWidgets Qt6::Test OsvMatching SbomParsing)
+    add_validation_resources(Phase12Test FALSE)
+    target_compile_definitions(Phase12Test PRIVATE PHASE12_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
+    foreach(target IN ITEMS Phase00SmokeTest Phase01Test Phase02Test Phase03Test Phase05Test Phase06Test Phase11Test Phase12Test)
+        target_link_libraries(${target} PRIVATE AppFoundation PresentationCore)
+        target_compile_definitions(${target} PRIVATE APPLICATION_VERSION="${PROJECT_VERSION}")
+    endforeach()
+    foreach(target IN ITEMS Phase02Test Phase03Test Phase05Test Phase06Test Phase07Test Phase08Test Phase09Test Phase10Test Phase12Test)
+        target_link_libraries(${target} PRIVATE PresentationWidgets)
+    endforeach()
+
     function(add_qt_test phase target test_case)
         # File output retains Qt Test diagnostics even when Windows stdout is unavailable.
         add_test(NAME ${phase}.${test_case} COMMAND ${target} ${test_case}
@@ -235,6 +262,13 @@ if(BUILD_TESTING)
             )
         endif()
     endfunction()
+    foreach(test_case IN ITEMS vocabulary exactThreshold forbiddenSemantics acquisition kevNotQueryable
+            freshnessDrift statusFreshness cveJoin noCve missingAssociation multiCvePartial
+            selectionOwnership initialSynchronization projectSwitch createDelete successfulApply
+            overviewSummary largeSummary summaryError overviewNavigation settingsInfo validationVocabulary
+            uiLifetime markupSafety structuralContract vulnerabilityPresentation)
+        add_qt_test(Phase12 Phase12Test ${test_case})
+    endforeach()
     foreach(test_case IN ITEMS sharedEvaluator synthetic explanation profileCodec contractFailures
             hashContract timeContract provenanceContract duplicateSamples coverageGate aliasShared aliasPrimary
             aliasTransitive aliasPackageScope aliasRelations aliasOrder exactVersions productionVersionValidity frozenIdentityCompatibility representativeDeterminism

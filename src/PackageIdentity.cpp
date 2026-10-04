@@ -3,6 +3,8 @@
 #include <QStringConverter>
 
 namespace {
+const QString PypiEcosystem = QStringLiteral("PyPI");
+const QString NpmEcosystem = QStringLiteral("npm");
 bool validText(const QString& value)
 {
     if (!value.isValidUtf16()) return false;
@@ -38,6 +40,11 @@ bool decode(const QString& input, QString& output)
 }
 }
 
+QStringList PackageIdentity::supportedEcosystems()
+{
+    return {PypiEcosystem, NpmEcosystem};
+}
+
 std::optional<QueryIdentity> PackageIdentity::query() const
 {
     if (state!=IdentityState::Resolved) return {};
@@ -69,7 +76,7 @@ PackageIdentity PackageIdentity::resolve(const Component& c)
     static const QRegularExpression typePattern(QStringLiteral("\\A[a-z][a-z0-9.+-]*\\z"));
     if (!typePattern.match(type).hasMatch()) return fail(IdentityReason::MalformedPurl);
     if (type!="pypi" && type!="npm") return fail(IdentityReason::UnsupportedEcosystem);
-    r.ecosystem=type=="pypi" ? QStringLiteral("PyPI") : QStringLiteral("npm");
+    r.ecosystem=type=="pypi" ? PypiEcosystem : NpmEcosystem;
     auto path=p.mid(slash+1);
     QString purlVersion;
     const auto at=path.indexOf(u'@');

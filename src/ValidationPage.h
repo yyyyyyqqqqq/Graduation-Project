@@ -3,6 +3,7 @@
 #include <QWidget>
 class QTextBrowser;
 class QComboBox;
+class RiskPresentationView;
 class ValidationPage final : public QWidget
 {
     Q_OBJECT
@@ -15,6 +16,7 @@ class ValidationPage final : public QWidget
     QString m_directory;
     bool m_started = false;
     QTextBrowser *m_summary, *m_detail;
+    RiskPresentationView* m_presentation;
     QComboBox *m_samples, *m_threshold;
     std::optional<Validation::Dataset> m_dataset;
     Validation::Experiment m_experiment;

@@ -169,6 +169,8 @@ QString ProjectPage::selectedId() const
     return item ? item->data(Qt::UserRole).toString() : QString();
 }
 
+QString ProjectPage::currentProjectId() const { return selectedId(); }
+
 void ProjectPage::reload(const QString& preferredId)
 {
     QList<Project> projects;
@@ -196,6 +198,11 @@ void ProjectPage::reload(const QString& preferredId)
 
 void ProjectPage::showSelection()
 {
+    const auto selection = currentProjectId();
+    if (selection != m_lastNotifiedProjectId) {
+        m_lastNotifiedProjectId = selection;
+        emit currentProjectChanged(selection);
+    }
     m_details->clear();
     m_tabs->hide();
     m_dependencies->setProject({});
@@ -258,7 +265,10 @@ void ProjectPage::showSbomImport()
     // Window modality keeps this project's context fixed until its preview is closed.
     auto* dialog = new SbomImportDialog(project.id, project.name, m_components.databaseFilePath(), m_logger, this);
     connect(dialog, &SbomImportDialog::applyFinished, this, [this](bool success) {
-        if (success) showSelection();
+        if (success) {
+            showSelection();
+            emit currentProjectStateChanged(currentProjectId());
+        }
     });
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->open();

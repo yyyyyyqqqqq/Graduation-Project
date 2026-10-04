@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Component.h"
+#include <QStringList>
 #include <optional>
 
 struct QueryIdentity
@@ -26,6 +27,7 @@ struct PackageIdentity
     bool nameNormalized = false;
     std::optional<QueryIdentity> query() const;
     static PackageIdentity resolve(const Component& component);
+    static QStringList supportedEcosystems();
     // Shared with affected-package comparison; nullopt means outside the frozen PyPI subset.
     static std::optional<QString> canonicalPypiName(const QString& name);
     static constexpr qsizetype MaxPurlLength = 4096;

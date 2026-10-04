@@ -1,15 +1,18 @@
 #include "MainWindow.h"
+#include "AppDatabase.h"
+#include "RiskPriority.h"
 
 #include <QButtonGroup>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QStackedWidget>
 #include <QStatusBar>
 #include <QVBoxLayout>
 #include <QWidget>
 
-MainWindow::MainWindow(QWidget* projectPage, QWidget* parent, const QString& initialPage, QWidget* validationPage)
+MainWindow::MainWindow(QWidget* projectPage, QWidget* parent, const QString& initialPage, QWidget* validationPage, QWidget* overviewPage)
     : QMainWindow(parent)
 {
     setWindowTitle(QStringLiteral("软件供应链漏洞风险评估系统"));
@@ -46,14 +49,18 @@ MainWindow::MainWindow(QWidget* projectPage, QWidget* parent, const QString& ini
         navigationLayout->addWidget(button);
     };
     const auto addTextPage = [&](const QString& id, const QString& heading, const QString& description) {
-        auto* page = new QWidget(m_pages);
-        auto* pageLayout = new QVBoxLayout(page);
+        auto* page = new QScrollArea(m_pages);
+        page->setWidgetResizable(true);
+        page->setFrameShape(QFrame::NoFrame);
+        auto* textContent = new QWidget;
+        page->setWidget(textContent);
+        auto* pageLayout = new QVBoxLayout(textContent);
         pageLayout->setContentsMargins(32, 32, 32, 32);
         pageLayout->setSpacing(20);
-        auto* title = new QLabel(heading, page);
+        auto* title = new QLabel(heading, textContent);
         title->setObjectName(QStringLiteral("pageTitle"));
         title->setWordWrap(true);
-        auto* body = new QLabel(description, page);
+        auto* body = new QLabel(description, textContent);
         body->setWordWrap(true);
         body->setTextFormat(Qt::PlainText);
         body->setTextInteractionFlags(Qt::TextSelectableByMouse);
@@ -62,17 +69,20 @@ MainWindow::MainWindow(QWidget* projectPage, QWidget* parent, const QString& ini
         pageLayout->addStretch();
         addPage(page, id, heading);
     };
-    addTextPage(QStringLiteral("overview"), QStringLiteral("概览"),
-            QStringLiteral("软件供应链漏洞风险评估系统\n\n欢迎使用应用工作台。\n\n"
-                           "当前已提供项目创建、查看与删除，以及 CycloneDX SBOM 预览、质量诊断、组件与依赖持久化、依赖关系分析、PyPI/npm 组件身份、OSV 漏洞候选查询及本地版本适用性解释与 Finding，以及 Severity、EPSS、KEV 与依赖上下文证据。\n\n"
-                           "已支持 Rules v1 利用信号优先级与决策证据支持度；它是利用信号子模型，不是综合业务风险模型。"));
+    if (overviewPage) addPage(overviewPage, QStringLiteral("overview"), QStringLiteral("概览"));
+    else addTextPage(QStringLiteral("overview"), QStringLiteral("概览"),
+                    QStringLiteral("当前未选择项目\n请进入“项目”页面选择或创建项目。"));
     addPage(projectPage, QStringLiteral("projects"), QStringLiteral("项目"));
     if (validationPage) addPage(validationPage, QStringLiteral("validation"), QStringLiteral("方法验证"));
     addTextPage(QStringLiteral("settings"), QStringLiteral("设置"),
             QStringLiteral("页面偏好\n\n应用自动保存最后访问的页面，并在下次启动时恢复。\n\n"
-                           "验证方法：停留在本页，正常关闭程序后再次启动，应回到“设置”。"));
+                           "应用信息（只读）\n\nApplication Version：%1\nDatabase Schema Version：%2\n"
+                           "Rules Version：v%3\nProduction EPSS Percentile Threshold：%4\n\n"
+                           "上述方法信息为只读，不是可编辑设置。")
+                .arg(QStringLiteral(APPLICATION_VERSION)).arg(AppDatabase::SchemaVersion)
+                .arg(ProductionRulesVersion).arg(ProductionEpssPercentileThreshold, 0, 'f', 2));
     navigationLayout->addStretch();
-    auto* stage = new QLabel(QStringLiteral("Phase 11 · 方法验证"), sidebar);
+    auto* stage = new QLabel(QStringLiteral("Phase 12 · 结果呈现"), sidebar);
     stage->setWordWrap(true);
     navigationLayout->addWidget(stage);
     layout->addWidget(sidebar);

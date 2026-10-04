@@ -10,6 +10,28 @@
 
 QString ComponentRepository::databaseFilePath() const { return m_database.filePath(); }
 
+ComponentResult ComponentRepository::readOverviewSummary(const QString& projectId, ProjectOverviewSummary& summary) const
+{
+    summary = {};
+    if (!m_database.isOpen()) return {ComponentError::Database, QStringLiteral("Database is not open")};
+    // One SQLite statement observes one consistent state, validates the project, and
+    // uses the existing project/source-role and capture indexes without loading rows.
+    QSqlQuery query(m_database.connection());
+    if (!query.prepare(QStringLiteral(
+            "SELECT (SELECT COUNT(*) FROM components c WHERE c.project_id=p.id AND c.source_role=?), "
+            "EXISTS(SELECT 1 FROM dependency_capture d WHERE d.project_id=p.id) "
+            "FROM projects p WHERE p.id=?")))
+        return {ComponentError::Database, query.lastError().text()};
+    query.addBindValue(static_cast<int>(ComponentSourceRole::Component));
+    query.addBindValue(projectId);
+    if (!query.exec()) return {ComponentError::Database, query.lastError().text()};
+    if (!query.next()) return query.lastError().isValid()
+        ? ComponentResult{ComponentError::Database, query.lastError().text()}
+        : ComponentResult{ComponentError::ProjectNotFound, {}};
+    summary = {query.value(0).toLongLong(), query.value(1).toBool()};
+    return {};
+}
+
 ComponentResult ComponentRepository::replaceInFile(const QString& filePath, const QString& projectId, const SbomDocument& document)
 {
     AppDatabase database;

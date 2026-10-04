@@ -455,6 +455,12 @@ void Phase10Test::ui()
     candidates->setCurrentIndex(candidates->model()->index(0, 0));
     auto* tabs = page.findChild<QTabWidget*>("evidenceTabs"); tabs->setCurrentIndex(1);
     auto* text = page.findChild<QTextBrowser*>("riskPriorityAssessment"); QVERIFY(text);
+    auto* riskViews = page.findChild<QTabWidget*>("riskViews"); QVERIFY(riskViews);
+    QVERIFY(riskViews->currentWidget() != text);
+    const int priorityIndex = riskViews->indexOf(text); QVERIFY(priorityIndex >= 0);
+    riskViews->setCurrentIndex(priorityIndex);
+    QCoreApplication::processEvents();
+    QCOMPARE(riskViews->currentWidget(), static_cast<QWidget*>(text));
     QVERIFY(c.seed(now(), now())); page.findChild<QPushButton*>("riskCacheOnly")->click(); QTRY_VERIFY(!risk.busy()); QVERIFY(risk.assessment());
     const auto displayed = text->toPlainText(); QCOMPARE(displayed, priorityExplanation(*risk.assessment()));
     for (const auto& word : QStringList{"Exploit-Signal Priority Assessment", "Decision Evidence Support: Complete", "Rules: v1", "Percentile >= 0.90",

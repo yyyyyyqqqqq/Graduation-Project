@@ -46,7 +46,8 @@ QString reasonText(Reason reason, double threshold)
     switch (reason) {
     case Reason::FreshKevListed: return "Fresh KEV Listed independently determines Known Exploited.";
     case Reason::EpssDriverSelected: return "Maximum Fresh Available EPSS percentile; equal values use canonical CVE order.";
-    case Reason::FreshEpssAboveThreshold: return QString("Fresh EPSS percentile meets this run threshold (>= %1); Production Rules v1 default remains 0.90.").arg(threshold, 0, 'f', 2);
+    case Reason::FreshEpssAboveThreshold: return QString("Fresh EPSS percentile meets this run threshold (>= %1); Production Rules v%2 default remains %3.")
+        .arg(threshold, 0, 'f', 2).arg(ProductionRulesVersion).arg(ProductionEpssPercentileThreshold, 0, 'f', 2);
     case Reason::FreshEpssBelowThreshold: return QStringLiteral("当前 Fresh EPSS evidence 未达到 Rules v1 Research Percentile Threshold。这不是 Safe、Low Risk 或 Not Exploitable 结论。");
     case Reason::DecisionEvidenceComplete: return "The evidence required for this Rules v1 decision is current, complete and usable.";
     case Reason::DecisionEvidencePartial: return "A Fresh EPSS driver exists; corroborating alias/provider coverage is incomplete.";
@@ -68,13 +69,13 @@ QString reasonText(Reason reason, double threshold)
 
 RiskPriorityAssessment RiskPriorityEvaluator::evaluate(const RiskEvidenceProfile& profile, QDateTime time)
 {
-    return evaluateAtThreshold(profile, time, 0.90);
+    return evaluateAtThreshold(profile, time, ProductionEpssPercentileThreshold);
 }
 std::optional<RiskPriorityAssessment> RiskPriorityEvaluator::evaluate(const RiskEvidenceProfile& profile,
         QDateTime time, ExperimentalPriorityOptions options)
 {
     const double threshold = options.epssPercentileThreshold;
-    if (threshold != 0.85 && threshold != 0.90 && threshold != 0.95) return {};
+    if (threshold != 0.85 && threshold != ProductionEpssPercentileThreshold && threshold != 0.95) return {};
     return evaluateAtThreshold(profile, time, threshold);
 }
 RiskPriorityAssessment RiskPriorityEvaluator::evaluateAtThreshold(const RiskEvidenceProfile& profile,
@@ -236,9 +237,12 @@ QString priorityExplanation(const RiskPriorityAssessment& assessment)
         .arg(priorityClassText(a.priority), decisionEvidenceSupportText(a.support)).arg(a.rulesVersion);
     text += QString("Rules v%1 Research Threshold: Percentile >= %2\n")
         .arg(a.rulesVersion).arg(a.epssPercentileThreshold, 0, 'f', 2);
-    text += a.epssPercentileThreshold == 0.90 ? "Production default run: 0.90.\n"
-        : "Experimental threshold run; Production Rules v1 default remains 0.90.\n";
-    text += "0.90 is an EPSS percentile Research Default: relative ranking, not 90% exploitation probability or a FIRST official High threshold.\n";
+    text += a.epssPercentileThreshold == ProductionEpssPercentileThreshold
+        ? QString("Production default run: %1.\n").arg(ProductionEpssPercentileThreshold, 0, 'f', 2)
+        : QString("Experimental threshold run; Production Rules v%1 default remains %2.\n")
+            .arg(ProductionRulesVersion).arg(ProductionEpssPercentileThreshold, 0, 'f', 2);
+    text += QString("%1 is an EPSS percentile Research Default: relative ranking, not %2% exploitation probability or a FIRST official High threshold.\n")
+        .arg(ProductionEpssPercentileThreshold, 0, 'f', 2).arg(100 * ProductionEpssPercentileThreshold, 0, 'f', 0);
     text += "Support describes current, complete, usable evidence for this decision; it is not predictive confidence, Finding correctness, vulnerability probability or overall risk certainty.\n";
     text += QString("Driver: %1\nDriver CVE: %2\nDriver Effective Freshness: %3\nAcquisition: %4\n")
         .arg(providerText(a.driverKind), a.driverCve.isEmpty() ? "None" : a.driverCve,
