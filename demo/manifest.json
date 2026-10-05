@@ -1,0 +1,12 @@
+{
+  "filename": "defense-sbom.json",
+  "purpose": "Foundation journey and optional normal public lodash query",
+  "source": "synthetic",
+  "generationMethod": "Hand-authored deterministic CycloneDX 1.6 JSON; public package identities, invented root/helper/topology; no user SBOM copied",
+  "ordinaryComponentCount": 3,
+  "metadataRootCount": 1,
+  "dependencyEntryCount": 4,
+  "dependencyTargetCount": 3,
+  "sha256": "10f68402c1c73b593fb726f2b490e928cf87e879b3983b4e868eb371cf4b7846",
+  "privacyStatus": "reviewed synthetic/public; no personal data"
+}

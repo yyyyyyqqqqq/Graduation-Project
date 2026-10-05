@@ -1,0 +1,17 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "metadata": {"component": {"type": "application", "bom-ref": "demo-root", "name": "Synthetic Defense Project", "version": "1.0.0", "purl": "pkg:npm/synthetic-defense-root@1.0.0"}},
+  "components": [
+    {"type": "library", "bom-ref": "demo-lodash", "name": "lodash", "version": "4.17.20", "purl": "pkg:npm/lodash@4.17.20"},
+    {"type": "library", "bom-ref": "demo-six", "name": "six", "version": "1.17.0", "purl": "pkg:pypi/six@1.17.0"},
+    {"type": "library", "bom-ref": "demo-helper", "name": "synthetic-defense-helper", "version": "1.0.0", "purl": "pkg:npm/synthetic-defense-helper@1.0.0"}
+  ],
+  "dependencies": [
+    {"ref": "demo-root", "dependsOn": ["demo-lodash", "demo-six"]},
+    {"ref": "demo-lodash", "dependsOn": ["demo-helper"]},
+    {"ref": "demo-six", "dependsOn": []},
+    {"ref": "demo-helper", "dependsOn": []}
+  ]
+}

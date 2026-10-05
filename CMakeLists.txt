@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 
-project(SupplyChainRiskAssessment VERSION 0.14.0 LANGUAGES CXX)
+project(SupplyChainRiskAssessment VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -86,6 +86,14 @@ add_library(ValidationWidgets STATIC src/ValidationPage.h src/ValidationPage.cpp
 target_link_libraries(ValidationWidgets PUBLIC ValidationCore PresentationWidgets Qt6::Widgets Qt6::Concurrent)
 add_executable(ValidationReplay tools/ValidationReplay.cpp)
 target_link_libraries(ValidationReplay PRIVATE ValidationCore)
+
+# Explicit deployment support, never a product page or alternative analysis path.
+option(BUILD_DELIVERY_SUPPORT "Build the standalone deployment verification probe" OFF)
+if(BUILD_DELIVERY_SUPPORT)
+    add_executable(DeploymentProbe tools/DeploymentProbe.cpp)
+    target_link_libraries(DeploymentProbe PRIVATE AppFoundation Qt6::Network)
+    target_include_directories(DeploymentProbe PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
+endif()
 
 # The product carries only the final Dataset. Tests retain the full research audit.
 function(add_validation_resources target full_audit)
@@ -276,6 +284,10 @@ if(BUILD_TESTING)
             )
         endif()
     endfunction()
+    add_executable(Phase14Test tests/Phase14Test.cpp)
+    target_link_libraries(Phase14Test PRIVATE AppFoundation SbomParsing DependencyAnalysis VulnerabilityCore Qt6::Test)
+    target_compile_definitions(Phase14Test PRIVATE DELIVERY_DEMO_FILE="${CMAKE_CURRENT_SOURCE_DIR}/demo/defense-sbom.json")
+    add_qt_test(Phase14 Phase14Test demoCurrentState)
     foreach(test_case IN ITEMS semantics presentationConsistency multiCve noCve freshness htmlSafety privacy
             staticTime provenance candidateCapture eligibility retainedRisk ownership projectFailure
             saveCancel saveSnapshot singleFlight workerLifetime fileSafety noSideEffects resolvedPath scale architecture)
