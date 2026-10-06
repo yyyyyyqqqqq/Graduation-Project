@@ -1,6 +1,6 @@
 # 毕业设计项目总交接文档
 
-更新日期：2026-10-05（Asia/Shanghai；Phase 14 Final Candidate 准备；认证结果保存在 ignored 交付证据中，本文不预填最终结果）
+更新日期：2026-10-07（Asia/Shanghai；Phase 14 COMPLETE / FINAL SEAL PASS；按 69.md 在软件封版后独立维护本文）
 
 本文是项目唯一的长期动态交接文档。每个阶段结束后，更新当前状态、代码结构、Git、测试、人工验收、技术决策和下一步，避免另建多套状态文件。
 
@@ -8,7 +8,7 @@
 
 Phase 07.5-AUX 已完成只读 MCP 与真实 ChatGPT 连接验收，作为辅助基础设施保留。当前产品已完成 RiskEvidenceProfile → Exploit-Signal Priority Assessment → Decision Evidence Support → Deterministic Explanation、冻结 Validation Experiment、Presentation & Explainability，以及单 Finding 静态 HTML 报告导出。Phase 12 历史 GUI Test 20 的 NOT VERIFIED / NON-BLOCKING 保留；Phase 13 GUI / Report 19/19 PASS，已按 64.md 完成最终回归、唯一 completion commit、main 与 annotated tag 推送。未实现 numeric Risk Score / Risk Level / predictive Assessment Confidence。
 
-依据：04.md—64.md 保留历史阶段事实；65.md 授权最后一个正式工程 Phase 14 的 Frozen Design 实现、一次本地候选提交、clean reproduction 与交付候选。禁止 push/tag/Final Seal/Phase 15。本文在候选提交前维护为 result-neutral，认证后不得回填 tracked 文件。
+依据：04.md—64.md 保留历史阶段事实；65.md 完成最后一个正式工程 Phase 14 的冻结实现、唯一候选提交和 clean reproduction；66.md 补充浏览器验证，67.md 修正 generated evidence，68.md 完成 Test 16 隐私审计；69.md 确认最终验收并明确授权 Final Seal 及封版后一次独立 PROJECT-HANDOFF docs-only 提交。65.md 的候选期禁止 push/tag 和 tracked 回填约束已由 69.md 的明确收口授权取代；已验收源码、测试与交付包字节保持不变。
 
 **真实性优先级：实际运行结果 > 当前真实代码 > 当前 Git 状态 > 当前 GitHub 状态 > 已验证环境审计 > 历史项目资料 > 推测。** 当前阶段授权以用户最新具体指令为准。
 
@@ -22,18 +22,17 @@ Phase 07.5-AUX 已完成只读 MCP 与真实 ChatGPT 连接验收，作为辅助
 
 # 2. 当前一句话状态
 
-PHASE 14 FINAL CANDIDATE / READY FOR FINAL ENGINEERING CERTIFICATION。按 65.md 将 App 升为 1.0.0；schema 4、Rules v1 / 0.90、业务算法和六个冻结输入保持原范围。Phase 13 封版事实继续保留；本阶段当前文字不代表最终测试、部署、许可审计或用户验收已通过。
+PHASE 14 COMPLETE / FINAL SEAL PASS。App 1.0.0、schema 4、Rules v1 / 0.90；Release Source Commit 与 annotated phase-14-complete 已推送并完成远端核验。Final Acceptance 17/17 PASS：用户操作 Tests 1–15、17（16/16），Codex 操作 Test 16；Fresh-machine 为 NOT VERIFIED / NON-BLOCKING。正式工程 Phase 00–14 完成，软件开发主线关闭，转入论文、答辩与提交材料准备。
 
 # 3. 当前阶段
 
-**CURRENT PHASE: PHASE 14 FINAL CANDIDATE / READY FOR FINAL ENGINEERING CERTIFICATION**
+**CURRENT PHASE: PHASE 14 COMPLETE / FINAL SEAL PASS**
 
-65.md 已冻结 Final Integrated Acceptance & Thesis Delivery Hardening 设计，设计迭代关闭。
-Period A 完成版本、独立 DeploymentProbe、显式部署/哈希支持工具、synthetic demo、静态交付文档及预检；Period B 从唯一候选 SHA 创建 clean source，执行双配置 fresh build/CTest/Replay、deployed runtime 检查、GUI/离线答辩、报告与交付装配。
+Final Integrated Acceptance & Thesis Delivery Hardening 已完成。Period A 完成版本、独立 DeploymentProbe、部署/哈希工具、synthetic demo 和静态材料；Period B 从唯一候选创建 clean source，完成双配置认证、部署检查、验收与交付装配。69.md 封版仅只读复核已验收产物，普通推送精确 Release Source Commit，创建并推送 annotated tag；未重新生成已验收产物。
 
-候选提交后不得修改 tracked 文件；Mandatory Gate 失败即停止，不自动创建 Candidate B。最多一次本地 commit，不 push、不创建 phase-14-complete/v1.0.0、不发布 Release、不宣称 Phase 14 COMPLETE 或 Final Seal PASS。
+**FORMAL SOFTWARE ENGINEERING PHASES 00–14 COMPLETE / FORMAL SOFTWARE DEVELOPMENT COMPLETE / SOFTWARE DEVELOPMENT MAINLINE CLOSED。** 下一方向为 **THESIS WRITING / DEFENSE PREPARATION / SUBMISSION**；**NO PHASE 15 PRODUCT DEVELOPMENT IS AUTHORIZED**。
 
-最终动态状态以 ignored `build-final-delivery/phase14/Phase14-Final-Engineering-Report.md` 及同目录 manifests/evidence/review 为准。成功停止点是 READY FOR CHATGPT REVIEW，然后等待独立 Source/Delivery Review、User-required Manual Acceptance 和新的 Final Seal 授权。历史 GUI provenance 见第 18 节，不由本轮覆盖。
+封版直接证据为 ignored `build-final-delivery/phase14/final-seal/` 内的 `Phase14-Final-Seal-Receipt.md` / `.json`、`Phase14-Final-Acceptance-Closure.json` 及最终 `Phase14-Final-Seal-Report.md`。旧工程报告、review packet 与包内清单保留生成时的候选 / pending 状态，不覆盖历史；最终完成态由包外回执绑定精确 ZIP。未创建 v1.0.0 tag、GitHub Release 或上传交付 ZIP。历史 GUI provenance 见第 18 节。
 
 # 4. 正式项目目录
 
@@ -45,7 +44,31 @@ Period A 完成版本、独立 DeploymentProbe、显式部署/哈希支持工具
 
 # 5. Git / GitHub 当前状态
 
-Phase 14 起点已核对：main / origin/main / remote main=`aaa50b82afe2acdf465c3eb57898b06489f89035`，ahead/behind=0/0，工作区干净。65.md 只授权一个本地 Final Candidate Commit；候选 SHA、是否已创建及认证后的实时 Git 状态查 generated report 与 `git status`/`git log`。不将 Phase 13 completion 当作当前 HEAD。
+Phase 14 已于 2026-10-07（Asia/Shanghai）按 69.md 完成软件封版；tag 远端核验时间为 `2026-10-06T16:21:11.946067+00:00`。封版前 main 位于唯一候选，origin/main / remote main 位于 parent baseline，ahead/behind=1/0，工作区干净；本轮先普通推送 Release Source Commit，再创建 / 推送 tag 并核验。
+
+| 项目 | Phase 14 固定封版标识 |
+| --- | --- |
+| Release Source Commit | `9c182127cb283a5c10102a9b2fb4d883caa9bd36` |
+| parent / baseline | `aaa50b82afe2acdf465c3eb57898b06489f89035` |
+| commit message | `release: prepare phase 14 final 1.0.0 delivery` |
+| annotated tag | `phase-14-complete`；type=`tag` |
+| tag object | `c7179b651d2614e5c588d53c18cd301a4db53616`；本地与远端一致 |
+| peeled commit | `9c182127cb283a5c10102a9b2fb4d883caa9bd36`；本地与远端一致 |
+| tag message | `Phase 14 complete: final integrated acceptance and thesis delivery hardening` |
+| 软件封版时 main | HEAD = origin/main = remote main = Release Source Commit；ahead/behind=0/0；tracked clean、staged=0、formal untracked=0 |
+| 历史 tag | Phase 00–13 本地 / 远端 object 与 peeled commit 全部未变；只新增 Phase 14 tag |
+
+**main 可在封版后因为独立文档维护继续前进，但 phase-14-complete 永远固定 Release Source Commit。** 69.md 仅授权随后一次 `docs: record phase 14 final seal completion`，且只修改本文；它是 independent post-seal docs commit，不是第二个 completion、Release Source Commit 或 tag target。该文档提交的实际 SHA 与最终 main / origin/main / remote main、clean 状态在包外最终报告记录，本文不自引用尚未产生的 SHA。软件认证适用于固定 release commit / tag；本次文档维护不修改 source / tests / artifact bytes，无需重跑 272 项测试。
+
+| 已封存交付对象 | SHA-256 |
+| --- | --- |
+| `GraduationProject-1.0.0-Candidate.zip`（155 entries） | `c98928bdf596f8d19664010735c36c8fb78e9ba1547bfb7f26bdc1c34e05894d` |
+| `Phase14-Evidence-Candidate.zip`（68 entries） | `fa3173d04a3151217db55e8a8dceddd154a587078b0f94a636c51b255f3970ae` |
+| immutable application tree | `5579f824bdbf0b173ab4d32c2463adbb612e311d5586fb638325e8e4b5953c9c` |
+| sample HTML | `32e70ee9dccee877b3bcc98376712493d8cd2f18555d8d92c7681f65716dd219` |
+| 包外 `Phase14-Final-Seal-Receipt.md` | `54f7a5a7604d625199612b480aff74f70dab36fd7f18437f099de043b5ac5155` |
+
+以上产物位于 ignored `build-final-delivery/phase14/`；Receipt 位于其 `final-seal/` 子目录。三个 manifests 与实际文件匹配，两包 CRC / 逐文件校验 PASS，论文索引 14 条路径可解析，appExactCopy=true，无多余文件。Receipt 不放回 ZIP，原有 manifests 不重写。源码克隆不保证本地 ignored 交付证据存在，应同时保存最终 ZIP、Evidence ZIP 与包外封条。
 
 Phase 13 已于 2026-10-05 完成 FINAL SEAL PASS，最终封版核验时间为 `2026-10-05T01:40:20.0410721+08:00`。随后独立文档维护开始时再次确认 main / origin/main / remote main 均为下表 completion，ahead/behind=0/0，工作区干净。该历史文档维护提交已使 main 前进到 Phase 14 起点，不能将封版时的 main 等式视为永久状态。
 
@@ -249,7 +272,7 @@ Stale evidence 仅作历史上下文；future timestamp 是 Ineligible，不混�
 
 # 13. Phase 路线
 
-以下是第 9 节唯一长期路线的阶段状态。Phase 00—13 均已封版；Phase 13 已完成 Frozen Design、实现、源码审查、19/19 GUI / Report 验收及 64.md Final Seal；Phase 14 需求/设计已由 65.md 冻结并授权；最终封版仍需新授权。
+以下是第 9 节唯一长期路线的阶段状态。Phase 00–14 均已封版；Phase 14 按 65.md–69.md 完成最终工程认证、交付验收与 Final Seal，为最后一个正式工程 Phase。软件开发主线关闭，下一方向为论文、答辩与提交材料准备。
 
 | Phase | 名称与主要目标 | 当前状态 |
 | --- | --- | --- |
@@ -267,7 +290,7 @@ Stale evidence 仅作历史上下文；future timestamp 是 Ineligible，不混�
 | 11 | Validation & Threshold Sensitivity Experiment MVP | COMPLETE / FINAL SEAL PASS；completion 定位见第 5.1 节 |
 | 12 | Presentation & Explainability MVP | COMPLETE / FINAL SEAL PASS |
 | 13 | Current Finding Analysis Report Export MVP | COMPLETE / FINAL SEAL PASS；固定 commit / tag 见第 5 节 |
-| 14 | Final Integrated Acceptance / Thesis Delivery Hardening | FINAL CANDIDATE / READY FOR FINAL ENGINEERING CERTIFICATION；65.md 已授权，最终工程结果见 generated evidence |
+| 14 | Final Integrated Acceptance / Thesis Delivery Hardening | COMPLETE / FINAL SEAL PASS；固定 release / tag 与交付哈希见第 5 节 |
 
 **Historical / Superseded Plan：** Phase 00—06 开发期间使用的旧 Phase 07—17 未来安排已被 `22.md` 路线决策取代，旧表从正式路线中移除，历史可由 Git 查询；不得据其启动开发。Graphviz 仅为后续辅助展示与解释能力，不是 Phase 07 任务。
 
@@ -453,6 +476,12 @@ get_project_status 的 auxiliary_task_status 从本文明确的连接验收标�
 - selected confirmed Finding 的 self-contained UTF-8 HTML 导出已实现；local-only / static snapshot，无导出网络请求，复用 PresentationText，immutable ReportContext、worker render/write、QSaveFile atomic save、single-flight 与来源字段 allowlist。
 - App 0.14.0 / schema 4；新增 23 项测试，Debug / Release 各 271/271 PASS，历史 248 项保留；冻结输入与科学结果不变。
 - Second-party / ChatGPT Source-level Code Review PASS：Blocker=0、Must Fix=0、Frozen Design Deviation=0、Scope Creep=0、Confirmed Functional Defect=0。GUI / Report Acceptance 19/19 PASS；准确 provenance 见第 18 节。
+
+**Phase 14 —— COMPLETE / FINAL SEAL PASS。**
+
+- App 1.0.0 / schema 4；完成 clean Debug / Release 各 272/272、冻结 Replay、QSQLITE、Schannel TLS、Provider live smoke、开发环境隔离及再分发审计；准确范围与历史来源见第 17 节。
+- Final Acceptance 17/17 PASS：用户 Tests 1–15、17；Codex Test 16。Print Preview 和真正断网 Offline Defense 为 USER PASS；Fresh-machine 保持 NOT VERIFIED / NON-BLOCKING。
+- Release Source Commit / annotated tag 已推送并核验，交付 ZIP exact bytes 由包外 Receipt 封存；Frozen Design Deviation=0、Scope Creep=0。工程主线结束，不进入 Phase 15。
 
 # 15. 当前真实工程结构
 
@@ -885,7 +914,9 @@ RiskPriorityEvaluator 是纯 Core/value evaluator：读取不可变 RiskEvidence
 
 # 17. 当前自动测试状态
 
-Phase 14 认证结果不写入本 tracked 文档。精确 Candidate SHA、clean source dirty=false、双配置实际注册/执行/通过/失败数、frozen exact bytes 和 scientific comparison 均由 `build-final-delivery/phase14/evidence/` 与最终工程报告记录。下列 Phase 13 及更早 PASS 是历史事实，不冒充新候选的认证。
+Phase 14 最终软件认证对应 Release Source Commit `9c182127cb283a5c10102a9b2fb4d883caa9bd36` / `phase-14-complete`。clean source dirty=false；Debug / Release clean build 与 Full CTest 各 **272/272 PASS**，历史 Phase 00–13 的 271 个注册名全部保留。六个冻结输入 exact bytes 不变，Validation Replay PASS，scientific differences=0；源码输入指纹为 `6fbe91002080fc49e0f0856be7f79d6a44ebc97f49edcf174653ee8b0a163dff`。
+
+QSQLITE 实际初始化 schema 4 PASS；TLS 经证书验证的握手 PASS / Schannel；Provider Live Smoke、开发环境隔离、第三方再分发审计、样例报告及浏览器渲染 PASS。直接证据位于 `build-final-delivery/phase14/evidence/`；69.md 沿用已确认结果，封版仅重算产物哈希、核验清单 / ZIP / Git 身份，不重新构建、部署、请求 provider 或运行测试。Provider 结果是采集时证据，不保证未来服务可用；隔离不等于新机器验收。下列历史阶段结果独立保留。
 
 ## 64.md Phase 13 Final Seal 自动验证
 
@@ -1074,7 +1105,15 @@ if ($LASTEXITCODE -ne 0) { throw 'Release tests failed' }
 
 # 18. 当前人工验收状态
 
-Phase 14 必须区分 Automated / Codex-operated / User-reserved。本候选不预填用户 PASS；实际 journey、截图、报告 provenance 与 pending 用户步骤写入 generated acceptance evidence。Fresh-machine 仅在真正执行时才算 VERIFIED，否则可如实 NON-BLOCKING。
+## Phase 14 — FINAL USER / DELIVERY ACCEPTANCE PASS
+
+69.md 明确确认最终 **17/17 PASS；Confirmed FAIL=0、BLOCKED=0、PENDING=0**。执行来源如下，不能写成 User 17/17 或 Codex 17/17：
+
+- **User-operated：Tests 1–15、17，共 16/16 PASS。** Test 12 Print Preview PASS；Test 13 真正断网 / disconnected Offline Defense PASS。来源是用户在 69.md 的明确确认，本轮 Codex 未重新执行这些用户操作。
+- **Codex-operated：Test 16 — Final Package Privacy Audit PASS。** 按 68.md 完成只读文件 / 内容 / 图片审计；69.md 复核报告绑定的 Final ZIP 为第 5 节精确哈希。真实秘密、私人 DB / logs / cache / SBOM、截图隐私泄漏及 unsafe ZIP path 均为 0。官方 Qt 源码中的公开测试密钥及测试 DB/cache/log fixtures 已区分并披露，不误称不存在任何此类文本。
+- **Fresh-machine deployment：NOT VERIFIED / NON-BLOCKING。** 不升级为 VERIFIED，也不覆盖 Phase 12 的历史未验证项。
+
+最终 provenance 收口在包外 `final-seal/Phase14-Final-Acceptance-Closure.json` 与 Receipt。原包内 Print Preview pending、tag 未创建等文字是生成时快照，保持字节不变；最终确认由包外封条补充。66.md 浏览器渲染 PASS 与用户 Print Preview PASS 来源不同，原先 Codex 未验证打印的记录不改写。
 
 ## Phase 13 — GUI / REPORT MANUAL ACCEPTANCE PASS
 
@@ -1234,7 +1273,7 @@ future timestamp Ineligible、queued timer、refresh / cancel / destruction race
 
 # 19. 当前重要技术决策
 
-- **唯一有效长期方向**为第 9 节 Foundation → Vulnerability → Risk → Validation / Presentation。Phase 12 已封版；Phase 13 Frozen Design、实现、ChatGPT Code Review PASS 与 19/19 GUI / Report 验收已完成；64.md Final Seal 已完成；65.md 已授权 Phase 14 最终工程候选，不引入新业务能力，不授权推送或封版；旧 Phase 07—17 安排仍属 Historical / Superseded Plan。
+- **唯一有效长期方向**为第 9 节 Foundation → Vulnerability → Risk → Validation / Presentation。Phase 00–14 均已封版；69.md 已完成最后正式工程阶段的收口，软件开发主线关闭。后续为论文 / 答辩 / 提交准备，不授权 Phase 15 产品开发；旧 Phase 07—17 安排仍属 Historical / Superseded Plan。
 - **大方向冻结 + 单 Phase 逐步冻结。** 长期冻结四层方向，未来数据模型、schema、repository、provider、API、service、UI、scoring formula 仅在对应 Phase 开始前正式设计和冻结。这样控制本科毕设复杂度、避免过度设计，根据真实实现结果调整后续方案，防止下一阶段建立在错误假设上，并降低 Codex 长上下文开发的错误假设风险。
 - 不得因为路线中未来存在功能，就提前创建对应 database table、domain model、repository、service / provider framework、UI 或评分公式。Phase 11 按 47.md—51.md 完成共享 Rules v1 实验、审查与验收闭环及封版；Phase 12 呈现层只表达已有事实，不扩大生产风险模型。
 - **Phase 12 呈现契约：** ProjectPage 保持 Current Project 唯一 UI 权威，Overview 只做 observer，初始连接后显式同步；summary 以 COUNT / EXISTS 读取已存在状态，不隐式分析。Priority / Support / Why / Driver / 当前 freshness 来自 Assessment，provider facts 来自 Profile；No-CVE 正常不可关联与合法 CVE 关联缺行严格区分，exact CVE + provider join，不按数组位置或快照 freshness fallback。只读生产规则元数据和生态列表复用领域来源，详见第 16.3 节。
@@ -1350,13 +1389,15 @@ ChatGPT 已真实连接 Read-Only MCP。标准业务 Phase 可在开始前核验
 
 # 20. 当前待定事项
 
-- Phase 14 正在执行 65.md 冻结范围；候选认证和 Delivery Review 的真实状态查 ignored generated report。
-- 认证必须对应唯一精确 Candidate SHA，tracked clean；不得因简单修复自动堆叠候选提交。
-- 后续仍需 ChatGPT Final Source/Delivery Review、用户保留的实际验收及明确 Final Seal 授权。
+- Phase 14 软件封版已完成；当前没有待执行的 mandatory Final Seal gate。独立 docs-only 收口提交及最终远端状态见包外 Final Seal Report 和实时 Git。
+- 软件认证固定对应唯一 Release Source Commit / tag；后续文档维护不移动 tag，不重新打包已验收产物。
+- Fresh-machine 保持 NOT VERIFIED / NON-BLOCKING。学校论文格式、答辩 PPT 和提交材料要求待用户另行提供，不转化为新产品 Phase。
 - Phase 12 Test 20 的 historical NOT VERIFIED / NON-BLOCKING 永久保留；40 实样和 54 合成用例的覆盖范围不扩大。
 - Phase 14 为最后正式工程 Phase，不启动 Phase 15。
 
 # 21. 当前已知问题 / 风险
+
+- **Phase 14：Final Acceptance 17/17 PASS，Confirmed FAIL / BLOCKED / PENDING 均为 0；Fresh-machine NOT VERIFIED / NON-BLOCKING。** Qt 安装 SPDX 中 DLL SHA1 与实际签名文件字节不符的既有披露保留，独立有效 Qt 签名和 kit exact SHA 作为来源证据，不推测差异原因。原生文件框后加载的已签名 OneDrive / BaiduNetdisk shell extensions 来自主机，不随包分发。原 12 个 `.png` 实为 JPEG，67.md 已修正尺寸和编码说明，图片原字节 / 文件名保留；浏览器截图另计。以上既有边界不会因封版被删除或升级验证范围。
 
 - **Phase 13：Confirmed Functional FAIL=0、BLOCKED=0、NOT VERIFIED=0；19/19 PASS。** 单 Finding、静态快照，打开后不更新 freshness；合法 reportable 用户内容可能带有用户自行输入的敏感信息。没有 native PDF renderer、project-wide report、Report history / persistence、forced-exit recovery；性能数据仅为当前机器证据。这些已知范围限制不是 FAIL。
 
@@ -1368,7 +1409,7 @@ ChatGPT 已真实连接 Read-Only MCP。标准业务 Phase 可在开始前核验
 
 - **Phase 10 Blocker = 0、Must Fix = 0。** 46.md 封版时 Debug / Release 各 182/182 PASS，原 Phase00—09 各 158/158、Phase10 各 24/24；ChatGPT Code Review PASS；GUI Acceptance PASS、Confirmed Functional FAIL 0、Blocked 0、Mandatory Not Verified 0。历史 Phase 09 当次 GUI 边界与 Phase 10 新证据分别见第 18 节。
 - optional Vulkan Headers 缺失仍为 non-blocking warning，不影响当前 Qt Widgets 工程；无需据此安装额外组件。
-- 正式目录与 origin 已核对；Phase 00—13 均已封版，本地与远端十四个 tag 的 object / peeled target 一致。Phase 13 固定为 `aa2cc6fe3731ab528140b246aaf041921885ff39`，后续 main 可因文档维护前进；完成态与实时核验方式见第 5 节。ignored 本地产物不能因此公开或删除。
+- 正式目录与 origin 已核对；Phase 00–14 均已封版，本地与远端十五个 completion tag 的 object / peeled target 一致。Phase 14 固定为 `9c182127cb283a5c10102a9b2fb4d883caa9bd36`，main 可因独立文档维护前进；完成态与实时核验方式见第 5 节。ignored 本地产物和用户 runtime 继续保留，不能因此公开或删除。
 - Windows 原生文件框已有用户人工验收 PASS；自动快速关闭场景的测试限制见第 17 节，后续若修改文件框生命周期，应针对原生框重新验证。
 - 已完成 Foundation、Vulnerability Finding、Risk Evidence Enrichment 与 Exploit-Signal Prioritization MVP；仅 selected Finding，不是完整综合风险模型。没有 numeric Risk Score、Risk Level、CVSS calculator / normalization、NVD、EPSS Model Version mapping、stale provisional Priority、asset criticality、mission impact、internet exposure、runtime reachability；没有 Finding / Profile / Assessment / Quality / Report persistence、batch ranking、Dashboard、project-wide report 或 remediation SLA；Phase 13 单 Finding HTML 报告已实现，ValidationReplay 实验 JSON artifact 属于另一类研究产物。Decision Evidence Support 不是 predictive confidence。
 - 真实 SBOM dependency 声明可能不完整；可靠依赖分析不等于 runtime reachability，空结果不能证明没有依赖或漏洞。100000 规模性能只是当前机器证据；Phase 05 组件列表仍在 GUI 线程读取，真实长字段及负载变化须重新评估。
@@ -1379,9 +1420,9 @@ ChatGPT 已真实连接 Read-Only MCP。标准业务 Phase 可在开始前核验
 
 # 22. 下一步
 
-按 65.md 完成 FINAL ENGINEERING CANDIDATE，读取 `build-final-delivery/phase14/Phase14-Final-Engineering-Report.md` 了解最终实际状态，不通过本文件推断未执行门已 PASS。
+**FORMAL SOFTWARE DEVELOPMENT COMPLETE。NEXT: THESIS WRITING / DEFENSE PREPARATION / SUBMISSION。** 按用户后续明确要求整理论文、答辩 PPT、学校要求材料与提交清单；工程依据使用固定 release/tag、最终 ZIP、Evidence ZIP 和包外 Final Seal Receipt / Report。
 
-成功则 STOP 等待 ChatGPT Source/Delivery Review → User-required Manual Acceptance → 新的 Phase14 Final Seal Prompt。失败则保留候选/日志并报告 exact failed gate，不自动修改 tracked 文件、创建第二候选或推送/tag。App 1.0.0 仅表示本科冻结范围，不是 industrial-complete SCA。
+**NO PHASE 15 PRODUCT DEVELOPMENT IS AUTHORIZED。** 本轮成功后 STOP，不自动新增功能、重构、重新打包、移动 tag、创建 v1.0.0 tag 或 GitHub Release。App 1.0.0 表示本科冻结范围的稳定交付，不表示 industrial-complete SCA；第 21 节的全部已知限制继续成立。
 
 Read-Only MCP 仍是独立辅助工具，不阻塞产品认证或改变业务架构。
 
@@ -1394,7 +1435,7 @@ Read-Only MCP 仍是独立辅助工具，不阻塞产品认证或改变业务架
 5. 实现后完成适当构建、测试及 19.6 的 diff／维护性检查，清楚记录结果与限制；阶段通过必须包含用户要求的人工验收。
 6. 未经允许不得 `reset --hard`、`clean -fd`、force push、rebase、删除 branch / tag、删除用户文件或重写 Git 历史；发现已有错误 remote 先报告，不自行覆盖。身份配置优先仓库级，冻结环境不无故变更。
 7. 完成阶段后按 19.6 就地更新本文，不另造动态管理文档，不追加重复状态或全过程日志。
-8. 长期工程规则持续生效；各阶段以 `phase-XX-complete^{commit}` 固定定位，Phase 00—13 历史 tags 不得移动。Phase 13 已按 64.md 以单 completion commit 完成封版，固定标识见第 5 节。历史独立 docs commit 来自 Phase 13 封版后的用户新授权，不改变封版提交或 tag；未来文档维护也不应被误称为再次封版。接手时重新读取真实 Git / remote，保留 ignored evidence；辅助 MCP 独立于产品。
+8. 长期工程规则持续生效；各阶段以 `phase-XX-complete^{commit}` 固定定位，Phase 00–14 tags 不得移动。Phase 14 的 release / tag 固定标识见第 5 节；69.md 授权封版后一次本文维护，后续 main 可前进，completion tag 不随 docs commit 移动。文档维护不得误称再次封版。接手时重新读取真实 Git / remote，保留 ignored evidence；辅助 MCP 独立于产品。
 9. 任何 git add / commit / push 前均须按 19.7 审查候选／staged 文件及 privacy / sensitive information，push 同时检查待推送 commits；不得将真实 runtime database、SBOM、日志、用户数据、私有配置、API Key、token 或 credential 加入 Git。`12.md` / `13.md` 的隐私规则及 `.gitignore` 维护已独立提交并推送，其规则继续适用于本次及后续封版。
-10. 当前四层路线是唯一有效长期方向；旧 Phase 07—17 安排仅属 Historical / Superseded Plan。Phase 12 已封版，其历史 Test 20 NOT VERIFIED / NON-BLOCKING 保留。Phase 13 Review PASS、GUI / Report 19/19 PASS，provenance 以 64.md 为准；Phase 13 Final Seal 已完成；65.md 已授权 Phase 14 Final Engineering，但尚未授权该阶段 Final Seal。
+10. 当前四层路线已完成至最后正式工程 Phase 14，软件开发主线关闭；旧 Phase 07—17 安排仅属 Historical / Superseded Plan。Phase 12 历史 Test 20 NOT VERIFIED / NON-BLOCKING 保留；Phase 13 provenance 以 64.md 为准；Phase 14 Final Seal / 17 项验收 provenance 以 69.md 和包外封条为准。下一方向仅论文 / 答辩 / 提交材料，不自动启动 Phase 15。
 11. 遵循“大方向冻结 + 单 Phase 逐步冻结”；未来详细 Phase 设计须在该阶段开始前、根据已完成成果逐步冻结，不提前创建未来表、领域模型、Repository、Service / Provider 框架、UI 或评分公式。Candidate 不等于 Affected Finding，Applicability gate、Priority / Decision Evidence Support 分离和 Quality 证据原则持续生效；Phase 10 Rules v1 已冻结，不能扩大为完整风险模型或预测置信度。
