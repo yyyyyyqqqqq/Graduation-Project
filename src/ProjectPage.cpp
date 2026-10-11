@@ -301,7 +301,9 @@ void ProjectPage::reload(const QString& preferredId)
         for (const auto& project : projects) {
             auto* item = new QListWidgetItem(project.name, m_list);
             item->setData(Qt::UserRole, project.id);
-            item->setToolTip(project.name);
+            // Force rich-text decoding while keeping the project name literal.
+            item->setToolTip(QStringLiteral("<div style='white-space: pre-wrap;'>%1</div>")
+                                 .arg(project.name.toHtmlEscaped()));
             if (project.id == preferredId) {
                 m_list->setCurrentItem(item);
             }

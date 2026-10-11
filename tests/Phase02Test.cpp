@@ -24,6 +24,7 @@
 #include <QTemporaryDir>
 #include <QTest>
 #include <QTextBrowser>
+#include <QTextDocument>
 #include <QUuid>
 
 namespace
@@ -463,6 +464,42 @@ void Phase02Test::uiValidation()
     QTRY_VERIFY(dialog.isNull());
     QCOMPARE(totalChanges(context.database), changesBeforeCancel);
     QCOMPARE(page->findChild<QListWidget*>()->count(), 1);
+
+    // A-01: exercise the production list tooltip and Qt's rich-text decoding.
+    auto* list = page->findChild<QListWidget*>(QStringLiteral("projectList"));
+    auto* refresh = page->findChild<QPushButton*>(QStringLiteral("refreshProjects"));
+    QVERIFY(list && refresh);
+    const QStringList tooltipNames{
+        QStringLiteral("普通项目"), QStringLiteral("<b>项目测试</b>"),
+        QStringLiteral("A&B <i>测试</i>"), QStringLiteral("O'Reilly \"Test\""),
+        QString(100, u'长'), QStringLiteral("Ordinary project"),
+        QStringLiteral("A &lt; C")};
+    for (const auto& tooltipName : tooltipNames) {
+        Project project;
+        QVERIFY(context.repository.create(tooltipName, {}, project).ok());
+        QTest::mouseClick(refresh, Qt::LeftButton);
+        const auto matches = list->findItems(tooltipName, Qt::MatchExactly);
+        QCOMPARE(matches.size(), 1);
+        auto* item = matches.first();
+        QCOMPARE(item->data(Qt::UserRole).toString(), project.id);
+        list->setCurrentItem(item);
+        QCOMPARE(item->text(), tooltipName);
+        QVERIFY(details->toPlainText().contains(tooltipName));
+        Project stored;
+        QVERIFY(context.repository.findById(project.id, stored).ok());
+        QCOMPARE(stored.name, tooltipName);
+        const QString tooltip = item->toolTip();
+        // AutoText must decode the escaped name, never expose entity spelling.
+        QVERIFY(Qt::mightBeRichText(tooltip));
+        QTextDocument rendered;
+        rendered.setHtml(tooltip);
+        QCOMPARE(rendered.toPlainText(), tooltipName);
+        QTest::mouseClick(refresh, Qt::LeftButton);
+        QVERIFY(list->currentItem());
+        QCOMPARE(list->currentItem()->data(Qt::UserRole).toString(), project.id);
+        QCOMPARE(list->currentItem()->toolTip(), tooltip);
+        qInfo().noquote() << "A-01 literal tooltip verified:" << tooltipName;
+    }
 }
 
 void Phase02Test::uiErrors()
