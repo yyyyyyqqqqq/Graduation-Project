@@ -82,9 +82,6 @@ MainWindow::MainWindow(QWidget* projectPage, QWidget* parent, const QString& ini
                 .arg(QStringLiteral(APPLICATION_VERSION)).arg(AppDatabase::SchemaVersion)
                 .arg(ProductionRulesVersion).arg(ProductionEpssPercentileThreshold, 0, 'f', 2));
     navigationLayout->addStretch();
-    auto* stage = new QLabel(QStringLiteral("Phase 12 · 结果呈现"), sidebar);
-    stage->setWordWrap(true);
-    navigationLayout->addWidget(stage);
     layout->addWidget(sidebar);
     layout->addWidget(m_pages, 1);
     setCentralWidget(content);
