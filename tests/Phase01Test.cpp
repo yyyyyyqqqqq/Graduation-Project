@@ -210,6 +210,8 @@ void Phase01Test::navigation()
             QVERIFY(button->isChecked());
             QCOMPARE(pages->currentWidget()->objectName(), id);
             QCOMPARE(changes.count(), ++expectedSignals);
+            QTest::mouseClick(button, Qt::LeftButton);
+            QCOMPARE(changes.count(), expectedSignals); // Selecting the active page is not another navigation.
             QVERIFY2(saveError.isEmpty(), qPrintable(saveError));
         }
         QVERIFY(!window.selectPage(QStringLiteral("unknown")));

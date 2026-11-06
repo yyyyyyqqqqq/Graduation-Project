@@ -27,6 +27,7 @@
 #include <QTabWidget>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QScreen>
 #include <QSqlQuery>
 #include <QThreadPool>
 #include <QJsonDocument>
@@ -455,6 +456,9 @@ void Phase12Test::summaryError()
     QVERIFY(supplyText(overview).contains(QStringLiteral("读取失败"))); QVERIFY(!supplyText(overview).contains("0"));
     c.db.close(); overview.follow(page);
     QVERIFY(projectText(overview).contains(QStringLiteral("读取失败"))); QVERIFY(!supplyText(overview).contains("0"));
+    overview.resize(490, 500); overview.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&overview));
+    QVERIFY(overview.grab().save(QCoreApplication::applicationDirPath()+"/ui01-overview-error.png"));
 }
 void Phase12Test::overviewNavigation()
 {
@@ -528,6 +532,39 @@ void Phase12Test::uiLifetime()
         scroll->verticalScrollBar()->setValue(scroll->verticalScrollBar()->maximum());
         for (const auto& id : QStringList{"projects", "overview", "settings", "validation", "overview"}) QVERIFY(window.selectPage(id));
         QVERIFY(window.grab().save(QCoreApplication::applicationDirPath()+"/phase12-small-ui.png"));
+        QVERIFY(window.selectPage("overview"));
+        window.resize(1000,640);
+        scroll->verticalScrollBar()->setValue(0);
+        QCoreApplication::processEvents();
+        QVERIFY(window.grab().save(QCoreApplication::applicationDirPath()+"/ui01-overview-default-empty.png"));
+
+        Project longProject;
+        const QString longName = QStringLiteral("合成 UI01 Project ") + QString(80, QChar(0x957f));
+        const QString longDescription = QStringLiteral("Synthetic <b>literal</b> 描述 ").repeated(15).trimmed();
+        QVERIFY(c.projects.create(longName, longDescription, longProject).ok());
+        page->findChild<QPushButton*>("refreshProjects")->click();
+        select(*page, longProject.id);
+        QVERIFY(projectText(*overview).contains(longName));
+        QVERIFY(projectText(*overview).contains(longDescription));
+        qInfo("UI01 DPR=%.3f logicalDpi=%.1f screen=%dx%d", window.devicePixelRatioF(),
+              window.screen()->logicalDotsPerInch(), window.screen()->size().width(), window.screen()->size().height());
+        for (const QSize size : {QSize(1000,640), QSize(680,420)}) {
+            window.resize(size); QCoreApplication::processEvents();
+            QCOMPARE(window.size(), size);
+            QTRY_COMPARE(scroll->horizontalScrollBar()->maximum(), 0);
+            auto* text = overview->findChild<QLabel*>("overviewProject");
+            QTRY_VERIFY(text->height() >= text->heightForWidth(text->width()));
+            for (const auto* name : {"overviewManage", "overviewAnalyze", "overviewValidation"}) {
+                auto* button = overview->findChild<QPushButton*>(name); QVERIFY(button);
+                scroll->ensureWidgetVisible(button); QCoreApplication::processEvents();
+                const QRect bounds(button->mapTo(scroll->viewport(), QPoint()), button->size());
+                QVERIFY(scroll->viewport()->rect().contains(bounds));
+                QVERIFY(button->width() >= button->sizeHint().width());
+            }
+            scroll->verticalScrollBar()->setValue(0); QCoreApplication::processEvents();
+            QVERIFY(window.grab().save(QCoreApplication::applicationDirPath()
+                + QString("/ui01-overview-long-%1.png").arg(size.width())));
+        }
     }
     QVERIFY(QThreadPool::globalInstance()->waitForDone(30000));
     ProjectPage surviving(c.projects, c.components, c.logger, c.cache());
