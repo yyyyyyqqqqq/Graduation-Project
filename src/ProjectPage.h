@@ -28,11 +28,14 @@ public:
     QString currentProjectId() const;
     ReportCaptureResult captureFindingReport(qsizetype candidateIndex) const;
     bool reportExporting() const { return m_reportExporting; }
+    QString currentWorkspace() const;
+    bool showWorkspace(const QString& routeId);
 
 signals:
     void currentProjectChanged(const QString& projectId);
     void currentProjectStateChanged(const QString& projectId);
     void reportExportFinished(const ReportWriteResult& result);
+    void workspaceChanged(const QString& routeId);
 
 private:
     QString selectedId() const;

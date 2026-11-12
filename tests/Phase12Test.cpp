@@ -12,6 +12,11 @@
 #include "VulnerabilityPage.h"
 #include "VulnerabilityController.h"
 #include "RiskEvidenceController.h"
+#include "AppSettings.h"
+#include "DependencyPage.h"
+#include <QSettings>
+#include <QStackedWidget>
+#include <QStatusBar>
 #include <QTest>
 #include <QTemporaryDir>
 #include <QSignalSpy>
@@ -136,6 +141,7 @@ private slots:
     void selectionOwnership(); void initialSynchronization(); void projectSwitch(); void createDelete(); void successfulApply();
     void overviewSummary(); void largeSummary(); void summaryError(); void overviewNavigation(); void settingsInfo();
     void validationVocabulary(); void uiLifetime(); void markupSafety(); void structuralContract(); void vulnerabilityPresentation();
+    void workspaceRoutes(); void workspaceContext(); void workspaceRisk();
 };
 
 void Phase12Test::vocabulary()
@@ -662,5 +668,164 @@ void Phase12Test::vulnerabilityPresentation()
     QVERIFY(page.grab().save(QCoreApplication::applicationDirPath()+"/phase12-result-ui.png"));
     owner.select(-1); QVERIFY(view->toPlainText().isEmpty()); QCOMPARE(net.requests, 3);
 }
+
+namespace {
+void wireWorkspace(MainWindow& window, ProjectPage& page)
+{
+    QObject::connect(&window, &MainWindow::workspaceRequested, &page, &ProjectPage::showWorkspace);
+    QObject::connect(&page, &ProjectPage::workspaceChanged, &window, [&window](const QString& route) {
+        if (window.currentPageId() == "projects" && window.currentRouteId() != route) window.selectRoute(route);
+    });
+}
+}
+void Phase12Test::workspaceRoutes()
+{
+    Context c; QVERIFY(c.open()); FixtureNetwork net;
+    auto* page = new ProjectPage(c.projects,c.components,c.logger,c.cache(),nullptr,&net);
+    MainWindow window(page,nullptr,"overview",new QWidget); wireWorkspace(window,*page);
+    window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window));
+    auto* stack=window.findChild<QStackedWidget*>("pages"); QCOMPARE(stack->count(),4);
+    const QStringList routes{"overview","projects","components","dependencies","vulnerabilities","risk","validation","settings"};
+    auto* nav=window.findChild<QScrollArea*>("navigationScroll");
+    QSignalSpy top(&window,&MainWindow::navigationChanged), changed(&window,&MainWindow::routeChanged);
+    for(const auto size:{QSize(1000,640),QSize(680,420)}) {
+        window.resize(size); QCoreApplication::processEvents(); QCOMPARE(window.size(),size);
+        for(const auto& route:routes) {
+            auto* b=window.findChild<QPushButton*>("nav_"+route); QVERIFY(b);
+            nav->ensureWidgetVisible(b); QCoreApplication::processEvents();
+            QVERIFY(nav->viewport()->rect().contains(b->mapTo(nav->viewport(),b->rect().center())));
+            QTest::mouseClick(b,Qt::LeftButton); QCoreApplication::processEvents();
+            QCOMPARE(window.currentRouteId(),route); QVERIFY(b->isChecked());
+            const auto topId=routes.indexOf(route)>=1&&routes.indexOf(route)<=5?QString("projects"):route;
+            QCOMPARE(window.currentPageId(),topId);
+            if(topId=="projects") QCOMPARE(page->currentWorkspace(),route);
+            QVERIFY(window.statusBar()->currentMessage().contains(b->text()));
+            const auto n=changed.count(), t=top.count();
+            b->setFocus(); QTest::keyClick(b,Qt::Key_Space);
+            QCOMPARE(changed.count(),n); QCOMPARE(top.count(),t);
+            QCOMPARE(page->currentProjectId(),QString());
+        }
+        QVERIFY(window.grab().save(QCoreApplication::applicationDirPath()+QString("/ui02a-navigation-%1.png").arg(size.width())));
+    }
+    QVERIFY(nav->verticalScrollBar()->maximum()>0);
+    window.resize(1000,640); QCoreApplication::processEvents();
+    window.selectRoute("settings");
+    window.resize(680,420); QCoreApplication::processEvents();
+    auto* settingsButton=window.findChild<QPushButton*>("nav_settings");
+    QVERIFY(nav->viewport()->rect().contains(settingsButton->mapTo(nav->viewport(),settingsButton->rect().center())));
+    window.selectRoute("overview");
+    window.findChild<QPushButton*>("nav_overview")->setFocus();
+    QSet<QString> reached;
+    for(int i=0;i<80 && reached.size()<routes.size();++i) {
+        auto* focus=window.focusWidget();
+        if(focus && focus->objectName().startsWith("nav_")) {
+            reached.insert(focus->objectName().mid(4));
+            QVERIFY(nav->viewport()->rect().contains(focus->mapTo(nav->viewport(),focus->rect().center())));
+        }
+        // Exclusive Qt button groups use arrows within the group; Tab leaves the group.
+        QTest::keyClick(window.focusWidget(),Qt::Key_Down); QCoreApplication::processEvents();
+    }
+    QCOMPARE(reached.size(),routes.size());
+    QVERIFY(!window.selectPage("risk")); QVERIFY(!window.selectRoute("unknown"));
+    window.selectRoute("risk"); QCOMPARE(window.currentPageId(),QString("projects"));
+    QString error, saved;
+    QVERIFY(AppSettings::writeLastNavigationPage(c.dir.filePath("route.ini"),window.currentPageId(),error));
+    QVERIFY(AppSettings::readLastNavigationPage(c.dir.filePath("route.ini"),saved,error));
+    QCOMPARE(saved,QString("projects"));
+    QCOMPARE(QSettings(c.dir.filePath("route.ini"),QSettings::IniFormat).allKeys(),QStringList{"ui/lastNavigationPage"});
+    MainWindow restored(new QWidget,nullptr,saved); QCOMPARE(restored.currentRouteId(),QString("projects"));
+    MainWindow unknown(new QWidget,nullptr,"risk"); QCOMPARE(unknown.currentRouteId(),QString("overview"));
+    QCOMPARE(net.requests,0);
+}
+void Phase12Test::workspaceContext()
+{
+    Context c; QVERIFY(c.open()); FixtureNetwork net; SbomDocument d;
+    d.components={{"a","library","synthetic","1.0.0","pkg:npm/synthetic@1.0.0"}};
+    QVERIFY(c.components.replaceForProject(c.a.id,d).ok());
+    d.components.append({"b","library","other","2.0.0","pkg:npm/other@2.0.0"});
+    QVERIFY(c.components.replaceForProject(c.b.id,d).ok());
+    auto* page=new ProjectPage(c.projects,c.components,c.logger,c.cache(),nullptr,&net);
+    auto* overview=new OverviewPage(c.projects,c.components);
+    MainWindow window(page,nullptr,"projects",new QWidget,overview); wireWorkspace(window,*page); overview->follow(*page);
+    connect(overview,&OverviewPage::navigationRequested,&window,&MainWindow::selectPage);
+    window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window));
+    auto* owner=page->findChild<VulnerabilityController*>(); auto* risk=&owner->riskEvidence();
+    auto* dep=page->findChild<DependencyPage*>(); auto* view=page->findChild<VulnerabilityPage*>();
+    auto* tabs=page->findChild<QTabWidget*>("projectTabs");
+    auto* evidence=page->findChild<QTabWidget*>("evidenceTabs");
+    auto* components=page->findChild<QTableView*>("currentComponents");
+    auto* ownerParent=owner->parent(); auto* viewParent=view->parent(); auto* depParent=dep->parent();
+    for(const auto& id:{c.a.id,c.b.id}) {
+        select(*page,id);
+        for(const auto& route:QStringList{"components","dependencies","vulnerabilities","risk","projects"}) {
+            QVERIFY(window.selectRoute(route)); QCOMPARE(page->currentProjectId(),id);
+            QCOMPARE(components->model()->rowCount(),id==c.a.id?1:2);
+            QCOMPARE(page->findChildren<VulnerabilityController*>().size(),1);
+            QCOMPARE(page->findChildren<RiskEvidenceController*>().size(),1);
+            QCOMPARE(page->findChild<VulnerabilityController*>(),owner); QCOMPARE(&owner->riskEvidence(),risk);
+            QCOMPARE(owner->parent(),ownerParent); QCOMPARE(view->parent(),viewParent); QCOMPARE(dep->parent(),depParent);
+        }
+        QTRY_VERIFY(owner->loaded()&&!owner->loading());
+        for(const auto& row:owner->rows()) QCOMPARE(row.component.projectId,id);
+        tabs->setCurrentIndex(1); QCOMPARE(window.currentRouteId(),QString("components"));
+        tabs->setCurrentIndex(2); QCOMPARE(window.currentRouteId(),QString("dependencies"));
+        tabs->setCurrentIndex(3); QCOMPARE(window.currentRouteId(),QString("risk"));
+        evidence->setCurrentIndex(0); QCOMPARE(window.currentRouteId(),QString("vulnerabilities"));
+        evidence->setCurrentIndex(1); QCOMPARE(window.currentRouteId(),QString("risk"));
+        QVERIFY(page->findChild<QLabel*>("riskStatus")->text().contains(QStringLiteral("请选择当前已确认")));
+        QVERIFY(!page->captureFindingReport(0).context); QVERIFY(!page->findChild<QPushButton*>("exportFindingReport")->isEnabled());
+        window.selectPage("overview"); overview->findChild<QPushButton*>("overviewAnalyze")->click();
+        QCOMPARE(window.currentRouteId(),QString("projects")); QCOMPARE(tabs->currentIndex(),0);
+    }
+    window.selectRoute("risk");
+    page->findChild<QPushButton*>("removeProject")->click();
+    auto* confirm=page->findChild<QMessageBox*>("removeProjectDialog"); QVERIFY(confirm); confirm->button(QMessageBox::Yes)->click();
+    QCOMPARE(page->currentProjectId(),QString()); QVERIFY(!risk->hasRequest()); QVERIFY(!owner->snapshot());
+    QVERIFY(!page->captureFindingReport(0).context); QVERIFY(!page->findChild<QPushButton*>("importSbom")->isEnabled());
+    QCOMPARE(net.requests,0); QVERIFY(QThreadPool::globalInstance()->waitForDone(10000));
+}
+void Phase12Test::workspaceRisk()
+{
+    Context c; QVERIFY(c.open()); FixtureNetwork net; SbomDocument d;
+    d.components={{"a","library","synthetic","1.0.0","pkg:npm/synthetic@1.0.0"}};
+    QVERIFY(c.components.replaceForProject(c.a.id,d).ok());
+    auto* page=new ProjectPage(c.projects,c.components,c.logger,c.cache(),nullptr,&net);
+    MainWindow window(page,nullptr,"projects",new QWidget); wireWorkspace(window,*page);
+    window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window)); select(*page,c.a.id);
+    window.selectRoute("vulnerabilities"); auto* owner=page->findChild<VulnerabilityController*>();
+    QTRY_VERIFY(owner->loaded()&&!owner->loading());
+    page->findChild<QTableView*>("identityTable")->selectRow(0);
+    connect(owner,&VulnerabilityController::consentRequested,owner,[owner]{owner->consent(true);});
+    owner->query(QueryMode::Refresh);
+    window.selectRoute("risk"); window.selectRoute("vulnerabilities");
+    QTRY_VERIFY(!owner->busy()); QCOMPARE(net.requests,1); QVERIFY(owner->applicability());
+    auto* candidates=page->findChild<QTableView*>("candidateTable"); candidates->selectRow(0);
+    auto& risk=owner->riskEvidence(); QVERIFY(risk.hasRequest());
+    connect(&risk,&RiskEvidenceController::consentRequested,&risk,[&risk]{risk.consent(true);});
+    risk.load(EvidenceLoadMode::Refresh);
+    window.selectRoute("risk"); window.selectRoute("components");
+    QTRY_VERIFY(!risk.busy()); QCOMPARE(net.requests,3); QVERIFY(risk.profile()); QVERIFY(risk.assessment());
+    const auto profileText=RiskEvidence::profileText(*risk.profile()); const auto assessment=risk.assessmentText();
+    const auto generation=owner->generation(), riskGeneration=risk.generation();
+    const auto captured=page->captureFindingReport(0); QVERIFY(captured.context);
+    for(const auto& route:QStringList{"risk","vulnerabilities","dependencies","overview","risk","projects","risk"}) {
+        window.selectRoute(route); QCoreApplication::processEvents();
+        QCOMPARE(owner->generation(),generation); QCOMPARE(risk.generation(),riskGeneration);
+        QCOMPARE(owner->selected(),qsizetype(0)); QCOMPARE(candidates->currentIndex().row(),0);
+        QCOMPARE(RiskEvidence::profileText(*risk.profile()),profileText); QCOMPARE(risk.assessmentText(),assessment);
+        const auto now=page->captureFindingReport(0); QVERIFY(now.context); QCOMPARE(now.context->osvId,captured.context->osvId);
+        QCOMPARE(net.requests,3);
+    }
+    window.selectRoute("validation");
+    window.resize(680,420); QCoreApplication::processEvents(); window.selectRoute("risk"); QCoreApplication::processEvents();
+    auto* scroll=page->findChild<VulnerabilityPage*>()->findChild<QScrollArea*>();
+    auto* load=page->findChild<QPushButton*>("riskLoad");
+    QVERIFY(scroll->viewport()->rect().contains(load->mapTo(scroll->viewport(),load->rect().center())));
+    QVERIFY(window.grab().save(QCoreApplication::applicationDirPath()+"/ui02a-risk-small.png"));
+    select(*page,c.b.id); QVERIFY(!risk.hasRequest()); QVERIFY(!risk.profile()); QVERIFY(!risk.assessment());
+    QVERIFY(!page->captureFindingReport(0).context); QVERIFY(!page->findChild<QPushButton*>("exportFindingReport")->isEnabled());
+    QCOMPARE(net.requests,3); QVERIFY(QThreadPool::globalInstance()->waitForDone(10000));
+}
+
 QTEST_MAIN(Phase12Test)
 #include "Phase12Test.moc"

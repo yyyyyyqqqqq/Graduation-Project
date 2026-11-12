@@ -125,7 +125,7 @@ ProjectPage::ProjectPage(ProjectRepository& repository, ComponentRepository& com
     m_selectionHint = textLabel(QStringLiteral("projectSelectionHint"), this);
     m_selectionHint->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     m_selectionHint->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-    m_selectionHint->setText(QStringLiteral("请选择一个项目查看详情。"));
+    m_selectionHint->setText(QStringLiteral("请先在项目管理中选择或创建项目，再进入相应分析工作区。"));
     layout->addWidget(m_selectionHint);
 
     m_details = new QTextBrowser(this);
@@ -163,6 +163,11 @@ ProjectPage::ProjectPage(ProjectRepository& repository, ComponentRepository& com
     m_tabs->addTab(m_vulnerabilities,QStringLiteral("漏洞匹配"));
     layout->addWidget(m_tabs, 2);
 
+    connect(m_tabs, &QTabWidget::currentChanged, this, [this] { emit workspaceChanged(currentWorkspace()); });
+    connect(m_vulnerabilities, &VulnerabilityPage::evidenceWorkspaceChanged, this, [this] {
+        if (m_tabs->currentWidget() == m_vulnerabilities) emit workspaceChanged(currentWorkspace());
+    });
+
     connect(m_vulnerabilities, &VulnerabilityPage::reportExportRequested, this, &ProjectPage::exportFindingReport, Qt::DirectConnection);
     connect(m_vulnerabilities, &VulnerabilityPage::reportSelectionChanged, this, &ProjectPage::updateReportAvailability);
     connect(vulnerabilityController, &VulnerabilityController::changed, this, &ProjectPage::updateReportAvailability);
@@ -183,6 +188,31 @@ QString ProjectPage::selectedId() const
 }
 
 QString ProjectPage::currentProjectId() const { return selectedId(); }
+
+QString ProjectPage::currentWorkspace() const
+{
+    if (m_tabs->currentWidget() == m_vulnerabilities)
+        return m_vulnerabilities->showingRiskEvidence() ? QStringLiteral("risk") : QStringLiteral("vulnerabilities");
+    if (m_tabs->currentWidget() == m_dependencies) return QStringLiteral("dependencies");
+    if (m_tabs->currentWidget() == m_details) return QStringLiteral("projects");
+    return QStringLiteral("components");
+}
+
+bool ProjectPage::showWorkspace(const QString& routeId)
+{
+    const int index = routeId == "projects" ? 0 : routeId == "components" ? 1
+        : routeId == "dependencies" ? 2 : (routeId == "vulnerabilities" || routeId == "risk") ? 3 : -1;
+    if (index < 0) return false;
+    const auto previous = currentWorkspace();
+    {
+        // Publish one complete GUI route, never intermediate nested-tab selections.
+        const QSignalBlocker blocker(this);
+        m_tabs->setCurrentIndex(index);
+        if (index == 3) m_vulnerabilities->showEvidenceWorkspace(routeId == "risk");
+    }
+    if (previous != currentWorkspace()) emit workspaceChanged(currentWorkspace());
+    return true;
+}
 
 ReportError ProjectPage::reportInput(qsizetype candidateIndex, Project& project, std::optional<RiskEvidenceRequest>& request) const
 {

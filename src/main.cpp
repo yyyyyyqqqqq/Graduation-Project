@@ -82,6 +82,10 @@ int main(int argc, char* argv[])
         auto* projectPage = new ProjectPage(projects, components, logger, paths.osvCacheDirectory());
         auto* overviewPage = new OverviewPage(projects, components);
         MainWindow window(projectPage, nullptr, initialPage, new ValidationPage, overviewPage);
+        QObject::connect(&window, &MainWindow::workspaceRequested, projectPage, &ProjectPage::showWorkspace);
+        QObject::connect(projectPage, &ProjectPage::workspaceChanged, &window, [&window](const QString& route) {
+            if (window.currentPageId() == "projects" && window.currentRouteId() != route) window.selectRoute(route);
+        });
         overviewPage->follow(*projectPage);
         QObject::connect(overviewPage, &OverviewPage::navigationRequested, &window, &MainWindow::selectPage);
         if (window.currentPageId() != initialPage) {

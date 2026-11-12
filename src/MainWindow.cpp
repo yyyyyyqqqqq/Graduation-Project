@@ -8,10 +8,20 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QScrollBar>
 #include <QStackedWidget>
 #include <QStatusBar>
 #include <QVBoxLayout>
 #include <QWidget>
+
+namespace {
+QString pageForRoute(const QString& route)
+{
+    if (route == "components" || route == "dependencies" || route == "vulnerabilities" || route == "risk")
+        return QStringLiteral("projects");
+    return route;
+}
+}
 
 MainWindow::MainWindow(QWidget* projectPage, QWidget* parent, const QString& initialPage, QWidget* validationPage, QWidget* overviewPage)
     : QMainWindow(parent)
@@ -31,6 +41,7 @@ MainWindow::MainWindow(QWidget* projectPage, QWidget* parent, const QString& ini
     auto* sidebarLayout = new QVBoxLayout(sidebar);
     sidebarLayout->setContentsMargins(0, 0, 0, 0);
     auto* navigationScroll = new QScrollArea(sidebar);
+    m_navigationScroll = navigationScroll;
     navigationScroll->setObjectName(QStringLiteral("navigationScroll"));
     navigationScroll->setWidgetResizable(true);
     navigationScroll->setFrameShape(QFrame::NoFrame);
@@ -61,15 +72,19 @@ MainWindow::MainWindow(QWidget* projectPage, QWidget* parent, const QString& ini
     m_navigation->setExclusive(true);
     m_pages = new QStackedWidget(content);
     m_pages->setObjectName(QStringLiteral("pages"));
-    const auto addPage = [&](QWidget* page, const QString& id, const QString& heading) {
-        page->setObjectName(id);
-        const int index = m_pages->addWidget(page);
+    const auto addRoute = [&](const QString& id, const QString& heading) {
         auto* button = new QPushButton(heading, navigationContent);
         button->setObjectName(QStringLiteral("nav_%1").arg(id));
         button->setCheckable(true);
         button->setMinimumHeight(42);
-        m_navigation->addButton(button, index);
+        m_navigation->addButton(button);
         navigationLayout->addWidget(button);
+        connect(button, &QPushButton::clicked, this, [this, id] { selectRoute(id); });
+    };
+    const auto addPage = [&](QWidget* page, const QString& id, const QString& heading) {
+        page->setObjectName(id);
+        m_pages->addWidget(page);
+        addRoute(id, heading);
     };
     const auto addTextPage = [&](const QString& id, const QString& heading, const QString& description) {
         auto* page = new QScrollArea(m_pages);
@@ -93,10 +108,16 @@ MainWindow::MainWindow(QWidget* projectPage, QWidget* parent, const QString& ini
         pageLayout->addStretch();
         addPage(page, id, heading);
     };
-    if (overviewPage) addPage(overviewPage, QStringLiteral("overview"), QStringLiteral("概览"));
-    else addTextPage(QStringLiteral("overview"), QStringLiteral("概览"),
+    if (overviewPage) addPage(overviewPage, QStringLiteral("overview"), QStringLiteral("项目概览"));
+    else addTextPage(QStringLiteral("overview"), QStringLiteral("项目概览"),
                     QStringLiteral("当前未选择项目\n请进入“项目”页面选择或创建项目。"));
-    addPage(projectPage, QStringLiteral("projects"), QStringLiteral("项目"));
+    addPage(projectPage, QStringLiteral("projects"), QStringLiteral("项目管理"));
+    navigationLayout->addSpacing(12);
+    addGroup(QStringLiteral("供应链分析"));
+    addRoute(QStringLiteral("components"), QStringLiteral("SBOM 与组件"));
+    addRoute(QStringLiteral("dependencies"), QStringLiteral("依赖关系"));
+    addRoute(QStringLiteral("vulnerabilities"), QStringLiteral("漏洞匹配"));
+    addRoute(QStringLiteral("risk"), QStringLiteral("风险证据"));
     navigationLayout->addSpacing(12);
     addGroup(QStringLiteral("研究与配置"));
     if (validationPage) addPage(validationPage, QStringLiteral("validation"), QStringLiteral("方法验证"));
@@ -132,15 +153,9 @@ MainWindow::MainWindow(QWidget* projectPage, QWidget* parent, const QString& ini
         " { color: #243b53; font-size: 26px; font-weight: 600; }"
         "QStatusBar#shellStatus { background: #ffffff; color: #52647b; border-top: 1px solid #dce4ed; }"));
 
-    connect(m_navigation, &QButtonGroup::idClicked, m_pages, &QStackedWidget::setCurrentIndex);
-    connect(m_pages, &QStackedWidget::currentChanged, this, [this](int index) {
-        auto* button = m_navigation->button(index);
-        button->setChecked(true);
-        statusBar()->showMessage(QStringLiteral("当前页面：%1").arg(button->text()));
-        emit navigationChanged(currentPageId());
-    });
-    m_navigation->button(0)->setChecked(true);
-    statusBar()->showMessage(QStringLiteral("当前页面：概览"));
+    connect(m_navigationScroll->verticalScrollBar(), &QScrollBar::rangeChanged,
+            this, [this] { updateNavigation(); });
+    updateNavigation();
     selectPage(initialPage); // Unknown preferences safely fall back to overview.
 }
 
@@ -153,9 +168,38 @@ bool MainWindow::selectPage(const QString& pageId)
 {
     for (int index = 0; index < m_pages->count(); ++index) {
         if (m_pages->widget(index)->objectName() == pageId) {
-            m_pages->setCurrentIndex(index);
-            return true;
+            return selectRoute(pageId);
         }
     }
     return false;
+}
+
+bool MainWindow::selectRoute(const QString& routeId)
+{
+    auto* button = findChild<QPushButton*>(QStringLiteral("nav_%1").arg(routeId));
+    if (!button || !m_navigation->buttons().contains(button)) return false;
+    const QString pageId = pageForRoute(routeId);
+    QWidget* target = nullptr;
+    for (int i = 0; i < m_pages->count(); ++i)
+        if (m_pages->widget(i)->objectName() == pageId) target = m_pages->widget(i);
+    if (!target) return false;
+    const QString previousPage = currentPageId();
+    const bool changed = m_routeId != routeId;
+    m_routeId = routeId;
+    // Composition in main connects this to the existing persistent project workspace.
+    // Select the child before showing its parent, avoiding an unintended old tab's showEvent.
+    if (pageId == "projects") emit workspaceRequested(routeId);
+    m_pages->setCurrentWidget(target);
+    updateNavigation();
+    if (previousPage != currentPageId()) emit navigationChanged(currentPageId());
+    if (changed) emit routeChanged(m_routeId);
+    return true;
+}
+
+void MainWindow::updateNavigation()
+{
+    auto* button = findChild<QPushButton*>(QStringLiteral("nav_%1").arg(m_routeId));
+    button->setChecked(true);
+    statusBar()->showMessage(QStringLiteral("当前页面：%1").arg(button->text()));
+    m_navigationScroll->ensureWidgetVisible(button, 0, 8);
 }
