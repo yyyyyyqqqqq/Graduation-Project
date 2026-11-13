@@ -121,15 +121,22 @@ RiskPriorityAssessment RiskPriorityEvaluator::evaluateAtThreshold(const RiskEvid
         const bool usableKev = k && (k->status == KevStatus::Listed || k->status == KevStatus::NotListed);
         const bool usableEpss = e && (e->status == EpssStatus::NotScored
             || (e->status == EpssStatus::Available && unitValue(e->probability) && unitValue(e->percentile)));
+        // 按当前评估时间与获取时间重新判断新鲜度，恰好达到 24 小时即过期。
+        // 过期回退、未来时间等不合格证据不能驱动当前优先级。
         const auto kf = k ? effectiveFreshness(usableKev, k->fetchedAt, k->acquisition, result.evaluatedAt) : Freshness::NotApplicable;
         const auto ef = e ? effectiveFreshness(usableEpss, e->fetchedAt, e->acquisition, result.evaluatedAt) : Freshness::NotApplicable;
         result.evidenceFreshness.append({cve, kf, ef});
         if (k) considerExpiry(kf, k->fetchedAt);
         if (e) considerExpiry(ef, e->fetchedAt);
+        // 选择新鲜且已被 KEV 收录的证据；多个命中按既定 CVE 顺序保留首项。
         if (!kevDriver && kf == Freshness::Fresh && k->status == KevStatus::Listed) kevDriver = k;
+        // 在新鲜且有评分的 EPSS 中选择最大百分位；并列时保留先选中的项。
+        // 未评分和缺失证据不按零分处理，也不参与最大值比较。
         if (ef == Freshness::Fresh && e->status == EpssStatus::Available
             && (!epssDriver || *e->percentile > *epssDriver->percentile)) epssDriver = e;
 
+        // EPSS 分支的完整支持要求：每个可查询 CVE 均有新鲜 EPSS 评分，
+        // 且均有新鲜 KEV 未收录证据；累积检查全部别名，不只检查驱动项。
         const bool kevCovered = kf == Freshness::Fresh && k->status == KevStatus::NotListed;
         const bool epssCovered = ef == Freshness::Fresh && e->status == EpssStatus::Available;
         completeCoverage = completeCoverage && kevCovered && epssCovered;
@@ -141,6 +148,8 @@ RiskPriorityAssessment RiskPriorityEvaluator::evaluateAtThreshold(const RiskEvid
             ? Reason::StaleKevListedContextOnly : Reason::StaleKevContextOnly, cve, PriorityDriverKind::Kev});
         if (ef == Freshness::Stale) historical.append({Reason::StaleEpssContextOnly, cve, PriorityDriverKind::Epss});
     }
+    // KEV 优先：任一新鲜收录证据即可支持“已知被利用”这一类别。
+    // 该分支不依赖 EPSS；Complete 仅表示本次规则判断所需证据充分。
     if (kevDriver) {
         result.priority = PriorityClass::KnownExploited;
         result.support = DecisionEvidenceSupport::Complete;
@@ -153,8 +162,11 @@ RiskPriorityAssessment RiskPriorityEvaluator::evaluateAtThreshold(const RiskEvid
         result.kevFetchedAt = kevDriver->fetchedAt.toUTC();
         result.reasons.append({Reason::FreshKevListed, result.driverCve, result.driverKind});
     } else if (epssDriver) {
+        // 无新鲜 KEV 命中时，比较 EPSS 百分位与本次阈值，相等也归入达到阈值。
+        // 百分位表示相对排名，不是利用概率；低于阈值也不等于安全。
         result.priority = *epssDriver->percentile >= result.epssPercentileThreshold
             ? PriorityClass::AboveResearchPercentileThreshold : PriorityClass::BelowResearchPercentileThreshold;
+        // 优先级与支持度独立输出：有驱动但别名证据覆盖不全时，支持度为 Partial。
         result.support = completeCoverage ? DecisionEvidenceSupport::Complete : DecisionEvidenceSupport::Partial;
         result.driverKind = PriorityDriverKind::Epss;
         result.driverCve = epssDriver->cve;
@@ -169,6 +181,7 @@ RiskPriorityAssessment RiskPriorityEvaluator::evaluateAtThreshold(const RiskEvid
         result.reasons.append({result.priority == PriorityClass::AboveResearchPercentileThreshold
             ? Reason::FreshEpssAboveThreshold : Reason::FreshEpssBelowThreshold, result.driverCve, result.driverKind});
     } else {
+        // 没有新鲜驱动时保留默认的证据不足状态，并记录原因，不推断为低风险。
         result.reasons.append({Reason::NoFreshExploitDriver, {}});
     }
     result.reasons.append({result.support == DecisionEvidenceSupport::Complete ? Reason::DecisionEvidenceComplete

@@ -146,27 +146,36 @@ ApplicabilityResult VersionApplicability::evaluateLocal(const QueryIdentity& ide
     return result;
 }
 
+// 根据候选来源对本地判断进行发布门控，避免把证据冲突误解释为组件安全。
+// local 按值传入：此处调整发布副本，调用方保存的原始本地判断不受影响。
 ApplicabilityResult VersionApplicability::publish(ApplicabilityResult local, CandidateSource source)
 {
     // OSV may use fuzzy upstream-version matching. A local miss cannot reverse
     // a provider package+version candidate into a published NotAffected claim.
     if (source == CandidateSource::OsvPackageVersionQuery && local.state == State::NotAffected) {
+        // OSV 已按包和版本返回候选，本地未命中不能直接推翻提供方的关联。
+        // 将对外状态保留为 Unknown，并记录冲突原因，供界面解释和后续核查。
         local.state = State::Unknown;
         local.reason = Reason::ProviderEvidenceConflict;
     }
     return local;
 }
 
+// 先排除已撤回记录，再分别保留本地适用性结果和经过门控的发布结果。
 CandidateAssessment VersionApplicability::assess(const QueryIdentity& identity, const VulnerabilityCandidate& candidate,
                                                 CandidateSource source)
 {
     CandidateAssessment result;
     result.source = source;
+    // 有效的 withdrawn 时间戳表示记录已撤回：排除候选并立即返回。
+    // 此时不生成普通版本判断，不能将撤回记录写成 NotAffected 或 Unknown。
     if (OsvResponseParser::validTimestamp(candidate.text("withdrawn"))) {
         result.eligibility = CandidateEligibility::Excluded;
         return result;
     }
+    // 依据组件身份、显式版本及受影响范围进行本地判断，保留无法解释的状态。
     result.local = evaluateLocal(identity, candidate);
+    // 对本地结果执行发布门控；后续仅由发布为 Affected 的候选生成 Finding。
     result.published = publish(*result.local, source);
     return result;
 }
