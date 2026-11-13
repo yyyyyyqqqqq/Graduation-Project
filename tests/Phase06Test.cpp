@@ -507,7 +507,7 @@ void Phase06Test::projectIntegration()
     MainWindow window(new ProjectPage(c.projects,c.current,c.logger,c.dir.filePath("cache/osv-v1")),nullptr,"projects"); window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window));
     auto* list=window.findChild<QListWidget*>("projectList"); const auto select=[&](const QString& id){for(int i=0;i<list->count();++i) if(list->item(i)->data(Qt::UserRole).toString()==id) list->setCurrentRow(i);};
     auto* dep=window.findChild<DependencyPage*>(); QSignalSpy built(dep,&DependencyPage::analysisFinished);
-    select(a); window.findChild<QTabWidget*>("projectTabs")->setCurrentIndex(2); QTRY_COMPARE(built.count(),1);
+    select(a); QVERIFY(window.findChild<ProjectPage*>()->showWorkspace("dependencies")); QTRY_COMPARE(built.count(),1);
     auto* entries=dep->findChild<QTableView*>("dependencyEntries"); QCOMPARE(entries->model()->rowCount(),1);
     const auto file=c.dir.filePath("new.json"); QVERIFY(write(file,json(document({"X","Y"},{{"X",{"Y","X"}}}))));
     window.findChild<QPushButton*>("importSbom")->click(); QPointer<SbomImportDialog> dialog=window.findChild<SbomImportDialog*>(); QVERIFY(dialog);

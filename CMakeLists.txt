@@ -297,7 +297,7 @@ if(BUILD_TESTING)
             freshnessDrift statusFreshness cveJoin noCve missingAssociation multiCvePartial
             selectionOwnership initialSynchronization projectSwitch createDelete successfulApply
             overviewSummary largeSummary summaryError overviewNavigation settingsInfo validationVocabulary
-            uiLifetime markupSafety structuralContract vulnerabilityPresentation workspaceRoutes workspaceContext workspaceRisk)
+            uiLifetime markupSafety structuralContract vulnerabilityPresentation workspaceRoutes workspaceContext workspaceRisk workspaceLayout workspaceEmpty)
         add_qt_test(Phase12 Phase12Test ${test_case})
     endforeach()
     foreach(test_case IN ITEMS sharedEvaluator synthetic explanation profileCodec contractFailures

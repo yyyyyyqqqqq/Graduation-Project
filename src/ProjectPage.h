@@ -11,7 +11,11 @@ class ComponentRepository;
 class ProjectComponentsModel;
 class DependencyPage;
 class VulnerabilityPage;
-class QTabWidget;
+class QStackedWidget;
+class QSplitter;
+class QBoxLayout;
+class QLineEdit;
+class QResizeEvent;
 class AppLogger;
 class QLabel;
 class QListWidget;
@@ -37,7 +41,12 @@ signals:
     void reportExportFinished(const ReportWriteResult& result);
     void workspaceChanged(const QString& routeId);
 
+protected:
+    void resizeEvent(QResizeEvent* event) override;
+
 private:
+    void setAnalysisVisible(bool visible);
+    void updateWorkspaceLayout();
     QString selectedId() const;
     void reload(const QString& preferredId = {});
     void showSelection();
@@ -60,7 +69,14 @@ private:
     QTextBrowser* m_details;
     QPushButton* m_remove;
     QPushButton* m_import;
-    QTabWidget* m_tabs;
+    QStackedWidget* m_workspaces;
+    QWidget *m_managementWorkspace, *m_componentsWorkspace, *m_dependenciesWorkspace, *m_vulnerabilityWorkspace;
+    QWidget* m_componentData;
+    QLabel *m_componentsHint, *m_dependenciesHint, *m_vulnerabilityHint;
+    QLineEdit* m_projectContext;
+    QPushButton* m_switchProject;
+    QSplitter* m_managementSplit;
+    QBoxLayout* m_contextLayout;
     ProjectComponentsModel* m_componentModel;
     QLabel* m_componentSummary;
     DependencyPage* m_dependencies;

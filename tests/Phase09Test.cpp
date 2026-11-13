@@ -619,7 +619,7 @@ void Phase09Test::providerFailures(){
 void Phase09Test::projectApply(){
     Context c;QVERIFY(c.open());const auto id=c.project();QVERIFY(c.apply(id));QVERIFY(c.seed());
     ProjectPage widget(c.projects,c.components,c.logger,c.cache());widget.resize(1100,850);widget.show();
-    widget.findChild<QListWidget*>("projectList")->setCurrentRow(0);widget.findChild<QTabWidget*>("projectTabs")->setCurrentIndex(3);
+    widget.findChild<QListWidget*>("projectList")->setCurrentRow(0);QVERIFY(widget.showWorkspace("vulnerabilities"));
     auto* owner=widget.findChild<VulnerabilityController*>();QVERIFY(owner);QTRY_VERIFY(owner->loaded());owner->select(0);owner->query(QueryMode::CacheOnly);QTRY_VERIFY(!owner->busy());
     auto& risk=owner->riskEvidence();risk.setRequest(owner->riskEvidenceRequest(0));risk.load(EvidenceLoadMode::CacheOnly);QTRY_VERIFY(!risk.busy());QVERIFY(risk.profile());const auto key=risk.profile()->key;
     widget.findChild<QPushButton*>("importSbom")->click();auto* dialog=widget.findChild<SbomImportDialog*>();QVERIFY(dialog);

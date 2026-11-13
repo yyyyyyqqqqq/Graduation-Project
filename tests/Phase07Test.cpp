@@ -393,8 +393,8 @@ void Phase07Test::ui() {
 }
 void Phase07Test::projectIntegration() {
     Context c;QVERIFY(c.open());const auto id=c.project();QVERIFY(c.apply(id));ProjectPage pageWidget(c.projects,c.components,c.logger,c.cache());pageWidget.resize(1150,850);pageWidget.show();
-    auto* list=pageWidget.findChild<QListWidget*>();QVERIFY(list);list->setCurrentRow(0);auto* tabs=pageWidget.findChild<QTabWidget*>("projectDetailTabs");
-    if(!tabs)tabs=pageWidget.findChild<QTabWidget*>();QVERIFY(tabs);QCOMPARE(tabs->count(),4);QCOMPARE(tabs->tabText(3),QStringLiteral("漏洞匹配"));tabs->setCurrentIndex(3);
+    auto* list=pageWidget.findChild<QListWidget*>();QVERIFY(list);list->setCurrentRow(0);QVERIFY(pageWidget.showWorkspace("vulnerabilities"));
+    QVERIFY(pageWidget.findChild<VulnerabilityPage*>()->isVisible());
     auto* controller=pageWidget.findChild<VulnerabilityController*>();QVERIFY(controller);QTRY_VERIFY(controller->loaded());QCOMPARE(controller->rows().size(),2);
     const auto old=controller->rows()[0].component.id;controller->select(0);controller->query(QueryMode::CacheOnly);QTRY_VERIFY(!controller->busy());QCOMPARE(controller->error(),QueryError::CacheMiss);
     pageWidget.findChild<QPushButton*>("importSbom")->click();auto* dialog=pageWidget.findChild<SbomImportDialog*>();QVERIFY(dialog);

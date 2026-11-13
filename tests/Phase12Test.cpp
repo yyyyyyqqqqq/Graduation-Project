@@ -17,6 +17,7 @@
 #include <QSettings>
 #include <QStackedWidget>
 #include <QStatusBar>
+#include <QSplitter>
 #include <QTest>
 #include <QTemporaryDir>
 #include <QSignalSpy>
@@ -142,6 +143,7 @@ private slots:
     void overviewSummary(); void largeSummary(); void summaryError(); void overviewNavigation(); void settingsInfo();
     void validationVocabulary(); void uiLifetime(); void markupSafety(); void structuralContract(); void vulnerabilityPresentation();
     void workspaceRoutes(); void workspaceContext(); void workspaceRisk();
+    void workspaceLayout(); void workspaceEmpty();
 };
 
 void Phase12Test::vocabulary()
@@ -751,7 +753,7 @@ void Phase12Test::workspaceContext()
     window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window));
     auto* owner=page->findChild<VulnerabilityController*>(); auto* risk=&owner->riskEvidence();
     auto* dep=page->findChild<DependencyPage*>(); auto* view=page->findChild<VulnerabilityPage*>();
-    auto* tabs=page->findChild<QTabWidget*>("projectTabs");
+    auto* tabs=page->findChild<QStackedWidget*>("projectWorkspaceStack");
     auto* evidence=page->findChild<QTabWidget*>("evidenceTabs");
     auto* components=page->findChild<QTableView*>("currentComponents");
     auto* ownerParent=owner->parent(); auto* viewParent=view->parent(); auto* depParent=dep->parent();
@@ -767,15 +769,15 @@ void Phase12Test::workspaceContext()
         }
         QTRY_VERIFY(owner->loaded()&&!owner->loading());
         for(const auto& row:owner->rows()) QCOMPARE(row.component.projectId,id);
-        tabs->setCurrentIndex(1); QCOMPARE(window.currentRouteId(),QString("components"));
-        tabs->setCurrentIndex(2); QCOMPARE(window.currentRouteId(),QString("dependencies"));
-        tabs->setCurrentIndex(3); QCOMPARE(window.currentRouteId(),QString("risk"));
+        tabs->setCurrentWidget(page->findChild<QWidget*>("componentsWorkspace")); QCOMPARE(window.currentRouteId(),QString("components"));
+        tabs->setCurrentWidget(page->findChild<QWidget*>("dependenciesWorkspace")); QCOMPARE(window.currentRouteId(),QString("dependencies"));
+        tabs->setCurrentWidget(page->findChild<QWidget*>("vulnerabilityWorkspace")); QCOMPARE(window.currentRouteId(),QString("risk"));
         evidence->setCurrentIndex(0); QCOMPARE(window.currentRouteId(),QString("vulnerabilities"));
         evidence->setCurrentIndex(1); QCOMPARE(window.currentRouteId(),QString("risk"));
         QVERIFY(page->findChild<QLabel*>("riskStatus")->text().contains(QStringLiteral("请选择当前已确认")));
         QVERIFY(!page->captureFindingReport(0).context); QVERIFY(!page->findChild<QPushButton*>("exportFindingReport")->isEnabled());
         window.selectPage("overview"); overview->findChild<QPushButton*>("overviewAnalyze")->click();
-        QCOMPARE(window.currentRouteId(),QString("projects")); QCOMPARE(tabs->currentIndex(),0);
+        QCOMPARE(window.currentRouteId(),QString("projects")); QCOMPARE(tabs->currentWidget(),page->findChild<QWidget*>("managementWorkspace"));
     }
     window.selectRoute("risk");
     page->findChild<QPushButton*>("removeProject")->click();
@@ -825,6 +827,102 @@ void Phase12Test::workspaceRisk()
     select(*page,c.b.id); QVERIFY(!risk.hasRequest()); QVERIFY(!risk.profile()); QVERIFY(!risk.assessment());
     QVERIFY(!page->captureFindingReport(0).context); QVERIFY(!page->findChild<QPushButton*>("exportFindingReport")->isEnabled());
     QCOMPARE(net.requests,3); QVERIFY(QThreadPool::globalInstance()->waitForDone(10000));
+}
+
+void Phase12Test::workspaceLayout()
+{
+    Context c; QVERIFY(c.open()); FixtureNetwork net; Project longProject;
+    const QString name = QStringLiteral("长项目名称<&>").repeated(10);
+    const QString description = QStringLiteral("<b>必须按文字显示</b>") + QStringLiteral("\n长描述").repeated(80);
+    QVERIFY(c.projects.create(name,description,longProject).ok());
+    auto* page = new ProjectPage(c.projects,c.components,c.logger,c.cache(),nullptr,&net);
+    MainWindow window(page,nullptr,"projects",new QWidget); wireWorkspace(window,*page);
+    window.resize(1000,640); window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QVERIFY(page->currentProjectId().isEmpty());
+    window.selectRoute("components");
+    QTest::mouseClick(page->findChild<QPushButton*>("switchProject"),Qt::LeftButton);
+    QVERIFY(page->currentProjectId().isEmpty());
+    QVERIFY(page->findChild<QPushButton*>("createProject")->hasFocus());
+    select(*page,longProject.id);
+    auto* list = page->findChild<QListWidget*>("projectList");
+    auto* details = page->findChild<QTextBrowser*>("projectDetails");
+    auto* split = page->findChild<QSplitter*>("projectManagementSplitter");
+    auto* stack = page->findChild<QStackedWidget*>("projectWorkspaceStack");
+    auto* context = page->findChild<QLineEdit*>("currentProjectContext");
+    auto* dep = page->findChild<DependencyPage*>();
+    auto* vuln = page->findChild<VulnerabilityPage*>();
+    auto* owner = page->findChild<VulnerabilityController*>();
+    QCOMPARE(stack->count(),4); QCOMPARE(split->count(),2);
+    QCOMPARE(split->widget(0),list); QCOMPARE(split->widget(1),details);
+    QVERIFY(details->toPlainText().contains(description)); QVERIFY(context->text().contains(name));
+    context->setFocus(); QTest::keyClick(context,Qt::Key_A,Qt::ControlModifier);
+    QVERIFY(context->selectedText().contains(name));
+    QSignalSpy selection(page,&ProjectPage::currentProjectChanged);
+    for (const auto size : {QSize(1000,640),QSize(680,420),QSize(1200,760),QSize(680,420)}) {
+        window.selectRoute("settings"); window.resize(size); QCoreApplication::processEvents();
+        window.selectRoute("projects"); QCoreApplication::processEvents(); QCOMPARE(window.size(),size);
+        QCOMPARE(split->orientation(),page->contentsRect().width()-40 >= 700 ? Qt::Horizontal : Qt::Vertical);
+        QVERIFY(list->isVisible()); QVERIFY(details->isVisible());
+        QVERIFY(list->height() >= 60); QVERIFY(details->height() >= 60);
+        QVERIFY(details->verticalScrollBar()->maximum()>0);
+        split->setSizes({100,300}); QCoreApplication::processEvents();
+        for (const auto& route : QStringList{"components","dependencies","vulnerabilities","risk"}) {
+            window.selectRoute(route); QCoreApplication::processEvents();
+            QVERIFY(!list->isVisible()); QVERIFY(context->isVisible());
+            QCOMPARE(page->currentProjectId(),longProject.id);
+            QCOMPARE(page->findChildren<QListWidget*>("projectList").size(),1);
+            QCOMPARE(page->findChildren<DependencyPage*>().size(),1); QCOMPARE(page->findChild<DependencyPage*>(),dep);
+            QCOMPARE(page->findChildren<VulnerabilityPage*>().size(),1); QCOMPARE(page->findChild<VulnerabilityPage*>(),vuln);
+            QCOMPARE(page->findChildren<VulnerabilityController*>().size(),1); QCOMPARE(page->findChild<VulnerabilityController*>(),owner);
+            QCOMPARE(owner->parent(),page); QCOMPARE(owner->riskEvidence().parent(),owner);
+            for (const auto& button : {"switchProject","importSbom","refreshProjects"}) {
+                auto* b = page->findChild<QPushButton*>(button); QVERIFY(b->isVisible());
+                QVERIFY(page->rect().contains(b->mapTo(page,b->rect().center())));
+            }
+            QTest::mouseClick(page->findChild<QPushButton*>("switchProject"),Qt::LeftButton);
+            QCOMPARE(window.currentRouteId(),QString("projects")); QVERIFY(list->hasFocus());
+        }
+    }
+    QCOMPARE(selection.count(),0); QCOMPARE(net.requests,0);
+    QVERIFY(QThreadPool::globalInstance()->waitForDone(10000));
+}
+
+void Phase12Test::workspaceEmpty()
+{
+    Context c; QVERIFY(c.open()); QVERIFY(c.projects.remove(c.a.id).ok()); QVERIFY(c.projects.remove(c.b.id).ok());
+    FixtureNetwork net; auto* page = new ProjectPage(c.projects,c.components,c.logger,c.cache(),nullptr,&net);
+    MainWindow window(page,nullptr,"projects",new QWidget); wireWorkspace(window,*page);
+    window.resize(680,420); window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window));
+    auto* stack = page->findChild<QStackedWidget*>("projectWorkspaceStack");
+    auto* create = page->findChild<QPushButton*>("createProject");
+    for (const auto& route : QStringList{"components","dependencies","vulnerabilities","risk"}) {
+        window.selectRoute(route); QCoreApplication::processEvents();
+        QCOMPARE(window.currentRouteId(),route); QCOMPARE(page->currentWorkspace(),route);
+        QVERIFY(stack->isVisible()); QVERIFY(page->currentProjectId().isEmpty());
+        QVERIFY(!page->findChild<QPushButton*>("importSbom")->isEnabled());
+        QVERIFY(!page->findChild<DependencyPage*>()->isVisible());
+        QVERIFY(!page->findChild<VulnerabilityPage*>()->isVisible());
+        const auto hint = route=="components" ? "componentsWorkspaceHint" : route=="dependencies" ? "dependenciesWorkspaceHint" : "vulnerabilityWorkspaceHint";
+        QVERIFY(page->findChild<QLabel*>(hint)->isVisible());
+        QSignalSpy changes(page,&ProjectPage::workspaceChanged);
+        QVERIFY(page->showWorkspace(route)); QCOMPARE(changes.count(),0);
+        QVERIFY(!page->showWorkspace("invalid")); QCOMPARE(page->currentWorkspace(),route);
+        QTest::mouseClick(page->findChild<QPushButton*>("switchProject"),Qt::LeftButton);
+        QVERIFY(create->isVisible()); QVERIFY(create->hasFocus()); QCOMPARE(window.currentRouteId(),QString("projects"));
+    }
+    QTest::mouseClick(create,Qt::LeftButton);
+    auto* dialog = page->findChild<QDialog*>("createProjectDialog"); QVERIFY(dialog);
+    dialog->findChild<QLineEdit*>()->setText("Created from empty workspace");
+    QTest::mouseClick(dialog->findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Ok),Qt::LeftButton);
+    QVERIFY(!page->currentProjectId().isEmpty());
+    window.selectRoute("components"); QVERIFY(page->findChild<QTableView*>("currentComponents")->isVisible());
+    // A failed project read keeps the requested route and a reachable recovery action.
+    c.db.close(); QTest::mouseClick(page->findChild<QPushButton*>("refreshProjects"),Qt::LeftButton);
+    QCOMPARE(window.currentRouteId(),QString("components")); QVERIFY(stack->isVisible());
+    QVERIFY(page->findChild<QLabel*>("projectError")->isVisible());
+    QVERIFY(page->findChild<QLabel*>("componentsWorkspaceHint")->isVisible());
+    QTest::mouseClick(page->findChild<QPushButton*>("switchProject"),Qt::LeftButton);
+    QVERIFY(create->isVisible()); QCOMPARE(net.requests,0);
 }
 
 QTEST_MAIN(Phase12Test)

@@ -17,7 +17,9 @@
 #include <QAbstractTableModel>
 #include <QHeaderView>
 #include <QTableView>
-#include <QTabWidget>
+#include <QStackedWidget>
+#include <QSplitter>
+#include <QResizeEvent>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFormLayout>
@@ -87,62 +89,101 @@ ProjectPage::ProjectPage(ProjectRepository& repository, ComponentRepository& com
     : QWidget(parent), m_repository(repository), m_components(components), m_logger(logger)
 {
     auto* layout = new QVBoxLayout(this);
-    layout->setContentsMargins(32, 24, 32, 24);
-    layout->setSpacing(12);
-    auto* title = new QLabel(QStringLiteral("项目"), this);
-    title->setObjectName(QStringLiteral("pageTitle"));
-    layout->addWidget(title);
+    layout->setContentsMargins(20, 16, 20, 16);
+    layout->setSpacing(8);
+    m_contextLayout = new QBoxLayout(QBoxLayout::LeftToRight);
+    m_projectContext = new QLineEdit(this);
+    m_projectContext->setObjectName(QStringLiteral("currentProjectContext"));
+    m_projectContext->setReadOnly(true);
+    m_projectContext->setAccessibleName(QStringLiteral("当前项目"));
+    m_projectContext->setMinimumWidth(0);
+    m_projectContext->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+    m_contextLayout->addWidget(m_projectContext, 1);
     auto* actions = new QHBoxLayout;
-    auto* create = new QPushButton(QStringLiteral("新建项目"), this);
-    create->setObjectName(QStringLiteral("createProject"));
-    m_remove = new QPushButton(QStringLiteral("删除项目"), this);
-    m_remove->setObjectName(QStringLiteral("removeProject"));
-    auto* refresh = new QPushButton(QStringLiteral("刷新"), this);
-    refresh->setObjectName(QStringLiteral("refreshProjects"));
-    actions->addWidget(create);
-    actions->addWidget(m_remove);
+    m_switchProject = new QPushButton(QStringLiteral("切换项目"), this);
+    m_switchProject->setObjectName(QStringLiteral("switchProject"));
     m_import = new QPushButton(QStringLiteral("导入 SBOM"), this);
     m_import->setObjectName(QStringLiteral("importSbom"));
+    auto* refresh = new QPushButton(QStringLiteral("刷新"), this);
+    refresh->setObjectName(QStringLiteral("refreshProjects"));
+    actions->addWidget(m_switchProject);
     actions->addWidget(m_import);
-    actions->addStretch();
     actions->addWidget(refresh);
-    layout->addLayout(actions);
-
+    m_contextLayout->addLayout(actions);
+    layout->addLayout(m_contextLayout);
     m_error = textLabel(QStringLiteral("projectError"), this);
     m_error->setStyleSheet(QStringLiteral("color: #a12622;"));
     layout->addWidget(m_error);
-    m_empty = textLabel(QStringLiteral("projectsEmpty"), this);
-    m_empty->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-    m_empty->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    m_workspaces = new QStackedWidget(this);
+    m_workspaces->setObjectName(QStringLiteral("projectWorkspaceStack"));
+    layout->addWidget(m_workspaces, 1);
+    const auto workspace = [this](const char* name) {
+        auto* page = new QWidget(m_workspaces);
+        page->setObjectName(QString::fromLatin1(name));
+        auto* box = new QVBoxLayout(page);
+        box->setContentsMargins(0, 0, 0, 0);
+        box->setSpacing(8);
+        m_workspaces->addWidget(page);
+        return page;
+    };
+    m_managementWorkspace = workspace("managementWorkspace");
+    auto* management = static_cast<QVBoxLayout*>(m_managementWorkspace->layout());
+    auto* title = new QLabel(QStringLiteral("项目管理"), m_managementWorkspace);
+    title->setObjectName(QStringLiteral("pageTitle"));
+    management->addWidget(title);
+    auto* managementActions = new QHBoxLayout;
+    auto* create = new QPushButton(QStringLiteral("新建项目"), m_managementWorkspace);
+    create->setObjectName(QStringLiteral("createProject"));
+    m_remove = new QPushButton(QStringLiteral("删除项目"), m_managementWorkspace);
+    m_remove->setObjectName(QStringLiteral("removeProject"));
+    managementActions->addWidget(create);
+    managementActions->addWidget(m_remove);
+    managementActions->addStretch();
+    management->addLayout(managementActions);
+    m_empty = textLabel(QStringLiteral("projectsEmpty"), m_managementWorkspace);
     m_empty->setText(QStringLiteral("当前还没有项目\n点击“新建项目”，创建第一个分析项目。"));
-    layout->addWidget(m_empty);
-    m_list = new QListWidget(this);
+    management->addWidget(m_empty);
+    m_selectionHint = textLabel(QStringLiteral("projectSelectionHint"), m_managementWorkspace);
+    m_selectionHint->setText(QStringLiteral("请选择一个项目查看详情，或创建新项目。"));
+    management->addWidget(m_selectionHint);
+    m_managementSplit = new QSplitter(Qt::Horizontal, m_managementWorkspace);
+    m_managementSplit->setObjectName(QStringLiteral("projectManagementSplitter"));
+    m_managementSplit->setChildrenCollapsible(false);
+    m_list = new QListWidget(m_managementSplit);
     m_list->setObjectName(QStringLiteral("projectList"));
-    m_list->setMinimumHeight(80);
-    m_list->setMaximumHeight(180);
+    m_list->setMinimumSize(60, 60);
+    m_list->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     m_list->setSelectionMode(QAbstractItemView::SingleSelection);
-    layout->addWidget(m_list, 1);
-    m_selectionHint = textLabel(QStringLiteral("projectSelectionHint"), this);
-    m_selectionHint->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-    m_selectionHint->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-    m_selectionHint->setText(QStringLiteral("请先在项目管理中选择或创建项目，再进入相应分析工作区。"));
-    layout->addWidget(m_selectionHint);
-
-    m_details = new QTextBrowser(this);
+    m_details = new QTextBrowser(m_managementSplit);
     m_details->setObjectName(QStringLiteral("projectDetails"));
+    m_details->setMinimumSize(60, 60);
+    m_details->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     m_details->setFrameShape(QFrame::NoFrame);
     m_details->setOpenLinks(false);
     m_details->setOpenExternalLinks(false);
     m_details->setWordWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
     m_details->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
-    m_tabs = new QTabWidget(this);
-    m_tabs->setObjectName(QStringLiteral("projectTabs"));
-    m_tabs->addTab(m_details, QStringLiteral("项目详情"));
-    auto* componentPage = new QWidget(m_tabs);
-    auto* componentLayout = new QVBoxLayout(componentPage);
-    m_componentSummary = textLabel(QStringLiteral("currentComponentsSummary"), componentPage);
+    m_managementSplit->addWidget(m_list);
+    m_managementSplit->addWidget(m_details);
+    m_managementSplit->setStretchFactor(0, 1);
+    m_managementSplit->setStretchFactor(1, 2);
+    m_managementSplit->setSizes({240, 480});
+    management->addWidget(m_managementSplit, 1);
+
+    const auto hint = [](QWidget* page, const char* name) {
+        auto* value = textLabel(QString::fromLatin1(name), page);
+        value->setText(QStringLiteral("请先在项目管理中创建或选择项目。项目不可用时请查看上方错误提示。"));
+        page->layout()->addWidget(value);
+        return value;
+    };
+    m_componentsWorkspace = workspace("componentsWorkspace");
+    m_componentsHint = hint(m_componentsWorkspace, "componentsWorkspaceHint");
+    m_componentData = new QWidget(m_componentsWorkspace);
+    auto* componentLayout = new QVBoxLayout(m_componentData);
+    componentLayout->setContentsMargins(0, 0, 0, 0);
+    m_componentSummary = textLabel(QStringLiteral("currentComponentsSummary"), m_componentData);
     componentLayout->addWidget(m_componentSummary);
-    auto* table = new QTableView(componentPage);
+    auto* table = new QTableView(m_componentData);
     table->setObjectName(QStringLiteral("currentComponents"));
     m_componentModel = new ProjectComponentsModel(table);
     table->setModel(m_componentModel);
@@ -154,19 +195,31 @@ ProjectPage::ProjectPage(ProjectRepository& repository, ComponentRepository& com
     table->horizontalHeader()->setDefaultSectionSize(150);
     table->setColumnWidth(4, 280);
     componentLayout->addWidget(table, 1);
-    m_tabs->addTab(componentPage, QStringLiteral("当前组件"));
-    m_dependencies = new DependencyPage(m_components.databaseFilePath(),m_tabs);
-    m_tabs->addTab(m_dependencies,QStringLiteral("依赖关系"));
+    static_cast<QVBoxLayout*>(m_componentsWorkspace->layout())->addWidget(m_componentData, 1);
+    m_dependenciesWorkspace = workspace("dependenciesWorkspace");
+    m_dependenciesHint = hint(m_dependenciesWorkspace, "dependenciesWorkspaceHint");
+    m_dependencies = new DependencyPage(m_components.databaseFilePath(), m_dependenciesWorkspace);
+    static_cast<QVBoxLayout*>(m_dependenciesWorkspace->layout())->addWidget(m_dependencies, 1);
+    m_vulnerabilityWorkspace = workspace("vulnerabilityWorkspace");
+    m_vulnerabilityHint = hint(m_vulnerabilityWorkspace, "vulnerabilityWorkspaceHint");
     auto* vulnerabilityController = new VulnerabilityController(m_components.databaseFilePath(),cacheDirectory,m_logger,this,transport,transport);
     m_vulnerabilityController = vulnerabilityController;
-    m_vulnerabilities = new VulnerabilityPage(*vulnerabilityController,m_tabs);
-    m_tabs->addTab(m_vulnerabilities,QStringLiteral("漏洞匹配"));
-    layout->addWidget(m_tabs, 2);
+    m_vulnerabilities = new VulnerabilityPage(*vulnerabilityController, m_vulnerabilityWorkspace);
+    static_cast<QVBoxLayout*>(m_vulnerabilityWorkspace->layout())->addWidget(m_vulnerabilities, 1);
 
-    connect(m_tabs, &QTabWidget::currentChanged, this, [this] { emit workspaceChanged(currentWorkspace()); });
+    connect(m_workspaces, &QStackedWidget::currentChanged, this, [this] { emit workspaceChanged(currentWorkspace()); });
     connect(m_vulnerabilities, &VulnerabilityPage::evidenceWorkspaceChanged, this, [this] {
-        if (m_tabs->currentWidget() == m_vulnerabilities) emit workspaceChanged(currentWorkspace());
+        if (m_workspaces->currentWidget() == m_vulnerabilityWorkspace) emit workspaceChanged(currentWorkspace());
     });
+    connect(m_switchProject, &QPushButton::clicked, this, [this, create] {
+        showWorkspace(QStringLiteral("projects"));
+        if (m_list->isVisible() && m_list->currentItem()) m_list->setFocus(Qt::OtherFocusReason);
+        else create->setFocus(Qt::OtherFocusReason);
+    });
+    // Disabling Delete after removal must not transfer focus to an unselected
+    // QListWidget: Qt would implicitly select its first remaining row on focus.
+    QWidget::setTabOrder(m_remove, m_projectContext);
+    updateWorkspaceLayout();
 
     connect(m_vulnerabilities, &VulnerabilityPage::reportExportRequested, this, &ProjectPage::exportFindingReport, Qt::DirectConnection);
     connect(m_vulnerabilities, &VulnerabilityPage::reportSelectionChanged, this, &ProjectPage::updateReportAvailability);
@@ -191,27 +244,54 @@ QString ProjectPage::currentProjectId() const { return selectedId(); }
 
 QString ProjectPage::currentWorkspace() const
 {
-    if (m_tabs->currentWidget() == m_vulnerabilities)
+    if (m_workspaces->currentWidget() == m_vulnerabilityWorkspace)
         return m_vulnerabilities->showingRiskEvidence() ? QStringLiteral("risk") : QStringLiteral("vulnerabilities");
-    if (m_tabs->currentWidget() == m_dependencies) return QStringLiteral("dependencies");
-    if (m_tabs->currentWidget() == m_details) return QStringLiteral("projects");
+    if (m_workspaces->currentWidget() == m_dependenciesWorkspace) return QStringLiteral("dependencies");
+    if (m_workspaces->currentWidget() == m_managementWorkspace) return QStringLiteral("projects");
     return QStringLiteral("components");
 }
 
 bool ProjectPage::showWorkspace(const QString& routeId)
 {
-    const int index = routeId == "projects" ? 0 : routeId == "components" ? 1
-        : routeId == "dependencies" ? 2 : (routeId == "vulnerabilities" || routeId == "risk") ? 3 : -1;
-    if (index < 0) return false;
+    QWidget* target = routeId == "projects" ? m_managementWorkspace : routeId == "components" ? m_componentsWorkspace
+        : routeId == "dependencies" ? m_dependenciesWorkspace
+        : (routeId == "vulnerabilities" || routeId == "risk") ? m_vulnerabilityWorkspace : nullptr;
+    if (!target) return false;
     const auto previous = currentWorkspace();
     {
         // Publish one complete GUI route, never intermediate nested-tab selections.
         const QSignalBlocker blocker(this);
-        m_tabs->setCurrentIndex(index);
-        if (index == 3) m_vulnerabilities->showEvidenceWorkspace(routeId == "risk");
+        m_workspaces->setCurrentWidget(target);
+        if (target == m_vulnerabilityWorkspace) m_vulnerabilities->showEvidenceWorkspace(routeId == "risk");
     }
     if (previous != currentWorkspace()) emit workspaceChanged(currentWorkspace());
     return true;
+}
+
+void ProjectPage::setAnalysisVisible(bool visible)
+{
+    // Keep wrappers and the management page reachable, even with no valid project.
+    // Showing a child of an inactive wrapper does not make that wrapper visible.
+    for (auto* value : {m_componentsHint, m_dependenciesHint, m_vulnerabilityHint}) value->setVisible(!visible);
+    for (QWidget* value : {m_componentData, static_cast<QWidget*>(m_dependencies), static_cast<QWidget*>(m_vulnerabilities)})
+        value->setVisible(visible);
+}
+
+void ProjectPage::resizeEvent(QResizeEvent* event)
+{
+    QWidget::resizeEvent(event);
+    updateWorkspaceLayout();
+}
+
+void ProjectPage::updateWorkspaceLayout()
+{
+    const bool wide = contentsRect().width() - layout()->contentsMargins().left() - layout()->contentsMargins().right() >= 700;
+    m_contextLayout->setDirection(wide ? QBoxLayout::LeftToRight : QBoxLayout::TopToBottom);
+    const auto orientation = wide ? Qt::Horizontal : Qt::Vertical;
+    if (m_managementSplit->orientation() != orientation) {
+        m_managementSplit->setOrientation(orientation);
+        m_managementSplit->setSizes({240, 480});
+    }
 }
 
 ReportError ProjectPage::reportInput(qsizetype candidateIndex, Project& project, std::optional<RiskEvidenceRequest>& request) const
@@ -356,7 +436,8 @@ void ProjectPage::showSelection()
         emit currentProjectChanged(selection);
     }
     m_details->clear();
-    m_tabs->hide();
+    setAnalysisVisible(false);
+    m_projectContext->setText(QStringLiteral("当前未选择项目"));
     m_dependencies->setProject({});
     m_vulnerabilities->setProject({});
     m_componentModel->replace({});
@@ -371,6 +452,7 @@ void ProjectPage::showSelection()
     Project project;
     const auto result = m_repository.findById(id, project);
     if (!result.ok()) {
+        m_projectContext->setText(QStringLiteral("当前项目读取失败"));
         m_error->setText(result.userMessage());
         m_error->show();
         return;
@@ -384,7 +466,9 @@ void ProjectPage::showSelection()
                                      "<p><b>项目描述</b></p><div style='white-space: pre-wrap;'>%3</div>")
                            .arg(project.name.toHtmlEscaped(), createdAt, description.toHtmlEscaped()));
     m_selectionHint->hide();
-    m_tabs->show();
+    m_projectContext->setText(QStringLiteral("当前项目：%1").arg(project.name));
+    m_projectContext->setCursorPosition(0);
+    setAnalysisVisible(true);
     m_dependencies->setProject(id);
     m_vulnerabilities->setProject(id);
     m_remove->setEnabled(true);

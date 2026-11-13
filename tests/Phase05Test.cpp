@@ -617,7 +617,7 @@ void Phase05Test::projectUi()
         dialog->reject(); QTRY_VERIFY(dialog.isNull());
         select(b.id); QCOMPARE(table->model()->rowCount(), 0);
         select(a.id); QCOMPARE(table->model()->rowCount(), 5);
-        window.findChild<QTabWidget*>(QStringLiteral("projectTabs"))->setCurrentIndex(1);
+        QVERIFY(window.findChild<ProjectPage*>()->showWorkspace("components"));
         QVERIFY(window.grab().save(QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("phase05-components.png"))));
         window.resize(680,420);
         QTRY_COMPARE(window.size(), QSize(680,420));

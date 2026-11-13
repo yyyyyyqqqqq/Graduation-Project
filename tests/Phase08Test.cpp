@@ -376,7 +376,7 @@ void Phase08Test::destruction() {
 void Phase08Test::projectApply() {
     Context c;QVERIFY(c.open());const auto id=c.project();QVERIFY(c.apply(id));QVERIFY(c.seed());
     ProjectPage widget(c.projects,c.components,c.logger,c.cache());widget.resize(1100,850);widget.show();
-    widget.findChild<QListWidget*>("projectList")->setCurrentRow(0);widget.findChild<QTabWidget*>("projectTabs")->setCurrentIndex(3);
+    widget.findChild<QListWidget*>("projectList")->setCurrentRow(0);QVERIFY(widget.showWorkspace("vulnerabilities"));
     auto* controller=widget.findChild<VulnerabilityController*>();QVERIFY(controller);QTRY_VERIFY(controller->loaded());
     controller->select(0);controller->query(QueryMode::CacheOnly);QTRY_VERIFY(!controller->busy());QVERIFY(controller->applicability());
     const auto old=controller->applicability()->componentId;
