@@ -30,6 +30,7 @@
 #include <QFileDialog>
 #include <QComboBox>
 #include <QTableView>
+#include <QHeaderView>
 #include <QTabWidget>
 #include <QScrollArea>
 #include <QScrollBar>
@@ -144,6 +145,7 @@ private slots:
     void validationVocabulary(); void uiLifetime(); void markupSafety(); void structuralContract(); void vulnerabilityPresentation();
     void workspaceRoutes(); void workspaceContext(); void workspaceRisk();
     void workspaceLayout(); void workspaceEmpty();
+    void componentStates(); void componentLayout();
 };
 
 void Phase12Test::vocabulary()
@@ -426,9 +428,13 @@ void Phase12Test::successfulApply()
     QCOMPARE(state.size(), 1); QVERIFY(changed.isEmpty());
     QCOMPARE(page.currentProjectId(), c.a.id);
     QVERIFY(supplyText(overview).contains(QStringLiteral("普通组件数：2"))); QVERIFY(supplyText(overview).contains(QStringLiteral("已捕获")));
+    QVERIFY(page.findChild<QLabel*>("currentComponentsSummary")->text().contains(QStringLiteral("普通组件：2")));
+    QVERIFY(page.findChild<QLabel*>("currentComponentsSummary")->text().contains(QStringLiteral("元数据根组件：已提供")));
     QVERIFY(write(path, R"({"bomFormat":"CycloneDX","specVersion":"1.6","components":[]})"));
     dialog->importFile(path); QTRY_COMPARE(parsed.size(), 2); dialog->applyToProject(); QTRY_COMPARE(applied.size(), 2);
     QVERIFY(supplyText(overview).contains(QStringLiteral("普通组件数：0"))); QCOMPARE(state.size(), 2);
+    QVERIFY(page.findChild<QLabel*>("currentComponentsSummary")->text().contains(QStringLiteral("普通组件：0")));
+    QVERIFY(page.findChild<QLabel*>("currentComponentsSummary")->text().contains(QStringLiteral("元数据根组件：未提供")));
     dialog->reject();
 }
 void Phase12Test::overviewSummary()
@@ -923,6 +929,114 @@ void Phase12Test::workspaceEmpty()
     QVERIFY(page->findChild<QLabel*>("componentsWorkspaceHint")->isVisible());
     QTest::mouseClick(page->findChild<QPushButton*>("switchProject"),Qt::LeftButton);
     QVERIFY(create->isVisible()); QCOMPARE(net.requests,0);
+}
+
+void Phase12Test::componentStates()
+{
+    Context c; QVERIFY(c.open()); FixtureNetwork net;
+    auto* page = new ProjectPage(c.projects,c.components,c.logger,c.cache(),nullptr,&net);
+    MainWindow window(page,nullptr,"projects",new QWidget); wireWorkspace(window,*page);
+    window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QVERIFY(window.selectRoute("components"));
+    auto* table = page->findChild<QTableView*>("currentComponents");
+    auto* summary = page->findChild<QLabel*>("currentComponentsSummary");
+    auto* state = page->findChild<QLabel*>("currentComponentsState");
+    auto* refresh = page->findChild<QPushButton*>("refreshProjects");
+    auto* model = table->model();
+    QVERIFY(page->findChild<QLabel*>("componentsWorkspaceHint")->isVisible());
+    QCOMPARE(window.currentRouteId(),QString("components")); QVERIFY(page->currentProjectId().isEmpty());
+    auto* title=page->findChild<QWidget*>("componentsWorkspace")->findChild<QLabel*>("pageTitle");
+    auto* subtitle=page->findChild<QLabel*>("componentsSubtitle");
+    QVERIFY(title->height()<=2*title->fontMetrics().lineSpacing());
+    QVERIFY(subtitle->height()<=2*subtitle->fontMetrics().lineSpacing());
+    QVERIFY(subtitle->y()-title->geometry().bottom()<=20);
+    select(*page,c.a.id);
+    QVERIFY(summary->text().contains(QStringLiteral("普通组件：0")));
+    QVERIFY(summary->text().contains(QStringLiteral("元数据根组件：未提供")));
+    QVERIFY(state->text().contains(QStringLiteral("没有已保存组件")));
+    QVERIFY(!state->text().contains(QStringLiteral("从未导入")));
+    SbomDocument d; d.metadata.component = SbomComponent{"root","application","<b>root %5</b>","1.0",""};
+    QVERIFY(c.components.replaceForProject(c.a.id,d).ok()); refresh->click();
+    QCOMPARE(table->model(),model); QCOMPARE(model->rowCount(),1);
+    QVERIFY(summary->text().contains(QStringLiteral("普通组件：0")));
+    QVERIFY(summary->text().contains(QStringLiteral("元数据根组件：已提供")));
+    QCOMPARE(model->data(model->index(0,0)).toString(),QStringLiteral("元数据根组件"));
+    QCOMPARE(model->data(model->index(0,1)).toString(),QString("<b>root %5</b>"));
+    d.components = {{"z","library","first","1",""},{"a","library","second","2",""}};
+    QVERIFY(c.components.replaceForProject(c.a.id,d).ok()); refresh->click();
+    QVERIFY(summary->text().contains(QStringLiteral("普通组件：2"))); QCOMPARE(model->rowCount(),3);
+    QCOMPARE(model->data(model->index(1,0)).toString(),QStringLiteral("组件 #1"));
+    QCOMPARE(model->data(model->index(2,1)).toString(),QString("second"));
+    d.metadata.component.reset();
+    QVERIFY(c.components.replaceForProject(c.b.id,d).ok()); select(*page,c.b.id);
+    QCOMPARE(model->rowCount(),2); QVERIFY(summary->text().contains(QStringLiteral("元数据根组件：未提供")));
+    select(*page,c.a.id); QCOMPARE(model->rowCount(),3);
+    // Isolated SQL schema fault makes only the component read fail; the selected
+    // project still exists, so recovery actions must remain usable.
+    { QSqlQuery q(c.db.connection()); QVERIFY(q.exec("ALTER TABLE components RENAME TO components_unavailable")); }
+    refresh->click();
+    QCOMPARE(model->rowCount(),0); QVERIFY(summary->text().contains(QStringLiteral("不可用")));
+    QVERIFY(!summary->text().contains(QStringLiteral("普通组件：")));
+    QVERIFY(page->findChild<QLabel*>("projectError")->isVisible());
+    QVERIFY(page->findChild<QPushButton*>("importSbom")->isEnabled());
+    QCOMPARE(window.currentRouteId(),QString("components"));
+    { QSqlQuery q(c.db.connection()); QVERIFY(q.exec("ALTER TABLE components_unavailable RENAME TO components")); }
+    refresh->click(); QCOMPARE(model->rowCount(),3); QVERIFY(!page->findChild<QLabel*>("projectError")->isVisible());
+    QVERIFY(c.components.replaceForProject(c.a.id,{}).ok()); refresh->click();
+    QCOMPARE(model->rowCount(),0); QVERIFY(summary->text().contains(QStringLiteral("普通组件：0")));
+    QVERIFY(c.projects.remove(c.a.id).ok()); refresh->click();
+    QCOMPARE(model->rowCount(),0); QVERIFY(summary->text().contains(QStringLiteral("不可用")));
+    QCOMPARE(window.currentRouteId(),QString("components"));
+    page->findChild<QPushButton*>("switchProject")->click(); QCOMPARE(window.currentRouteId(),QString("projects"));
+    select(*page,c.b.id); window.selectRoute("components");
+    c.db.close(); refresh->click();
+    QVERIFY(summary->text().contains(QStringLiteral("不可用"))); QCOMPARE(model->rowCount(),0);
+    QVERIFY(page->findChild<QLabel*>("projectError")->isVisible());
+    QCOMPARE(net.requests,0);
+}
+
+void Phase12Test::componentLayout()
+{
+    Context c; QVERIFY(c.open()); FixtureNetwork net; SbomDocument d;
+    const QString literal = QStringLiteral("<b>%5 & 组件</b>") + QString(800,u'长');
+    d.metadata.component = SbomComponent{"root","application","root","1",""};
+    for (int i=0;i<120;++i) d.components.append({QString("ref-%1").arg(i),"library",i==0?literal:QString("item-%1").arg(i),"1.0.0",QString(700,u'p')});
+    QVERIFY(c.components.replaceForProject(c.a.id,d).ok());
+    auto* page = new ProjectPage(c.projects,c.components,c.logger,c.cache(),nullptr,&net);
+    MainWindow window(page,nullptr,"projects",new QWidget); wireWorkspace(window,*page);
+    window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window)); select(*page,c.a.id);
+    auto* table = page->findChild<QTableView*>("currentComponents"); auto* model=table->model();
+    auto* owner = page->findChild<VulnerabilityController*>(); auto* risk = &owner->riskEvidence();
+    const auto generation=owner->generation(); QSignalSpy resets(model,&QAbstractItemModel::modelReset);
+    QCOMPARE(model->columnCount(),6); QCOMPARE(table->editTriggers(),QAbstractItemView::NoEditTriggers);
+    QCOMPARE(model->data(model->index(1,1)).toString(),literal.left(512)+QStringLiteral("…"));
+    QVERIFY(!(model->flags(model->index(1,1)) & Qt::ItemIsEditable));
+    for (const QSize size : {QSize(1000,640),QSize(680,420),QSize(1500,900),QSize(680,420)}) {
+        window.selectRoute("settings"); window.resize(size); QTRY_COMPARE(window.size(),size);
+        window.selectRoute("components"); QCoreApplication::processEvents();
+        QCOMPARE(table->model(),model); QCOMPARE(resets.count(),0);
+        QVERIFY(table->viewport()->height() >= 3*table->rowHeight(0));
+        QVERIFY(table->viewport()->width() >= 200);
+        QVERIFY(table->visibleRegion().contains(table->rect().center()));
+        for (const char* name : {"switchProject","importSbom","refreshProjects"}) {
+            auto* b=page->findChild<QPushButton*>(name); QVERIFY(b->isEnabled());
+            QVERIFY(b->visibleRegion().contains(b->rect().center()));
+            QVERIFY(window.rect().contains(b->mapTo(&window,b->rect().center())));
+        }
+        table->setFocus(); QTest::keyClick(table,Qt::Key_End,Qt::ControlModifier);
+        QTRY_COMPARE(table->currentIndex().row(),120);
+        table->scrollTo(model->index(120,5),QAbstractItemView::PositionAtBottom); QCoreApplication::processEvents();
+        QVERIFY(table->viewport()->rect().intersects(table->visualRect(model->index(120,5))));
+        QVERIFY(table->verticalScrollBar()->maximum()>0);
+        if(size.width()==680) QVERIFY(table->horizontalScrollBar()->maximum()>0);
+        qInfo() << "UI02B2 component geometry" << size << "viewport" << table->viewport()->size() << "rowHeight" << table->rowHeight(0) << "DPR" << window.devicePixelRatioF();
+        QVERIFY(window.grab().save(QDir(QCoreApplication::applicationDirPath()).filePath(QString("ui02b2-components-%1x%2.png").arg(size.width()).arg(size.height()))));
+    }
+    table->horizontalHeader()->resizeSection(1,220); QCOMPARE(table->columnWidth(1),220);
+    window.selectRoute("settings"); window.resize(1000,640); window.selectRoute("components");
+    QCOMPARE(table->columnWidth(1),220); QCOMPARE(resets.count(),0); QCOMPARE(owner->generation(),generation);
+    QCOMPARE(page->findChildren<VulnerabilityController*>().size(),1); QCOMPARE(owner->parent(),page);
+    QCOMPARE(page->findChildren<RiskEvidenceController*>().size(),1); QCOMPARE(risk->parent(),owner); QCOMPARE(net.requests,0);
 }
 
 QTEST_MAIN(Phase12Test)

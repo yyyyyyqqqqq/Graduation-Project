@@ -22,6 +22,9 @@
 #include <QSignalSpy>
 #include <QSqlQuery>
 #include <QTableView>
+#include <QTabWidget>
+#include <QHeaderView>
+#include <QScrollBar>
 #include <QTemporaryDir>
 #include <QTest>
 #include <QTextBrowser>
@@ -104,6 +107,7 @@ private slots:
     void projectIntegration();
     void largePreview();
     void closingDuringImport();
+    void importLayout();
 };
 
 void Phase03Test::minimal()
@@ -511,6 +515,90 @@ void Phase03Test::closingDuringImport()
     QVERIFY(QThreadPool::globalInstance()->waitForDone(5000));
     SbomImportDialog reopened(QStringLiteral("synthetic-project-id"), QStringLiteral("demo"), context.database.filePath(), context.logger);
     QCOMPARE(reopened.findChild<QTableView*>(QStringLiteral("sbomComponents"))->model()->rowCount(), 0);
+}
+
+void Phase03Test::importLayout()
+{
+    Context c; QVERIFY(c.open()); Project project;
+    const QString name=QStringLiteral("<b>%5 & 项目</b>")+QString(80,u'长');
+    QVERIFY(c.repository.create(name,{},project).ok());
+    const auto file=c.temporary.filePath(QStringLiteral("长文件名-%5-synthetic-input.json"));
+    const auto bad=c.temporary.filePath("invalid.json"); QVERIFY(writeFile(bad,"{"));
+    const QString literal=QStringLiteral("<script>%5 & literal</script>")+QString(800,u'文');
+    auto object=minimalObject(); object["version"]=7; object["serialNumber"]=literal;
+    const QJsonObject root{{"name",literal},{"type","application"},{"version","1.0"},{"bom-ref","root"},{"purl","pkg:generic/root@1.0"}};
+    object["metadata"]=QJsonObject{{"timestamp",literal},{"component",root}};
+    QJsonArray components;
+    for(int i=0;i<120;++i) components.append(QJsonObject{{"name",i==0?literal:QString("synthetic-%1").arg(i)},
+        {"version","1.0"},{"type","library"},{"purl",QString(700,u'p')+QString::number(i)},{"bom-ref",QString("ref-%1").arg(i)}});
+    components.append(QJsonObject{}); // Deliberate quality Error; never a parser failure.
+    object["components"]=components; QVERIFY(writeFile(file,encode(object)));
+    SbomImportDialog dialog(project.id,name,c.database.filePath(),c.logger);
+    dialog.show(); QVERIFY(QTest::qWaitForWindowExposed(&dialog));
+    auto* table=dialog.findChild<QTableView*>("sbomComponents");
+    auto* issues=dialog.findChild<QTableView*>("sbomQualityIssues");
+    auto* summary=dialog.findChild<QTextBrowser*>("sbomSummary");
+    auto* tabs=dialog.findChild<QTabWidget*>("sbomTabs");
+    auto* apply=dialog.findChild<QPushButton*>("applySbom");
+    auto* choose=dialog.findChild<QPushButton*>("chooseSbomFile");
+    auto* close=dialog.findChild<QPushButton*>("closeSbom");
+    auto* model=table->model(); auto* qualityModel=issues->model();
+    QVERIFY(!apply->isEnabled()); dialog.importFile({}); QCOMPARE(model->rowCount(),0);
+    QSignalSpy parsed(&dialog,&SbomImportDialog::importFinished);
+    dialog.importFile(file); QTRY_COMPARE(parsed.size(),1); QVERIFY(parsed[0][0].toBool());
+    QCOMPARE(model->rowCount(),121); QCOMPARE(model->columnCount(),5); QCOMPARE(qualityModel->columnCount(),4);
+    QCOMPARE(model->data(model->index(0,0)).toString(),literal.left(512)+QStringLiteral("…"));
+    QCOMPARE(dialog.findChild<QLabel*>("sbomProject")->text(),QStringLiteral("当前项目：%1").arg(name));
+    const auto successfulSummary=summary->toPlainText();
+    for (const QString text : {QStringLiteral("长文件名-%5-synthetic-input.json"),QStringLiteral("BOM version：7"),
+         QStringLiteral("组件数量：121"),QStringLiteral("依赖条目数量：0"),literal.left(512)})
+        QVERIFY(successfulSummary.contains(text));
+    QVERIFY(!successfulSummary.contains(c.temporary.path()));
+    QCOMPARE(scalar(c.database,"SELECT COUNT(*) FROM components").toInt(),0);
+    QVERIFY(apply->isEnabled());
+    QVERIFY(dialog.findChild<QLabel*>("sbomStatus")->text().contains(QStringLiteral("存在质量 Error")));
+    for (const QSize size : {QSize(900,600),QSize(560,400),QSize(1200,800),QSize(560,400)}) {
+        dialog.resize(size); QTRY_COMPARE(dialog.size(),size);
+        for (int tab=0;tab<2;++tab) {
+            tabs->setCurrentIndex(tab); QCoreApplication::processEvents();
+            auto* view=tab==0?table:issues;
+            qInfo()<<"UI02B2 import geometry"<<size<<"tab"<<tab<<"viewport"<<view->viewport()->size()<<"rowHeight"<<view->rowHeight(0)<<"DPR"<<dialog.devicePixelRatioF();
+            QVERIFY(dialog.grab().save(QDir(QCoreApplication::applicationDirPath()).filePath(QString("ui02b2-import-before-scroll-%1x%2-tab%3.png").arg(size.width()).arg(size.height()).arg(tab))));
+            QVERIFY(view->visibleRegion().contains(view->rect().center()));
+            QVERIFY(view->viewport()->height()>=2*view->rowHeight(0));
+            QVERIFY(view->viewport()->width()>=300);
+            for(auto* button:{choose,apply,close}) {
+                QVERIFY(button->isEnabled()); QVERIFY(button->visibleRegion().contains(button->rect().center()));
+                QVERIFY(dialog.rect().contains(QRect(button->mapTo(&dialog,QPoint()),button->size())));
+            }
+            auto* tabBar=tabs->tabBar(); QVERIFY(tabBar->visibleRegion().contains(tabBar->tabRect(tab).center()));
+            view->scrollTo(view->model()->index(view->model()->rowCount()-1,view->model()->columnCount()-1),QAbstractItemView::PositionAtBottom);
+            QCoreApplication::processEvents();
+            QVERIFY(view->viewport()->rect().intersects(view->visualRect(view->model()->index(view->model()->rowCount()-1,view->model()->columnCount()-1))));
+            if(size.width()==560) QVERIFY(view->horizontalScrollBar()->maximum()>0);
+            QVERIFY(dialog.grab().save(QDir(QCoreApplication::applicationDirPath()).filePath(QString("ui02b2-import-%1x%2-tab%3.png").arg(size.width()).arg(size.height()).arg(tab))));
+        }
+    }
+    QCOMPARE(table->model(),model); QCOMPARE(issues->model(),qualityModel);
+    dialog.importFile(bad); QTRY_COMPARE(parsed.size(),2); QVERIFY(!parsed.last()[0].toBool());
+    QCOMPARE(summary->toPlainText(),successfulSummary); QCOMPARE(model->rowCount(),121); QVERIFY(apply->isEnabled());
+    dialog.importFile({}); QCOMPARE(summary->toPlainText(),successfulSummary);
+    // Same preview model, root kept in summary and excluded from its row count.
+    object["components"]=QJsonArray{}; QVERIFY(writeFile(file,encode(object)));
+    dialog.importFile(file); QTRY_COMPARE(parsed.size(),3); QCOMPARE(model->rowCount(),0);
+    QVERIFY(summary->toPlainText().contains(QStringLiteral("组件数量：0")));
+    QVERIFY(summary->toPlainText().contains(literal.left(512)));
+    QVERIFY(writeFile(file,encode(minimalObject()))); dialog.importFile(file); QTRY_COMPARE(parsed.size(),4);
+    QVERIFY(summary->toPlainText().contains(QStringLiteral("元数据根组件：未提供"))); QCOMPARE(model->rowCount(),0);
+    // Fully specified synthetic root + ordinary component produce clean diagnostics.
+    object=minimalObject(); object["metadata"]=QJsonObject{{"component",root}};
+    object["components"]=QJsonArray{QJsonObject{{"name","clean"},{"version","1"},{"type","library"},{"purl","pkg:generic/clean@1"},{"bom-ref","clean"}}};
+    QVERIFY(writeFile(file,encode(object))); dialog.importFile(file); QTRY_COMPARE(parsed.size(),5);
+    QCOMPARE(model->rowCount(),1); QCOMPARE(qualityModel->rowCount(),0);
+    QVERIFY(dialog.findChild<QLabel*>("sbomQualitySummary")->text().contains(QStringLiteral("当前诊断规则未发现问题")));
+    QCOMPARE(scalar(c.database,"SELECT COUNT(*) FROM components").toInt(),0);
+    QFile log(c.temporary.filePath("test.log")); QVERIFY(log.open(QIODevice::ReadOnly)); const auto bytes=log.readAll();
+    for(const auto& forbidden:{name.toUtf8(),literal.left(100).toUtf8(),file.toUtf8(),QByteArray("pkg:generic")}) QVERIFY(!bytes.contains(forbidden));
 }
 
 QTEST_MAIN(Phase03Test)

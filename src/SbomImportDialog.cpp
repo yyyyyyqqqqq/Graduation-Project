@@ -3,12 +3,14 @@
 
 #include <QAbstractTableModel>
 #include <QCloseEvent>
+#include <QColor>
 #include <QDialogButtonBox>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QHeaderView>
 #include <QLabel>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QTableView>
 #include <QTabWidget>
 #include <QTextBrowser>
@@ -82,6 +84,13 @@ public:
         if (!index.isValid() || index.row() < 0 || index.row() >= rowCount()) return {};
         const auto& issue = m_report.issues().at(index.row());
         if (role == Qt::ToolTipRole) return issue.message();
+        if (role == Qt::ForegroundRole && index.column() == 0) {
+            switch (issue.severity()) {
+            case QualitySeverity::Error: return QColor(QStringLiteral("#a12622"));
+            case QualitySeverity::Warning: return QColor(QStringLiteral("#805700"));
+            case QualitySeverity::Info: return QColor(QStringLiteral("#315f88"));
+            }
+        }
         if (role != Qt::DisplayRole) return {};
         switch (index.column()) {
         case 0:
@@ -135,19 +144,34 @@ SbomImportDialog::SbomImportDialog(const QString& projectId, const QString& proj
     resize(900, 600);
     setMinimumSize(560, 400);
     auto* layout = new QVBoxLayout(this);
+    layout->setContentsMargins(12, 8, 12, 8);
+    layout->setSpacing(4);
     auto* project = new QLabel(QStringLiteral("当前项目：%1").arg(projectName), this);
     project->setObjectName(QStringLiteral("sbomProject"));
     project->setTextFormat(Qt::PlainText);
     project->setWordWrap(true);
-    layout->addWidget(project);
-    auto* hint = new QLabel(QStringLiteral("支持 CycloneDX JSON 1.4 / 1.5 / 1.6，最大 %1 MiB。\n"
-        "预览不写入数据库。点击“应用到项目”后，将完整替换当前组件（含元数据根组件）及原始依赖声明。")
+    project->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
+    QSizePolicy projectPolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+    projectPolicy.setHeightForWidth(true);
+    project->setSizePolicy(projectPolicy);
+    auto* projectScroll = new QScrollArea(this);
+    projectScroll->setObjectName(QStringLiteral("sbomProjectScroll"));
+    projectScroll->setWidgetResizable(true);
+    projectScroll->setFrameShape(QFrame::NoFrame);
+    projectScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    projectScroll->setFixedHeight(project->fontMetrics().lineSpacing() * 2 + 4);
+    projectScroll->setWidget(project);
+    layout->addWidget(projectScroll);
+    auto* fileActions = new QHBoxLayout;
+    auto* hint = new QLabel(QStringLiteral("CycloneDX JSON 1.4 / 1.5 / 1.6 · 最大 %1 MiB")
         .arg(CycloneDxParser::MaxFileBytes / (1024 * 1024)), this);
+    hint->setObjectName(QStringLiteral("sbomFormatHint"));
     hint->setWordWrap(true);
-    layout->addWidget(hint);
     m_choose = new QPushButton(QStringLiteral("选择 SBOM 文件…"), this);
     m_choose->setObjectName(QStringLiteral("chooseSbomFile"));
-    layout->addWidget(m_choose, 0, Qt::AlignLeft);
+    fileActions->addWidget(m_choose);
+    fileActions->addWidget(hint, 1);
+    layout->addLayout(fileActions);
     m_status = new QLabel(QStringLiteral("请选择文件。"), this);
     m_status->setObjectName(QStringLiteral("sbomStatus"));
     m_status->setTextFormat(Qt::PlainText);
@@ -157,15 +181,18 @@ SbomImportDialog::SbomImportDialog(const QString& projectId, const QString& proj
     tabs->setObjectName(QStringLiteral("sbomTabs"));
     auto* componentPage = new QWidget(tabs);
     auto* componentLayout = new QVBoxLayout(componentPage);
+    componentLayout->setContentsMargins(6, 6, 6, 6);
+    componentLayout->setSpacing(4);
     m_summary = new QTextBrowser(componentPage);
     m_summary->setObjectName(QStringLiteral("sbomSummary"));
     m_summary->setOpenLinks(false);
     m_summary->setOpenExternalLinks(false);
     m_summary->setWordWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-    m_summary->setMinimumHeight(90);
-    m_summary->setMaximumHeight(180);
+    m_summary->setMinimumHeight(54);
+    m_summary->setMaximumHeight(100);
+    m_summary->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Ignored);
     m_summary->setPlainText(QStringLiteral("尚无成功解析的 SBOM。"));
-    componentLayout->addWidget(m_summary);
+    componentLayout->addWidget(m_summary, 1);
     auto* table = new QTableView(componentPage);
     table->setObjectName(QStringLiteral("sbomComponents"));
     table->setModel(m_model);
@@ -173,12 +200,19 @@ SbomImportDialog::SbomImportDialog(const QString& projectId, const QString& proj
     table->setSelectionBehavior(QAbstractItemView::SelectRows);
     table->setAlternatingRowColors(true);
     table->setWordWrap(false);
-    table->horizontalHeader()->setDefaultSectionSize(150);
-    table->setColumnWidth(3, 280);
-    componentLayout->addWidget(table, 1);
+    table->setShowGrid(false);
+    table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Ignored);
+    table->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+    table->horizontalHeader()->setStretchLastSection(true);
+    const QList<int> previewWidths{180, 120, 110, 260, 200};
+    for (int column = 0; column < previewWidths.size(); ++column)
+        table->setColumnWidth(column, previewWidths[column]);
+    componentLayout->addWidget(table, 4);
     tabs->addTab(componentPage, QStringLiteral("组件预览"));
     auto* qualityPage = new QWidget(tabs);
     auto* qualityLayout = new QVBoxLayout(qualityPage);
+    qualityLayout->setContentsMargins(6, 6, 6, 6);
+    qualityLayout->setSpacing(4);
     m_qualitySummary = new QLabel(QStringLiteral("尚无质量诊断结果。"), qualityPage);
     m_qualitySummary->setObjectName(QStringLiteral("sbomQualitySummary"));
     m_qualitySummary->setTextFormat(Qt::PlainText);
@@ -191,6 +225,9 @@ SbomImportDialog::SbomImportDialog(const QString& projectId, const QString& proj
     issues->setSelectionBehavior(QAbstractItemView::SelectRows);
     issues->setAlternatingRowColors(true);
     issues->setWordWrap(false);
+    issues->setShowGrid(false);
+    issues->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+    issues->horizontalHeader()->setStretchLastSection(true);
     // The wrapping summary drives tab height-for-width. The scrollable table
     // must use available height instead of imposing its preferred row area.
     issues->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Ignored);
@@ -201,13 +238,42 @@ SbomImportDialog::SbomImportDialog(const QString& projectId, const QString& proj
     qualityLayout->addWidget(issues, 1);
     tabs->addTab(qualityPage, QStringLiteral("质量诊断"));
     layout->addWidget(tabs, 1);
+    auto* applyHint = new QLabel(QStringLiteral("预览不写库；应用将完整替换组件（含根组件）与原始依赖。"), this);
+    applyHint->setObjectName(QStringLiteral("sbomApplyHint"));
+    applyHint->setWordWrap(true);
+    layout->addWidget(applyHint);
     auto* buttons = new QDialogButtonBox(QDialogButtonBox::Close, this);
     m_close = buttons->button(QDialogButtonBox::Close);
+    m_close->setObjectName(QStringLiteral("closeSbom"));
     m_close->setText(QStringLiteral("关闭"));
     m_apply = buttons->addButton(QStringLiteral("应用到项目"), QDialogButtonBox::ActionRole);
     m_apply->setObjectName(QStringLiteral("applySbom"));
     m_apply->setAutoDefault(false);
     layout->addWidget(buttons);
+    setStyleSheet(QStringLiteral(
+        "QDialog#sbomImportDialog { background: #f3f6fa; }"
+        "QLabel#sbomProject { color: #243b53; font-weight: 600; }"
+        "QLabel#sbomFormatHint, QLabel#sbomApplyHint { color: #52647b; }"
+        "QLabel#sbomStatus { color: #244765; }"
+        "QTextBrowser#sbomSummary { background: #edf2f8; color: #334e68; border: 1px solid #d6e1ed; border-radius: 4px; }"
+        "QLabel#sbomQualitySummary { color: #334e68; }"
+        "QTabWidget#sbomTabs::pane { background: white; border: 1px solid #d6e1ed; }"
+        "QTabWidget#sbomTabs QTabBar::tab { padding: 6px 16px; color: #52647b; background: #e8eef6; }"
+        "QTabWidget#sbomTabs QTabBar::tab:selected { background: white; color: #174f87; border-bottom: 2px solid #3976b6; }"
+        "QTabWidget#sbomTabs QTabBar::tab:focus { outline: 1px solid #3976b6; }"
+        "QTableView#sbomComponents, QTableView#sbomQualityIssues { background: white; alternate-background-color: #f5f8fc;"
+        " color: #243b53; border: 1px solid #d6e1ed; selection-background-color: #d6e8fb; selection-color: #173d69; }"
+        "QTableView#sbomComponents:focus, QTableView#sbomQualityIssues:focus { border-color: #3976b6; }"
+        "QTableView#sbomComponents QHeaderView::section, QTableView#sbomQualityIssues QHeaderView::section"
+        " { background: #edf2f8; color: #334e68; padding: 4px; border: none; border-right: 1px solid #d6e1ed; border-bottom: 1px solid #d6e1ed; }"
+        "QPushButton#chooseSbomFile, QPushButton#applySbom, QPushButton#closeSbom"
+        " { color: #244765; background: white; padding: 5px 12px; border: 1px solid #b6c8dc; border-radius: 5px; }"
+        "QPushButton#applySbom { background: #255faa; border-color: #255faa; color: white; }"
+        "QPushButton#chooseSbomFile:hover, QPushButton#closeSbom:hover { background: #e8eff7; }"
+        "QPushButton#applySbom:hover { background: #1c4f91; }"
+        "QPushButton#chooseSbomFile:focus, QPushButton#applySbom:focus, QPushButton#closeSbom:focus { border: 2px solid #619bd4; padding: 4px 11px; }"
+        "QPushButton#chooseSbomFile:disabled, QPushButton#applySbom:disabled, QPushButton#closeSbom:disabled"
+        " { color: #697b8e; background: #e8edf3; border-color: #d6e1ed; }"));
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
     connect(m_choose, &QPushButton::clicked, this, &SbomImportDialog::chooseFile);
     connect(m_apply, &QPushButton::clicked, this, &SbomImportDialog::applyToProject);
@@ -262,9 +328,9 @@ SbomImportDialog::SbomImportDialog(const QString& projectId, const QString& proj
             m_qualityModel->replace(std::move(result.quality));
             m_applyState = ApplyState::Ready;
             m_status->setStyleSheet(QString());
-            m_status->setText(QStringLiteral("解析成功（%1 项问题，Error：%2），尚未应用。组件数不含元数据根组件。%3")
+            m_status->setText(QStringLiteral("解析成功 · 尚未应用（%1 项问题，Error：%2）。%3")
                 .arg(total).arg(errors).arg(errors > 0
-                    ? QStringLiteral("存在质量 Error；仍可保存当前输入，保存不代表数据没有问题。") : QString()));
+                    ? QStringLiteral("存在质量 Error；仍可应用，保存不代表数据没有问题。") : QString()));
         }
         m_pendingFileName.clear();
         updateActions();

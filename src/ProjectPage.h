@@ -79,6 +79,7 @@ private:
     QBoxLayout* m_contextLayout;
     ProjectComponentsModel* m_componentModel;
     QLabel* m_componentSummary;
+    QLabel* m_componentState;
     DependencyPage* m_dependencies;
     VulnerabilityPage* m_vulnerabilities;
     VulnerabilityController* m_vulnerabilityController;

@@ -297,7 +297,8 @@ if(BUILD_TESTING)
             freshnessDrift statusFreshness cveJoin noCve missingAssociation multiCvePartial
             selectionOwnership initialSynchronization projectSwitch createDelete successfulApply
             overviewSummary largeSummary summaryError overviewNavigation settingsInfo validationVocabulary
-            uiLifetime markupSafety structuralContract vulnerabilityPresentation workspaceRoutes workspaceContext workspaceRisk workspaceLayout workspaceEmpty)
+            uiLifetime markupSafety structuralContract vulnerabilityPresentation workspaceRoutes workspaceContext workspaceRisk workspaceLayout workspaceEmpty
+            componentStates componentLayout)
         add_qt_test(Phase12 Phase12Test ${test_case})
     endforeach()
     foreach(test_case IN ITEMS sharedEvaluator synthetic explanation profileCodec contractFailures
@@ -337,7 +338,7 @@ if(BUILD_TESTING)
     endforeach()
     foreach(test_case IN ITEMS minimal supportedVersions components metadata dependencies invalidJson
             invalidHeaders invalidStructures utf8 limits fileRead previewAtomicity projectIntegration
-            largePreview closingDuringImport)
+            largePreview closingDuringImport importLayout)
         add_qt_test(Phase03 Phase03Test ${test_case})
     endforeach()
     foreach(test_case IN ITEMS clean missingFields duplicateIdentifiers emptyDocument dependencyRules
@@ -345,7 +346,8 @@ if(BUILD_TESTING)
         add_qt_test(Phase04 Phase04Test ${test_case})
     endforeach()
     foreach(test_case IN ITEMS schema migrateV2 migrationFailures foreignKeys sourcePreservation replacement rollback
-            repositoryErrors previewOnly explicitApply parserFailures applyFailureRetry projectUi largeReplacement largeApply workerLifetime)
+            repositoryErrors previewOnly explicitApply parserFailures applyFailureRetry projectUi largeReplacement largeApply
+            largeApplyResponsiveness responseTailCalibration workerLifetime)
         add_qt_test(Phase05 Phase05Test ${test_case})
     endforeach()
     foreach(test_case IN ITEMS schema migration migrationFailures captureRaw atomicReplace resolution graphTraversal metricsSelf consistentSnapshot largeData

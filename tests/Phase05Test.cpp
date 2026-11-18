@@ -30,8 +30,93 @@
 #include <QTemporaryDir>
 #include <QTest>
 #include <QUuid>
+#include <QThread>
+#include <chrono>
+#include <condition_variable>
+#include <memory>
+#include <mutex>
+#include <thread>
 
 namespace {
+// Test-only active observer. The original largeApply deliberately does not use
+// it: extra posted events would change the original awake sampling conditions.
+class GuiResponseProbe final
+{
+    using Clock = std::chrono::steady_clock;
+    static qint64 nowUs() { return std::chrono::duration_cast<std::chrono::microseconds>(Clock::now().time_since_epoch()).count(); }
+    struct State {
+        std::mutex mutex;
+        std::condition_variable changed;
+        bool ready = false, stopped = false;
+        qint64 originUs = nowUs(), pendingUs = -1, maximumUs = 0;
+        quintptr probeThread = 0;
+        QVector<QPair<qint64,qint64>> deliveries;
+    };
+public:
+    struct Measurement {
+        qint64 deliveredMaximumUs = 0, pendingAgeUs = 0, elapsedUs = 0;
+        qsizetype deliveries = 0;
+        double maximumMs() const { return qMax(deliveredMaximumUs,pendingAgeUs) / 1000.0; }
+    };
+    GuiResponseProbe() : m_state(std::make_shared<State>())
+    {
+        m_state->deliveries.reserve(2048);
+        m_thread = std::thread([state=m_state, receiver=&m_receiver] {
+            std::unique_lock lock(state->mutex);
+            state->probeThread = quintptr(QThread::currentThreadId());
+            while (!state->stopped) {
+                if (state->pendingUs < 0) {
+                    state->pendingUs = nowUs();
+                    QMetaObject::invokeMethod(receiver,[state] {
+                        std::lock_guard guard(state->mutex);
+                        if (state->stopped) return;
+                        const auto received = nowUs();
+                        state->maximumUs = qMax(state->maximumUs,received-state->pendingUs);
+                        state->deliveries.append({state->pendingUs-state->originUs,received-state->originUs});
+                        state->pendingUs = -1;
+                    },Qt::QueuedConnection);
+                }
+                state->ready = true;
+                state->changed.notify_all();
+                state->changed.wait_for(lock,std::chrono::milliseconds(20),[&]{return state->stopped;});
+            }
+        });
+        std::unique_lock lock(m_state->mutex);
+        m_state->changed.wait(lock,[&]{return m_state->ready;});
+    }
+    ~GuiResponseProbe() { finish(); }
+    Measurement finish()
+    {
+        if (m_finished) return m_measurement;
+        {
+            std::lock_guard lock(m_state->mutex);
+            const auto end = nowUs();
+            m_state->stopped = true;
+            m_measurement = {m_state->maximumUs,m_state->pendingUs < 0 ? 0 : end-m_state->pendingUs,
+                             end-m_state->originUs,m_state->deliveries.size()};
+        }
+        // Freeze pending age BEFORE joining. Never pump/drain GUI events to make
+        // an outstanding request disappear at the measurement boundary.
+        m_state->changed.notify_all();
+        m_thread.join();
+        m_finished = true;
+        qInfo() << "GUI_RESPONSE elapsedUs=" << m_measurement.elapsedUs
+                << "deliveredMaximumUs=" << m_measurement.deliveredMaximumUs
+                << "pendingAgeUs=" << m_measurement.pendingAgeUs << "deliveries=" << m_measurement.deliveries
+                << "guiThread=" << quintptr(QThread::currentThreadId()) << "probeThread=" << m_state->probeThread;
+        QJsonArray timeline;
+        for (const auto& pair : m_state->deliveries) timeline.append(QJsonArray{pair.first,pair.second});
+        qInfo().noquote() << "GUI_RESPONSE_TIMELINE_US" << QJsonDocument(timeline).toJson(QJsonDocument::Compact);
+        return m_measurement;
+    }
+private:
+    QObject m_receiver; // Removes queued callbacks on destruction; no product object is captured.
+    std::shared_ptr<State> m_state;
+    std::thread m_thread;
+    bool m_finished = false;
+    Measurement m_measurement;
+};
+
 struct Context {
     QTemporaryDir temporary;
     AppLogger logger;
@@ -125,6 +210,8 @@ private slots:
     void projectUi();
     void largeReplacement();
     void largeApply();
+    void largeApplyResponsiveness();
+    void responseTailCalibration();
     void workerLifetime();
 };
 
@@ -658,9 +745,19 @@ void Phase05Test::largeApply()
     QSignalSpy applied(&dialog,&SbomImportDialog::applyFinished);
     dialog.importFile(file); QTRY_COMPARE_WITH_TIMEOUT(parsed.count(),1,15000);
     QVERIFY(parsed.first()[0].toBool());
+    QVector<qint64> awakeTimes;
+    awakeTimes.reserve(2048);
     QElapsedTimer timer; timer.start();
+    const auto diagnostic = qScopeGuard([&] {
+        if (QTest::currentTestFailed()) {
+            QJsonArray timeline; for (auto value : awakeTimes) timeline.append(value);
+            qInfo().noquote() << "LARGE_APPLY_FAILURE_AWAKE_MS guiThread=" << quintptr(QThread::currentThreadId())
+                             << QJsonDocument(timeline).toJson(QJsonDocument::Compact);
+        }
+    });
     dialog.applyToProject();
     const auto dispatchMs = timer.elapsed();
+    qInfo() << "100000 GUI Apply dispatch ms=" << dispatchMs;
     QVERIFY2(dispatchMs < 500,"Apply dispatch blocked the GUI thread");
     auto* apply = dialog.findChild<QPushButton*>(QStringLiteral("applySbom"));
     QVERIFY(!apply->isEnabled());
@@ -677,16 +774,28 @@ void Phase05Test::largeApply()
     int wakeups = 0;
     qint64 maximumGap = 0;
     qint64 previous = timer.elapsed();
+    qint64 completionMs = -1;
     const auto connection = connect(QAbstractEventDispatcher::instance(),&QAbstractEventDispatcher::awake,&dialog,[&] {
         const auto now = timer.elapsed(); maximumGap = qMax(maximumGap,now-previous); previous=now; ++wakeups;
+        awakeTimes.append(now);
+    });
+    const auto reportMeasurement = qScopeGuard([&] {
+        disconnect(connection);
+        // Also runs on a QTRY failure; uses the captured Apply measurement, not
+        // the later timer.restart() used for persisted view loading.
+        if (QTest::currentTestFailed())
+            qInfo() << "LARGE_APPLY_FAILURE dispatchMs=" << dispatchMs << "maximumGap=" << maximumGap
+                    << "wakeups=" << wakeups << "lastAwakeMs=" << previous
+                    << "completionMs=" << (completionMs < 0 ? timer.elapsed() : completionMs);
     });
     QTRY_COMPARE_WITH_TIMEOUT(applied.count(),1,20000);
     disconnect(connection);
+    completionMs = timer.elapsed();
+    qInfo() << "100000 GUI Apply: dispatch ms=" << dispatchMs << "completion ms=" << completionMs
+        << "event-loop wakeups=" << wakeups << "max observed gap ms=" << maximumGap;
     QVERIFY(applied.first()[0].toBool());
     QVERIFY(wakeups > 1);
     QVERIFY2(maximumGap < 1000,"GUI event dispatch was stalled during Apply");
-    qInfo() << "100000 GUI Apply: dispatch ms=" << dispatchMs << "completion ms=" << timer.elapsed()
-        << "event-loop wakeups=" << wakeups << "max observed gap ms=" << maximumGap;
     const auto persisted = rows(c.components,a.id);
     QCOMPARE(persisted.size(),100000);
     dialog.applyToProject();
@@ -698,13 +807,90 @@ void Phase05Test::largeApply()
     timer.restart();
     page.findChild<QListWidget*>(QStringLiteral("projectList"))->setCurrentRow(0);
     const auto viewMs = timer.elapsed();
-    QCOMPARE(page.findChild<QTableView*>(QStringLiteral("currentComponents"))->model()->rowCount(),100000);
     qInfo() << "100000 persisted component view load ms=" << viewMs;
+    QCOMPARE(page.findChild<QTableView*>(QStringLiteral("currentComponents"))->model()->rowCount(),100000);
     QVERIFY(viewMs < 1000);
     const QDir output(QCoreApplication::applicationDirPath());
     QVERIFY(writeFile(output.filePath(QStringLiteral("phase05-large-sbom.json")),bytes));
     QVERIFY(writeFile(output.filePath(QStringLiteral("phase05-replacement-sbom.json")),R"({"bomFormat":"CycloneDX","specVersion":"1.6","components":[{"bom-ref":"replacement-only","type":"library","name":"synthetic-replacement-only","version":"2.0","purl":"pkg:generic/synthetic-replacement-only@2.0"}]})"));
     QVERIFY(writeFile(output.filePath(QStringLiteral("phase05-empty-sbom.json")),R"({"bomFormat":"CycloneDX","specVersion":"1.6","components":[]})"));
+}
+
+void Phase05Test::largeApplyResponsiveness()
+{
+    const bool native=QCoreApplication::testAttribute(Qt::AA_DontUseNativeDialogs);
+    QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs);
+    const auto restore=qScopeGuard([&]{QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs,native);});
+    Context c; QVERIFY(c.open()); Project a,b;
+    QVERIFY(c.projects.create("synthetic project A",{},a).ok());
+    QVERIFY(c.projects.create("synthetic project B",{},b).ok());
+    const auto document=largeDocument(); QVERIFY(c.components.replaceForProject(a.id,document).ok());
+    QJsonArray array;
+    for(const auto& component:document.components)
+        array.append(QJsonObject{{"bom-ref",component.bomRef},{"type",component.type},{"name",component.name},
+            {"version",component.version},{"purl",component.purl}});
+    const auto file=c.temporary.filePath("large.json");
+    QVERIFY(writeFile(file,QJsonDocument(QJsonObject{{"bomFormat","CycloneDX"},{"specVersion","1.6"},{"components",array}}).toJson(QJsonDocument::Compact)));
+    auto* page=new ProjectPage(c.projects,c.components,c.logger,c.temporary.filePath("cache"));
+    MainWindow window(page,nullptr,"projects"); window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window));
+    auto* list=page->findChild<QListWidget*>("projectList");
+    auto select=[&](const QString& id){for(int i=0;i<list->count();++i)if(list->item(i)->data(Qt::UserRole).toString()==id)list->setCurrentRow(i);};
+    select(a.id); QVERIFY(page->showWorkspace("components"));
+    auto* table=page->findChild<QTableView*>("currentComponents"); QCOMPARE(table->model()->rowCount(),100000);
+    auto* model=table->model();
+    page->findChild<QPushButton*>("importSbom")->click();
+    QPointer<SbomImportDialog> dialog=page->findChild<SbomImportDialog*>(); QVERIFY(dialog);
+    QPointer<QFileDialog> picker=dialog->findChild<QFileDialog*>();QVERIFY(picker);picker->reject();QTRY_VERIFY(picker.isNull());
+    QSignalSpy parsed(dialog,&SbomImportDialog::importFinished),applied(dialog,&SbomImportDialog::applyFinished);
+    QSignalSpy refreshed(page,&ProjectPage::currentProjectStateChanged);
+    dialog->importFile(file);QTRY_COMPARE_WITH_TIMEOUT(parsed.count(),1,15000);QVERIFY(parsed.first()[0].toBool());
+    // Separate active test: includes the real ProjectPage synchronous refresh.
+    GuiResponseProbe probe;
+    QElapsedTimer timer; timer.start();
+    dialog->applyToProject();
+    const auto dispatchMs=timer.elapsed();
+    qInfo()<<"PROJECT_RESPONSE dispatchMs="<<dispatchMs;
+    QVERIFY(dispatchMs<500);
+    QTRY_COMPARE_WITH_TIMEOUT(applied.count(),1,20000);
+    const auto measurement=probe.finish();
+    QVERIFY(applied.first()[0].toBool());
+    QCOMPARE(refreshed.count(),1);
+    QVERIFY(measurement.deliveries>0);
+    QVERIFY2(measurement.maximumMs()<1000,"GUI response including completion tail exceeded 1000ms");
+    QCOMPARE(table->model(),model);QCOMPARE(model->rowCount(),100000);
+    QCOMPARE(model->data(model->index(99999,1)).toString(),QString("synthetic-99999"));
+    dialog->applyToProject();QCOMPARE(applied.count(),1);dialog->reject();QTRY_VERIFY(dialog.isNull());
+    select(b.id);QCOMPARE(model->rowCount(),0);select(a.id);QCOMPARE(model->rowCount(),100000);
+}
+
+void Phase05Test::responseTailCalibration()
+{
+    Context c; QVERIFY(c.open()); Project a;
+    QVERIFY(c.projects.create("synthetic tail calibration",{},a).ok());
+    const auto file=c.temporary.filePath("calibration.json");
+    QVERIFY(writeFile(file,sample()));
+    SbomImportDialog dialog(a.id,a.name,c.file(),c.logger);
+    QSignalSpy parsed(&dialog,&SbomImportDialog::importFinished);
+    dialog.importFile(file);
+    QTRY_COMPARE(parsed.count(),1);
+    QVERIFY(parsed.first()[0].toBool());
+    GuiResponseProbe probe;
+    GuiResponseProbe::Measurement measurement;
+    bool completed=false,success=false;
+    connect(&dialog,&SbomImportDialog::applyFinished,&dialog,[&](bool ok) {
+        // CALIBRATION ONLY. Freeze before returning to the event loop, so an
+        // outstanding event cannot be drained away at the measurement boundary.
+        QTest::qSleep(1200);
+        measurement=probe.finish();
+        success=ok; completed=true;
+    });
+    qInfo()<<"CALIBRATION: intentional 1200ms completion-slot block; expecting detection, not a performance pass";
+    dialog.applyToProject();
+    QTRY_VERIFY_WITH_TIMEOUT(completed,10000);
+    QVERIFY(success);
+    QVERIFY2(measurement.pendingAgeUs>=1000000,"Observer missed the unsettled completion-tail event");
+    QVERIFY(measurement.maximumMs()>=1000);
+    QCOMPARE(rows(c.components,a.id).size(),5);
 }
 
 void Phase05Test::workerLifetime()

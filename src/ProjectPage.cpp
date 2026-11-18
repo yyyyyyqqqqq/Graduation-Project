@@ -177,12 +177,24 @@ ProjectPage::ProjectPage(ProjectRepository& repository, ComponentRepository& com
         return value;
     };
     m_componentsWorkspace = workspace("componentsWorkspace");
+    auto* componentWorkspaceLayout = static_cast<QVBoxLayout*>(m_componentsWorkspace->layout());
+    auto* componentTitle = textLabel(QStringLiteral("pageTitle"), m_componentsWorkspace);
+    componentTitle->setText(QStringLiteral("SBOM 与组件"));
+    componentWorkspaceLayout->addWidget(componentTitle);
+    auto* componentSubtitle = textLabel(QStringLiteral("componentsSubtitle"), m_componentsWorkspace);
+    componentSubtitle->setText(QStringLiteral("当前项目已保存的组件清单 · 预览后需明确应用才能保存"));
+    componentWorkspaceLayout->addWidget(componentSubtitle);
     m_componentsHint = hint(m_componentsWorkspace, "componentsWorkspaceHint");
+    m_componentsHint->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    m_componentsHint->setText(QStringLiteral("尚未选择项目\n使用上方“切换项目”选择或创建项目，再导入 SBOM。读取失败时请先刷新或重新选择。"));
     m_componentData = new QWidget(m_componentsWorkspace);
     auto* componentLayout = new QVBoxLayout(m_componentData);
     componentLayout->setContentsMargins(0, 0, 0, 0);
+    componentLayout->setSpacing(6);
     m_componentSummary = textLabel(QStringLiteral("currentComponentsSummary"), m_componentData);
     componentLayout->addWidget(m_componentSummary);
+    m_componentState = textLabel(QStringLiteral("currentComponentsState"), m_componentData);
+    componentLayout->addWidget(m_componentState);
     auto* table = new QTableView(m_componentData);
     table->setObjectName(QStringLiteral("currentComponents"));
     m_componentModel = new ProjectComponentsModel(table);
@@ -191,11 +203,28 @@ ProjectPage::ProjectPage(ProjectRepository& repository, ComponentRepository& com
     table->setSelectionBehavior(QAbstractItemView::SelectRows);
     table->setAlternatingRowColors(true);
     table->setWordWrap(false);
+    table->setShowGrid(false);
     table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Ignored);
-    table->horizontalHeader()->setDefaultSectionSize(150);
-    table->setColumnWidth(4, 280);
+    table->verticalHeader()->hide();
+    table->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+    table->horizontalHeader()->setStretchLastSection(true);
+    const QList<int> componentWidths{110, 180, 120, 110, 260, 200};
+    for (int column = 0; column < componentWidths.size(); ++column)
+        table->setColumnWidth(column, componentWidths[column]);
     componentLayout->addWidget(table, 1);
-    static_cast<QVBoxLayout*>(m_componentsWorkspace->layout())->addWidget(m_componentData, 1);
+    componentWorkspaceLayout->addWidget(m_componentData, 1);
+    // Keep the heading and recovery hint together when the data widget is hidden.
+    // The visible data widget's stretch still takes all available table space.
+    componentWorkspaceLayout->addStretch();
+    m_componentsWorkspace->setStyleSheet(QStringLiteral(
+        "QLabel#componentsSubtitle, QLabel#currentComponentsState { color: #52647b; }"
+        "QLabel#currentComponentsSummary { color: #244765; background: #e8eff7; padding: 7px 10px; border-radius: 5px; }"
+        "QLabel#componentsWorkspaceHint { color: #52647b; padding-top: 12px; }"
+        "QTableView#currentComponents { background: white; alternate-background-color: #f5f8fc;"
+        " color: #243b53; border: 1px solid #d6e1ed; selection-background-color: #d6e8fb; selection-color: #173d69; }"
+        "QTableView#currentComponents:focus { border-color: #3976b6; }"
+        "QTableView#currentComponents QHeaderView::section { background: #edf2f8; color: #334e68;"
+        " padding: 6px; border: none; border-right: 1px solid #d6e1ed; border-bottom: 1px solid #d6e1ed; }"));
     m_dependenciesWorkspace = workspace("dependenciesWorkspace");
     m_dependenciesHint = hint(m_dependenciesWorkspace, "dependenciesWorkspaceHint");
     m_dependencies = new DependencyPage(m_components.databaseFilePath(), m_dependenciesWorkspace);
@@ -441,6 +470,9 @@ void ProjectPage::showSelection()
     m_dependencies->setProject({});
     m_vulnerabilities->setProject({});
     m_componentModel->replace({});
+    m_componentSummary->setText(QStringLiteral("组件摘要不可用"));
+    m_componentState->clear();
+    m_componentState->hide();
     m_remove->setEnabled(false);
     m_import->setEnabled(false);
     m_selectionHint->setVisible(m_list->count() > 0);
@@ -479,10 +511,20 @@ void ProjectPage::showSelection()
         m_error->setText(componentResult.userMessage());
         m_error->show();
     }
-    m_componentSummary->setText(!componentResult.ok() ? QStringLiteral("当前组件读取失败。")
-        : components.isEmpty() ? QStringLiteral("当前项目没有已保存组件。导入预览后点击“应用到项目”保存。")
-        : QStringLiteral("当前已保存 %1 条组件（包含元数据根组件）。来源序号为展开顺序；超长文本省略显示。")
-            .arg(components.size()));
+    if (componentResult.ok()) {
+        // Repository order is MetadataRoot first, then flattened components;
+        // the unique source-position index allows at most one root. No second scan/query.
+        const bool hasRoot = !components.isEmpty() && components.first().sourceRole == ComponentSourceRole::MetadataRoot;
+        m_componentSummary->setText(QStringLiteral("普通组件：%1　|　元数据根组件：%2")
+            .arg(components.size() - (hasRoot ? 1 : 0)).arg(hasRoot ? QStringLiteral("已提供") : QStringLiteral("未提供")));
+        m_componentState->setText(components.isEmpty()
+            ? QStringLiteral("当前项目没有已保存组件。可通过上方“导入 SBOM”预览并应用；合法空 SBOM 也会得到空清单。")
+            : QString());
+    } else {
+        m_componentSummary->setText(QStringLiteral("组件摘要不可用 · 当前组件读取失败"));
+        m_componentState->setText(QStringLiteral("请查看上方错误提示，修正后使用“刷新”重试，或切换项目。"));
+    }
+    m_componentState->setVisible(!m_componentState->text().isEmpty());
     m_componentModel->replace(std::move(components));
 }
 
