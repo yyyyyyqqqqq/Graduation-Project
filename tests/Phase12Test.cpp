@@ -19,6 +19,7 @@
 #include <QStatusBar>
 #include <QSplitter>
 #include <QTest>
+#include <QtTest/qtestwheel.h>
 #include <QTemporaryDir>
 #include <QSignalSpy>
 #include <QLabel>
@@ -145,6 +146,7 @@ private slots:
     void validationVocabulary(); void uiLifetime(); void markupSafety(); void structuralContract(); void vulnerabilityPresentation();
     void workspaceRoutes(); void workspaceContext(); void workspaceRisk();
     void workspaceLayout(); void workspaceEmpty();
+    void sidebarInput(); void riskReadingPosition();
     void componentStates(); void componentLayout();
 };
 
@@ -1037,6 +1039,56 @@ void Phase12Test::componentLayout()
     QCOMPARE(table->columnWidth(1),220); QCOMPARE(resets.count(),0); QCOMPARE(owner->generation(),generation);
     QCOMPARE(page->findChildren<VulnerabilityController*>().size(),1); QCOMPARE(owner->parent(),page);
     QCOMPARE(page->findChildren<RiskEvidenceController*>().size(),1); QCOMPARE(risk->parent(),owner); QCOMPARE(net.requests,0);
+}
+
+void Phase12Test::sidebarInput()
+{
+    Context c; QVERIFY(c.open()); FixtureNetwork net;
+    auto* page = new ProjectPage(c.projects,c.components,c.logger,c.cache(),nullptr,&net);
+    MainWindow window(page,nullptr,"overview",new QWidget); wireWorkspace(window,*page);
+    window.resize(680,420); window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window));
+    auto* nav = window.findChild<QScrollArea*>("navigationScroll");
+    auto* last = window.findChild<QPushButton*>("nav_settings");
+    const auto visible = [&](QWidget* w) {
+        return nav->viewport()->rect().contains(w->mapTo(nav->viewport(),w->rect().center()));
+    };
+    const auto wheelPoint = nav->viewport()->mapTo(&window,nav->viewport()->rect().center());
+    QTest::wheelEvent(window.windowHandle(),wheelPoint,QPoint(0,-2400));
+    QVERIFY(visible(last)); QCOMPARE(window.currentRouteId(),QString("overview"));
+    window.resize(680,430); QCoreApplication::processEvents(); QVERIFY(visible(last));
+    window.resize(680,420); QCoreApplication::processEvents(); QVERIFY(visible(last));
+    QTest::mouseClick(last,Qt::LeftButton); QCOMPARE(window.currentRouteId(),QString("settings"));
+    for (const auto& route : QStringList{"validation","risk","vulnerabilities","dependencies","components","projects","overview"}) {
+        QTest::keyClick(window.focusWidget(),Qt::Key_Up);
+        auto* button = window.findChild<QPushButton*>("nav_"+route);
+        QCOMPARE(window.focusWidget(),button); QVERIFY(button->isChecked()); QVERIFY(visible(button));
+        QCOMPARE(window.currentRouteId(),route); QVERIFY(window.statusBar()->currentMessage().contains(button->text()));
+        if (window.currentPageId()=="projects") QCOMPARE(page->currentWorkspace(),route);
+    }
+    QVERIFY(page->currentProjectId().isEmpty()); QCOMPARE(net.requests,0);
+}
+
+void Phase12Test::riskReadingPosition()
+{
+    Context c; QVERIFY(c.open()); FixtureNetwork net;
+    auto* page = new ProjectPage(c.projects,c.components,c.logger,c.cache(),nullptr,&net);
+    MainWindow window(page,nullptr,"projects",new QWidget); wireWorkspace(window,*page);
+    window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window)); select(*page,c.a.id);
+    auto* entry = window.findChild<QPushButton*>("nav_risk");
+    QTest::mouseClick(entry,Qt::LeftButton);
+    auto* scroll = page->findChild<VulnerabilityPage*>()->findChild<QScrollArea*>();
+    auto* bar = scroll->verticalScrollBar(); auto* anchor = page->findChild<QPushButton*>("riskLoad");
+    const auto anchorVisible = [&] {
+        return scroll->viewport()->rect().contains(anchor->mapTo(scroll->viewport(),anchor->rect().center()));
+    };
+    QTRY_VERIFY(anchorVisible()); QVERIFY(bar->value()>0);
+    const auto point = bar->mapTo(&window,bar->rect().center());
+    QTest::wheelEvent(window.windowHandle(),point,QPoint(0,4800)); QCOMPARE(bar->value(),0);
+    QSignalSpy requests(&window,&MainWindow::workspaceRequested);
+    QTest::mouseClick(entry,Qt::LeftButton); QCOMPARE(requests.count(),0); QCOMPARE(bar->value(),0);
+    window.resize(1000,540); QCoreApplication::processEvents(); QCOMPARE(bar->value(),0);
+    window.selectRoute("settings"); window.resize(680,420); window.selectRoute("risk");
+    QTRY_VERIFY(anchorVisible()); QCOMPARE(page->currentProjectId(),c.a.id); QCOMPARE(net.requests,0);
 }
 
 QTEST_MAIN(Phase12Test)

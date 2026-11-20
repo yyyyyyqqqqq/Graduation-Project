@@ -287,6 +287,8 @@ bool ProjectPage::showWorkspace(const QString& routeId)
         : (routeId == "vulnerabilities" || routeId == "risk") ? m_vulnerabilityWorkspace : nullptr;
     if (!target) return false;
     const auto previous = currentWorkspace();
+    // The shell may be acknowledging a change made by the visible evidence tabs.
+    if (previous == routeId && isVisible()) return true;
     {
         // Publish one complete GUI route, never intermediate nested-tab selections.
         const QSignalBlocker blocker(this);

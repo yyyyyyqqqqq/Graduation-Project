@@ -1,6 +1,6 @@
 # 毕业设计项目总交接文档
 
-更新日期：2026-11-20（Asia/Shanghai）。96.md 确认 UI-02B-3 用户人工验收全部通过，并授权封版与 GitHub 同步。
+更新日期：2026-11-20（Asia/Shanghai）。98.md 确认 UI-02B-4 人工验收 10/10 通过，授权本阶段封版与 GitHub 同步。
 
 本文是项目唯一的长期动态交接文档。每个阶段结束后，更新当前状态、代码结构、Git、测试、人工验收、技术决策和下一步，避免另建多套状态文件。
 
@@ -16,7 +16,7 @@ Phase 07.5-AUX 已完成只读 MCP 与真实 ChatGPT 连接验收，作为辅助
 
 这是《基于 C++ 的软件供应链漏洞风险评估系统的设计与实现》，面向开发者与维护者：从 SBOM 保存组件和声明式依赖，按用户操作匹配漏洞，再为已确认 Finding 展示利用信号优先级、证据支持与解释。技术栈为 C++20、Qt Widgets 6.11.2、Qt SQL/SQLite、Qt Network/Concurrent、CMake 3.30+、Ninja、MinGW 13.1。正式源码只有 `D:/codex/Graduation Project/project`，入口 `src/main.cpp`，程序 `SupplyChainRiskAssessment.exe`。
 
-**UI-02B-3 COMPLETE / USER ACCEPTANCE PASS。** 用户亲自完成依赖关系工作区全部验收项目，包括十万组件查询和循环依赖。当前实现与验证见第 3.5、17、18 节。UI-02B-2 两项历史性能异常继续按第 21 节跟踪。
+**UI-02B-4 COMPLETE / UI-02B COMPLETE / USER ACCEPTANCE PASS。** 项目工作区的四个子阶段均已完成。整体导航、滚动及验证见第 3.6、17、18 节，历史性能风险及复发处理见第 21 节。
 
 实际能力与边界：
 
@@ -45,9 +45,9 @@ Phase 07.5-AUX 已完成只读 MCP 与真实 ChatGPT 连接验收，作为辅助
 启动与回归（本机路径；新机器需安装同版本工具并调整路径；避免使用用户真实数据库）：
 
 ```powershell
-# UI-02B-3 受测 Release，使用独立的演示数据目录
+# UI-02B-4 受测 Release，使用独立的演示数据目录
 $env:PATH='D:/program/Qt/6.11.2/mingw_64/bin;D:/program/Qt/Tools/mingw1310_64/bin;' + $env:PATH
-& 'D:/codex/u2b3-20261119/release/SupplyChainRiskAssessment.exe' --data-dir 'D:/codex/ui02b3-demo-runtime'
+& 'D:/codex/u2b4f-20261120/release/SupplyChainRiskAssessment.exe' --data-dir 'D:/codex/ui02b4-demo-runtime'
 # 授权开发时的新构建目录示例；先确认目录不存在或缓存与本项目相符
 & 'D:/program/Qt/Tools/CMake_64/bin/cmake.exe' -S 'D:/codex/Graduation Project/project' -B D:/codex/ui-next-debug -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=D:/program/Qt/6.11.2/mingw_64 -DCMAKE_CXX_COMPILER=D:/program/Qt/Tools/mingw1310_64/bin/g++.exe -DCMAKE_MAKE_PROGRAM=D:/program/Qt/Tools/Ninja/ninja.exe -DBUILD_TESTING=ON
 if ($LASTEXITCODE -ne 0) { throw 'Configure failed' }
@@ -58,11 +58,11 @@ if ($LASTEXITCODE -ne 0) { throw 'Tests failed' }
 # Release 用独立 ui-next-release 目录，配置为 -DCMAKE_BUILD_TYPE=Release，随后同样 build/ctest
 ```
 
-最近正式回归使用 95.md 冻结候选，Debug、Release 各 284/284 PASS，失败、跳过、禁用均为 0。96.md 封版复核了相同编译输入、受测产物、原始 XML 与 Qt 日志。
+最近正式回归使用 97.md 冻结候选，Debug、Release 各 286/286 PASS，失败、跳过、禁用均为 0。98.md 核验受测产物及原始证据后复用成绩。
 
-下一计划为 UI-02B-4 整体工作区导航和滚动收口，等待单独授权。性能异常复发时立即执行第 21 节的取证与定位规则。
+下一阶段为 UI-03，等待单独授权。性能异常复发时立即执行第 21 节的取证与定位规则。
 
-仓库为 [yyyyyyqqqqq/Graduation-Project](https://github.com/yyyyyyqqqqq/Graduation-Project)。UI-02B-3 封版的父提交为 6fe1d21。完整提交身份及独立远端查询见项目外 output/UI2B/UI02B-3-FINAL/ 封版与同步报告。接手时重新核对 Git。
+仓库为 [yyyyyyqqqqq/Graduation-Project](https://github.com/yyyyyyqqqqq/Graduation-Project)。UI-02B-4 封版的父提交为 d56f361。最终提交及独立远端查询见项目外 output/UI2B/UI02B-4-FINAL/ 封版回执。
 
 # 1. 项目基本信息
 
@@ -74,17 +74,17 @@ if ($LASTEXITCODE -ne 0) { throw 'Tests failed' }
 
 # 2. 当前一句话状态
 
-**UI-02B-3 依赖关系工作区已完成，用户人工验收全部通过。** 当前 App 1.0.0 / schema 4 / Rules v1 / 生产阈值 0.90。两项历史性能风险见第 21 节。
+**UI-02B 整体已完成，UI-02B-4 用户亲验 10/10 通过。** 当前 App 1.0.0 / schema 4 / Rules v1 / 生产阈值 0.90。两项历史性能风险见第 21 节。
 
 # 3. 当前阶段
 
-**UI-02B-3 COMPLETE / USER ACCEPTANCE PASS**
+**UI-02B-4 COMPLETE / UI-02B COMPLETE / USER ACCEPTANCE PASS**
 
 A-01 是已完成的封版后独立 Tooltip 显示修复，不是新工程 Phase。76.md的提交与推送、2026-10-13侧栏维护及83.md的UI-01封版均已完成；2026-11-07 docs提交为011ebe6e1b62351d6b6592ae30fccaea5c9956ef。84.md—86.md完成UI-02A及本地封版 b8e06589796a3e3661fd81b93886fe81177dea2e；87.md完成UI-02B-ARCH，88.md完成UI-02B-1开发验证，89.md授权的封版已于11月14日完成，普通推送已于11月16日核验成功。90.md—94.md 完成 UI-02B-2 的开发、诊断、恢复验证和封版。
 
 Final Integrated Acceptance & Thesis Delivery Hardening 已完成。Period A 完成版本、独立 DeploymentProbe、部署/哈希工具、synthetic demo 和静态材料；Period B 从唯一候选创建 clean source，完成双配置认证、部署检查、验收与交付装配。69.md 封版仅只读复核已验收产物，普通推送精确 Release Source Commit，创建并推送 annotated tag；未重新生成已验收产物。
 
-**FORMAL SOFTWARE ENGINEERING PHASES 00–14 COMPLETE / FORMAL SOFTWARE DEVELOPMENT COMPLETE / SOFTWARE DEVELOPMENT MAINLINE CLOSED。** 工程交付后的方向为 **THESIS WRITING / DEFENSE PREPARATION / SUBMISSION**；另行授权的UI维护已完成至UI-02B-3，其后续计划见第22节；**NO PHASE 15 PRODUCT DEVELOPMENT IS AUTHORIZED**。
+**FORMAL SOFTWARE ENGINEERING PHASES 00–14 COMPLETE / FORMAL SOFTWARE DEVELOPMENT COMPLETE / SOFTWARE DEVELOPMENT MAINLINE CLOSED。** 工程交付后的方向为 **THESIS WRITING / DEFENSE PREPARATION / SUBMISSION**；另行授权的UI维护已完成 UI-02B，其后续计划见第22节；**NO PHASE 15 PRODUCT DEVELOPMENT IS AUTHORIZED**。
 
 封版直接证据为 ignored `build-final-delivery/phase14/final-seal/` 内的 `Phase14-Final-Seal-Receipt.md` / `.json`、`Phase14-Final-Acceptance-Closure.json` 及最终 `Phase14-Final-Seal-Report.md`。旧工程报告、review packet 与包内清单保留生成时的候选 / pending 状态，不覆盖历史；最终完成态由包外回执绑定精确 ZIP。未创建 v1.0.0 tag、GitHub Release 或上传交付 ZIP。历史 GUI provenance 见第 18 节。
 
@@ -147,7 +147,7 @@ ProjectPage 用 `QStackedWidget#projectWorkspaceStack` 替代重复的外层 pro
 
 largeApply 最近 Debug/Release maximumGap 为33/29ms，Apply完成1353/1646ms、视图加载181/150ms；原 `maximumGap < 1000` 不变，历史间歇异常根因未定位。阶段初期两次定向测试失败及修复、后续49/49定向与完整回归均保留原记录，不将历史失败覆盖为成功。
 
-证据目录 D:/codex/Graduation Project/output/UI2B：UI02B-ARCH三份报告、UI02B-1-执行报告.md、candidate-final/final源码清单与patch、debug/release-full.xml及CTest/Qt日志、build-artifacts、validation-summary、实际GUI截图；封版另存 FINAL-SYNC 审计和 FINAL-GITHUB 封版报告，11月16日补充 SYNC-SUCCESS 审计；早先STOP报告另存日期快照，原始测试证据未覆盖。当前完成不等于UI-02B全阶段完成；当时计划的下一步为UI-02B-2，依赖深层布局留给UI-02B-3、漏洞/风险内部复杂滚动留给UI-03。
+证据目录 D:/codex/Graduation Project/output/UI2B：UI02B-ARCH三份报告、UI02B-1-执行报告.md、candidate-final/final源码清单与patch、debug/release-full.xml及CTest/Qt日志、build-artifacts、validation-summary、实际GUI截图；封版另存 FINAL-SYNC 审计和 FINAL-GITHUB 封版报告，11月16日补充 SYNC-SUCCESS 审计；早先STOP报告另存日期快照，原始测试证据未覆盖。该阶段仅完成 UI-02B-1；当时计划的下一步为UI-02B-2，依赖深层布局留给UI-02B-3、漏洞/风险内部复杂滚动留给UI-03。
 
 ## 3.4 UI-02B-2 组件工作区封版（2026-11-18）
 
@@ -173,21 +173,29 @@ largeApply 最近 Debug/Release maximumGap 为33/29ms，Apply完成1353/1646ms�
 
 95.md 开发范围为 src/DependencyPage.h、src/DependencyPage.cpp、tests/Phase06Test.cpp、CMakeLists.txt。96.md 封版另更新本文。编译输入 SHA-256 为 2ba084fc626eb68ccb9c9b848c301ce1eb7dfdc915b31db6cc288f46907b69e2，人工验收 Release EXE SHA-256 为 e8f8957e1f531aa4a834ea5b572a612bfda8fdf38313a67cb03a70796cebe97c。
 
+## 3.6 UI-02B-4 整体导航与滚动（2026-11-20 封版）
+
+97.md 在 d56f3616a31587615db0808b2b5d357b99228a66 基线上修改了 `src/MainWindow.cpp`、`src/ProjectPage.cpp`、`src/VulnerabilityPage.cpp`、`tests/Phase12Test.cpp` 和 `CMakeLists.txt`。冻结编译输入 SHA-256 为 `6df36d65f05dc515046b96d0cdf7de1c49ebf1606198df51d4063ebc489b454e`，用户验收的 Release EXE SHA-256 为 `51a7b3cffe76ee24df5dfc8083914edf110c8487f396bf9c6881870825b45397`。
+
+MainWindow 在活动入口重复触发时直接返回。侧栏缩小时，仅对原先可见的选中入口补定位，用户可滚离该入口继续浏览。ProjectPage 收到可见证据标签的同一路由确认时保留当前焦点和阅读位置。风险页显式进入时定位证据区，隐藏后显示时在布局生效后补定位一次。回调绑定页面对象，并再次判断可见性与当前标签。
+
+四个持久工作区分别承担项目管理、组件表、依赖检查和共享的漏洞／风险证据视图。项目选择来源与控制器归属见本文开头的 GUI 说明。单纯导航保留有效选择和查询结果；项目切换、刷新及成功 Apply 继续走既有失效流程。98.md 确认全部 10 项用户亲验通过。开发、测试、桌面记录位于项目外 output/UI2B/UI02B-4/，封版与推送证据位于相邻 UI02B-4-FINAL/。
+
 # 4. 正式项目目录
 
 唯一正式根目录：`D:\codex\Graduation Project\project`。
 
 源码仍在上述目录。`D:\build-gp-debug` 是独立构建输出目录，用于缓存、中间文件和可执行文件，不是第二份源码或新开发工程；无需复制或移动源码。2026-10-13 只读核对 Qt Creator Debug 设置及 CMakeCache 已使用该短目录，source 仍指向正式根目录。该次核查的Release设置为 `build\Desktop_Qt_6_11_2_MinGW_64_bit_Release`，不能代表当前IDE配置；`D:\build-gp-release` 仅为建议值，尚未核实采用，不应写成已配置或验收。
 
-UI-02B-3 最新受测构建目录为 D:/codex/u2b3-20261119/debug 和 release，源码来自本节正式目录。UI-02B-2 历史构建位于 D:/codex/u2b2r2-20261117。
+UI-02B-4 的正式 Debug 和 Release 构建分别位于 D:/codex/u2b4f-20261120/debug 和 release。UI-02B-3 与 UI-02B-2 的历史构建分别位于 D:/codex/u2b3-20261119 和 D:/codex/u2b2r2-20261117。
 
-后续源码、CMake、测试、项目文档和 Git 均围绕此目录组织。正式开发目录仍唯一；65.md 认证允许精确候选的独立 clean source 和浅层构建目录，不将它们作为第二开发工程。父目录的 01.md—34.md 为既有准备、设计、开发、封版及辅助 MCP 依据，35.md—42.md 为 Phase 09 依据，43.md—46.md 为 Phase 10 依据；47.md 是 Phase 11 已冻结设计下的正式开发授权；48.md 为审查材料准备，49.md 为首次 Code Review 修复授权，50.md 为自动与 GUI 验证，51.md 为 Phase 11 最终封版授权，52.md 为 Phase 12 冻结设计、正式开发及自动验收授权，53.md 为只读审查材料准备，54.md 为首次审查五项修复，55.md 为历史 UI 测试导航兼容修复及重新自动验证，56.md 为验收执行，57.md 为 Test 16/19 最小修复，58.md 为 Phase 12 最终验收收口与 Final Seal 授权；59.md—64.md 为 Phase 13 冻结实现、源码审查、验收与 Phase 13 正式封版依据；65.md—69.md 为 Phase 14 交付与最终封版依据，70.md—76.md 为封版后审查、A-01 修复、验证及独立补丁收口依据。77.md—83.md记录UI-00/UI-01审查开发与封版，84.md—86.md记录UI-02A，87.md为UI-02B-ARCH，88.md为UI-02B-1开发，89.md为其封版、历史注释收口与GitHub同步。90.md—94.md 依次记录组件工作区开发、性能专项、恢复验证、真实 GUI 异常诊断及该阶段封版授权。95.md、96.md 分别授权依赖工作区开发验收及封版同步。父目录任务文件不是 Git 正式源码，克隆仓库后不保证存在。
+后续源码、CMake、测试、项目文档和 Git 均围绕此目录组织。正式开发目录仍唯一；65.md 认证允许精确候选的独立 clean source 和浅层构建目录，不将它们作为第二开发工程。父目录的 01.md—34.md 为既有准备、设计、开发、封版及辅助 MCP 依据，35.md—42.md 为 Phase 09 依据，43.md—46.md 为 Phase 10 依据；47.md 是 Phase 11 已冻结设计下的正式开发授权；48.md 为审查材料准备，49.md 为首次 Code Review 修复授权，50.md 为自动与 GUI 验证，51.md 为 Phase 11 最终封版授权，52.md 为 Phase 12 冻结设计、正式开发及自动验收授权，53.md 为只读审查材料准备，54.md 为首次审查五项修复，55.md 为历史 UI 测试导航兼容修复及重新自动验证，56.md 为验收执行，57.md 为 Test 16/19 最小修复，58.md 为 Phase 12 最终验收收口与 Final Seal 授权；59.md—64.md 为 Phase 13 冻结实现、源码审查、验收与 Phase 13 正式封版依据；65.md—69.md 为 Phase 14 交付与最终封版依据，70.md—76.md 为封版后审查、A-01 修复、验证及独立补丁收口依据。77.md—83.md记录UI-00/UI-01审查开发与封版，84.md—86.md记录UI-02A，87.md为UI-02B-ARCH，88.md为UI-02B-1开发，89.md为其封版、历史注释收口与GitHub同步。90.md—94.md 依次记录组件工作区开发、性能专项、恢复验证、真实 GUI 异常诊断及该阶段封版授权。95.md、96.md 分别授权依赖工作区开发验收及封版同步。97.md、98.md 分别授权整体导航开发验收及封版同步。父目录任务文件不是 Git 正式源码，克隆仓库后不保证存在。
 
 `D:\codex\SupplyChainRiskAssessment` 是历史环境验证目录，不是正式项目；本轮未检查或修改其内容。
 
 # 5. Git / GitHub 当前状态
 
-UI-02B-3 封版前 main、origin/main、实时 GitHub main 同为 6fe1d21a33e7e1eef49916cbb7613dd0ce104b69（UI-02B-2 封版提交）。96.md 授权第 3.5 节四个开发文件和本文共五个文件提交、普通推送。提交后身份和远端状态见 output/UI2B/UI02B-3-FINAL/。此前封版回执保存在相邻 UI02B-2-FINAL/。
+UI-02B-4 封版前，main、origin/main、GitHub 实时 main 均为 d56f3616a31587615db0808b2b5d357b99228a66（UI-02B-3 封版提交）。98.md 授权提交第 3.6 节五个冻结文件及本文，并普通推送。完整提交 SHA 和推送后的独立查询保存在项目外 output/UI2B/UI02B-4-FINAL/封版回执.json。
 
 | 已完成并推送的提交 | 完整SHA | 范围 |
 | --- | --- | --- |
@@ -197,7 +205,7 @@ UI-02B-3 封版前 main、origin/main、实时 GitHub main 同为 6fe1d21a33e7e1
 
 11月14日本地封版完成后，远端查询因本机代理端口不可达而停止；11月16日早先重试仍失败。用户修正代理后，普通 `git fetch origin main` 确认远端011ebe6为本地祖先且本地仅领先上述3个已审核提交，随后 `git push origin main` 退出0；独立ls-remote确认远端精确接收351d30b，工作区clean。未force、merge、rebase、改tag、重打包或修改受测源码。原始失败记录及推送前报告快照保留，最新完成证据为项目外 `output/UI2B/UI02B-1-SYNC-SUCCESS-20261116-audit.json`、`UI02B-1-FINAL-GITHUB-封版与同步报告.md`。同步阻塞已解除，不能把旧STOP报告当成当前待办。
 
-97db700 是 UI-02B-1 之后的独立交接文档提交。94.md 的八文件封版和 96.md 的五文件封版各有独立授权；下一阶段须另行批准。
+97db700 是 UI-02B-1 之后的独立交接文档提交。94.md 的八文件封版和 96.md 的五文件封版各有独立授权。98.md 的六文件封版亦为单次授权。
 
 **以下为历史Git记录。** 当时的“未提交注释”“不推送”“本轮”等均只适用于对应日期；三份注释现在已独立提交并推送，不再是工作区残留。
 
@@ -235,7 +243,7 @@ Phase 14 已于 2026-10-07（Asia/Shanghai）按 69.md 完成软件封版；tag 
 
 A-01 修复 Commit：`d96e59c27daa0716f83cf106f0cd65971a706ab2`，message：`fix: preserve literal project names in tooltips`；仅包含 `src/ProjectPage.cpp` 的 Tooltip 字面呈现修复与 `tests/Phase02Test.cpp` 的七组回归断言，已普通推送并核验 remote main 精确接收。随后 Handoff 独立提交为 `fca04be27e86330d2e2acb0eab2cc9408f7c7a8b`，message：`docs: record A-01 post-seal patch closure`，parent 为上述修复 Commit，仅修改本文。两个 Commit 均普通推送并完成精确远端核验；76.md 完成时 main 三方同步且工作区 clean，直接记录见 ignored `build-a01-fix-review/A01-Post-Seal-Closure-Report.md`。
 
-原 Phase 14 软件认证与封存包仍对应固定 release commit / tag；**原封存 ZIP 不包含 A-01 修复、2026-10-13侧栏文字维护、UI-01、UI-02A或UI-02B-1改造**。后续验证见第 17、18 节；若需包含补丁的新交付包，须另行授权。76.md 仅版本收口，不重建、不重跑测试、不启动 GUI、不改 tag 或原交付物。
+原 Phase 14 软件认证与封存包仍对应固定 release commit / tag；**原封存 ZIP 不包含 A-01 修复、2026-10-13侧栏文字维护、UI-01、UI-02A或 UI-02B 各子阶段改造**。后续验证见第 17、18 节；若需包含补丁的新交付包，须另行授权。76.md 仅版本收口，不重建、不重跑测试、不启动 GUI、不改 tag 或原交付物。
 
 | 已封存交付对象 | SHA-256 |
 | --- | --- |
@@ -451,7 +459,7 @@ Stale evidence 仅作历史上下文；future timestamp 是 Ineligible，不混�
 
 # 13. Phase 路线
 
-以下是第 9 节唯一长期路线的阶段状态。Phase 00–14 均已封版；Phase 14 按 65.md–69.md 完成最终工程认证、交付验收与 Final Seal，为最后一个正式工程 Phase。软件开发主线关闭；论文、答辩与提交材料准备可按独立指令推进，UI维护路线已完成至UI-02B-1，见第3节。
+以下是第 9 节唯一长期路线的阶段状态。Phase 00–14 均已封版；Phase 14 按 65.md–69.md 完成最终工程认证、交付验收与 Final Seal，为最后一个正式工程 Phase。软件开发主线关闭；论文、答辩与提交材料准备可按独立指令推进，UI维护路线已完成 UI-02B，见第3节。
 
 | Phase | 名称与主要目标 | 当前状态 |
 | --- | --- | --- |
@@ -664,7 +672,7 @@ get_project_status 的 auxiliary_task_status 从本文明确的连接验收标�
 
 # 15. 当前真实工程结构
 
-Phase 14 新增 opt-in `tools/DeploymentProbe.cpp`（TLS/SQLite 支持探针，非产品功能）、`tools/deploy.ps1`、`tools/delivery_inventory.py`、`tests/Phase14Test.cpp`、`demo/defense-sbom.json`/`manifest.json` 及 `docs/delivery/` 六份静态材料。CMake 版本为 1.0.0，新增 BUILD_DELIVERY_SUPPORT；历史 271 项注册名称保留，Phase14 demoCurrentState 检查演示输入经真实解析/质量/持久化的行为。下方文件树仍适用于当前 UI-02B-3 完成态；A-01、侧栏维护、UI-01、UI-02A及UI-02B-1/2/3均未新增源码文件，当前 tracked 共115个文件。
+Phase 14 新增 opt-in `tools/DeploymentProbe.cpp`（TLS/SQLite 支持探针，非产品功能）、`tools/deploy.ps1`、`tools/delivery_inventory.py`、`tests/Phase14Test.cpp`、`demo/defense-sbom.json`/`manifest.json` 及 `docs/delivery/` 六份静态材料。CMake 版本为 1.0.0，新增 BUILD_DELIVERY_SUPPORT；历史 271 项注册名称保留，Phase14 demoCurrentState 检查演示输入经真实解析/质量/持久化的行为。下方文件树仍适用于当前 UI-02B 完成态；A-01、侧栏维护、UI-01、UI-02A及UI-02B-1/2/3/4均未新增源码文件，当前 tracked 共115个文件。
 
 Phase 11 新增 `src/ValidationDataset.h/.cpp`、`ValidationSelection.h/.cpp`、`ValidationExperiment.h/.cpp`、`ValidationSynthetic.cpp`、`ValidationPage.h/.cpp`、`ValidationBuildInfo.h.in`、`tests/Phase11Test.cpp`；准备工具为 `tools/prepare_validation_snapshots.py` 与 opt-in `tools/ValidationPrepare.cpp`，正式离线重放入口为 `tools/ValidationReplay.cpp`。Phase 12 新增 `OverviewPage.h/.cpp`、`PresentationText.h/.cpp`、`RiskPresentationView.h/.cpp` 和 `tests/Phase12Test.cpp`。Phase 13 新增 `src/FindingReport.h/.cpp` 和 `tests/Phase13Test.cpp`，ProjectPage 捕获并协调导出，VulnerabilityPage 提供入口。公开输入位于 `validation/`，六个冻结文件见第 16.1 节；下方为当前正式文件树。
 
@@ -794,7 +802,7 @@ Phase 07 的 public / large / empty / invalid SBOM、cache fixture、launch 脚�
 | OsvMatching | OsvClient、VulnerabilityController；继续拥有 Finding，向 RiskEvidenceController 发出不可变请求 |
 | SupplyChainRiskAssessment | Widgets 应用与页面组合，main 连接 ProjectPage 权威选择与 OverviewPage；直接链接 ValidationWidgets、PresentationWidgets 与 FindingReportCore，未链接 Qt Svg |
 | DeploymentProbe | BUILD_DELIVERY_SUPPORT=ON 时显式构建的独立 SQLite / TLS 部署检查工具；AppFoundation / Qt Network；不是产品页面 |
-| Phase00SmokeTest—Phase14Test | Windows 注册 277 项自动回归（UI-02A新增3项、UI-02B-1新增2项）；Graphviz 仅用于 Phase00 smoke，Phase14 验证 synthetic demo，详细数量见第 17 节 |
+| Phase00SmokeTest—Phase14Test | Windows 当前注册 286 项自动回归；Graphviz 仅用于 Phase00 smoke，Phase14 验证 synthetic demo，详细数量见第 17 节 |
 
 Phase 09 / 10 fixtures、审查包 / review patch、调查与验收日志、生成的 cmd / checklist / JSON、缓存、数据库及截图留在 ignored build 目录，不进入正式提交；`.gitignore` 覆盖 `**/cache/risk-evidence-v1/`。
 
@@ -1114,7 +1122,9 @@ RiskPriorityEvaluator 是纯 Core/value evaluator：读取不可变 RiskEvidence
 
 # 17. 当前自动测试状态
 
-**当前自动化基线为 95.md 冻结候选。** Debug、Release 各执行 284 项，284 PASS，0 FAIL、0 SKIP、0 DISABLED。保留原 282 项，新增 Phase06.inspectionLayout 与 Phase06.largeViewport。96.md 核验候选字节、构建记录、注册清单、两份原始 XML 和全部 Qt 日志后复用成绩。原始结果位于 output/UI2B/UI02B-3/tests/{debug,release}-full.xml 及对应日志目录。十万规模依赖测试中，Debug / Release 的被动最大唤醒间隔为 33 / 34 ms，结果安装后至确认绘制首行的上界为 40 / 54 ms，调整尺寸、滚动、选择及重绘均为 6 ms。
+**当前自动化基线为 97.md 冻结候选。** Debug、Release 各 286/286 PASS，失败、跳过、禁用均为 0。完整保留上一阶段的 284 个名称，新增 `Phase12.sidebarInput` 和 `Phase12.riskReadingPosition`。开发首版 `Phase12.workspaceRisk` 曾在隐藏页缩小后返回时未能定位证据按钮。修复后原断言通过。首版原始失败及修复后的定向记录见 output/UI2B/UI02B-4/development/，正式全量 XML 与 Qt 日志见同阶段 tests/。98.md 对冻结输入、两套注册及实测产物逐项核验后复用成绩。
+
+**UI-02B-3 历史基线为 95.md 冻结候选。** Debug、Release 各执行 284 项，284 PASS，0 FAIL、0 SKIP、0 DISABLED。保留原 282 项，新增 Phase06.inspectionLayout 与 Phase06.largeViewport。96.md 核验候选字节、构建记录、注册清单、两份原始 XML 和全部 Qt 日志后复用成绩。原始结果位于 output/UI2B/UI02B-3/tests/{debug,release}-full.xml 及对应日志目录。十万规模依赖测试中，Debug / Release 的被动最大唤醒间隔为 33 / 34 ms，结果安装后至确认绘制首行的上界为 40 / 54 ms，调整尺寸、滚动、选择及重绘均为 6 ms。
 
 以下为 92.md 的历史测量。十万组件正常测试 Debug / Release 的 dispatch 为 0 / 0 ms、awake 最大间隔为 32 / 31 ms、完成时间为 1560 / 1385 ms、视图加载为 644 / 415 ms；独立响应测量为 420.034 / 475.309 ms。测试层 1200 ms 阻塞校准检出的待处理年龄为 1187.814 / 1191.147 ms。
 
@@ -1323,6 +1333,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Release tests failed' }
 构建目录不存在时，先使用冻结 cmake.exe 执行配置：`-S . -B build-debug -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=D:/program/Qt/Tools/Ninja/ninja.exe -DCMAKE_CXX_COMPILER=D:/program/Qt/Tools/mingw1310_64/bin/g++.exe -DCMAKE_PREFIX_PATH=D:/program/Qt/6.11.2/mingw_64 -DBUILD_TESTING=ON`；Release 对应改为 `build-release` / `Release`，检查成功后再构建。已有缓存的生成器或工具链不符时先核对原因，不直接覆盖。GUI 用例需要可用的 Windows 桌面会话，不能把无显示环境中的结果等同于人工验收。
 
 # 18. 当前人工验收状态
+
+**UI-02B-4 用户人工验收：10/10 PASS。** 98.md 确认用户亲自完成全部十项。97.md 的 Windows Release 桌面记录覆盖 150% 缩放、八个入口、鼠标及键盘、最小窗口与隐藏后恢复。十万组件已入库表格可到达首末行、跨页往返；该次 60 次窗口消息探测均有响应，最大 78.15 ms。四次重启分别恢复概览、项目管理、方法验证、设置。项目内风险路由重启后回到项目管理。该测量仅覆盖本机此次操作；十万组件导入预览和 Apply 的历史风险见第 21 节。
 
 **UI-02B-3 用户人工验收：USER ACCEPTANCE PASS。** 96.md 明确确认用户亲自完成清单全部测试，包括十万组件依赖查询和循环依赖。95.md 的实际 Release 记录显示，十万节点链的首组件返回 99999 条传递结果，末行最短深度为 99999；三节点环从 A 出发返回 B、C，深度为 1、2。人工验收清单、截图索引及程序身份记录位于 output/UI2B/UI02B-3/。
 
@@ -1618,7 +1630,7 @@ ChatGPT 已真实连接 Read-Only MCP。标准业务 Phase 可在开始前核验
 
 # 20. 当前待定事项
 
-- UI-02B-3 已完成。UI-02B-2 的两项历史性能风险仍未定因，是否同因未知。本阶段未观察到新的性能异常。持续执行第 21 节的复发诊断规则。
+- UI-02B 全部子阶段已完成。UI-02B-2 的两项历史性能风险仍未定因，是否同因未知。本阶段未观察到新的性能异常。持续执行第 21 节的复发诊断规则。
 - 软件认证固定对应唯一 Release Source Commit / tag；后续 UI 维护及文档提交不移动 tag，不重新打包已验收产物。UI-01 GUI确认及未逐项验证范围见第3.1节；Release 若继续使用原长构建路径仍可能触发第 7 节的问题。
 - Fresh-machine 保持 NOT VERIFIED / NON-BLOCKING。学校论文格式、答辩 PPT 和提交材料要求待用户另行提供，不转化为新产品 Phase。
 - Phase 12 Test 20 的 historical NOT VERIFIED / NON-BLOCKING 永久保留；40 实样和 54 合成用例的覆盖范围不扩大。
@@ -1664,7 +1676,7 @@ ChatGPT 已真实连接 Read-Only MCP。标准业务 Phase 可在开始前核验
 
 # 22. 下一步
 
-下一阶段建议为 **UI-02B-4：整体工作区导航和滚动收口**。等待用户指令。UI-02B-4、UI-03 及 Phase 15 均未获得本轮开发授权。性能异常复发时依第 21 节保全现场并查因。
+下一阶段为 **UI-03，漏洞匹配与风险证据工作区内部布局、信息组织和复杂滚动**。具体设计与实施等待单独授权。性能异常复发时立即执行第 21 节。
 
 **NO PHASE 15 PRODUCT DEVELOPMENT IS AUTHORIZED。** 本轮成功后 STOP，不自动新增功能、重构、重新打包、移动 tag、创建 v1.0.0 tag 或 GitHub Release。App 1.0.0 表示本科冻结范围的稳定交付，不表示 industrial-complete SCA；第 21 节的全部已知限制继续成立。
 
@@ -1679,7 +1691,7 @@ Read-Only MCP 仍是独立辅助工具，不阻塞产品认证或改变业务架
 5. 实现后完成适当构建、测试及 19.6 的 diff／维护性检查，清楚记录结果与限制；阶段通过必须包含用户要求的人工验收。
 6. 未经允许不得 `reset --hard`、`clean -fd`、force push、rebase、删除 branch / tag、删除用户文件或重写 Git 历史；发现已有错误 remote 先报告，不自行覆盖。身份配置优先仓库级，冻结环境不无故变更。
 7. 完成阶段后按 19.6 就地更新本文，不另造动态管理文档，不追加重复状态或全过程日志。
-8. 长期工程规则持续生效；各阶段以 `phase-XX-complete^{commit}` 固定定位，Phase 00–14 tags 不得移动。Phase 14 release/tag及各次历史收口见第5节；89.md封版/同步及其后的97db700文档提交均已完成，不构成后续自动commit/push授权。94.md 与 96.md 分别仅授权 UI-02B-2 与 UI-02B-3 的封版同步。main可在另行授权后前进，completion tag不随补丁或docs移动，文档维护不等于再次封版。接手时重读真实Git/remote并保留证据；辅助MCP独立于产品。
+8. 长期工程规则持续生效；各阶段以 `phase-XX-complete^{commit}` 固定定位，Phase 00–14 tags 不得移动。Phase 14 release/tag及各次历史收口见第5节；89.md封版/同步及其后的97db700文档提交均已完成，不构成后续自动commit/push授权。94.md、96.md、98.md 分别授权 UI-02B-2、UI-02B-3、UI-02B-4 的封版同步。main可在另行授权后前进，completion tag不随补丁或docs移动，文档维护不等于再次封版。接手时重读真实Git/remote并保留证据；辅助MCP独立于产品。
 9. 任何 git add / commit / push 前均须按 19.7 审查候选／staged 文件及 privacy / sensitive information，push 同时检查待推送 commits；不得将真实 runtime database、SBOM、日志、用户数据、私有配置、API Key、token 或 credential 加入 Git。`12.md` / `13.md` 的隐私规则及 `.gitignore` 维护已独立提交并推送，其规则继续适用于本次及后续封版。
-10. 当前四层路线已完成至最后正式工程Phase 14；旧Phase 07—17安排仅属Historical / Superseded Plan。Phase 12历史Test 20、Phase 13/14及A-01验收来源保持。UI-01、UI-02A、UI-02B-ARCH、UI-02B-1已完成；UI-02B-2 已经用户接受已知风险并封版，见第3.4节；UI-02B-3 已通过用户全项验收，见第3.5节。再次出现第21节所列性能现象须立即按第21节定位，不等待重复诊断授权、不以重跑通过结案。后续阶段仍须新授权，不自动启动Phase 15；C-01B、Fresh-machine、CacheIo及未解性能根因等限制保留。
+10. 当前四层路线已完成至最后正式工程Phase 14；旧Phase 07—17安排仅属Historical / Superseded Plan。Phase 12历史Test 20、Phase 13/14及A-01验收来源保持。UI-01、UI-02A、UI-02B-ARCH、UI-02B-1已完成；UI-02B-2 已经用户接受已知风险并封版，见第3.4节；UI-02B-3 已通过用户全项验收，见第3.5节；UI-02B-4 及 UI-02B 整体已完成，见第3.6节。再次出现第21节所列性能现象须立即按第21节定位，不等待重复诊断授权、不以重跑通过结案。后续阶段仍须新授权，不自动启动Phase 15；C-01B、Fresh-machine、CacheIo及未解性能根因等限制保留。
 11. 遵循“大方向冻结 + 单 Phase 逐步冻结”；未来详细 Phase 设计须在该阶段开始前、根据已完成成果逐步冻结，不提前创建未来表、领域模型、Repository、Service / Provider 框架、UI 或评分公式。Candidate 不等于 Affected Finding，Applicability gate、Priority / Decision Evidence Support 分离和 Quality 证据原则持续生效；Phase 10 Rules v1 已冻结，不能扩大为完整风险模型或预测置信度。

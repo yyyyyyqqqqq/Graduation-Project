@@ -153,8 +153,21 @@ MainWindow::MainWindow(QWidget* projectPage, QWidget* parent, const QString& ini
         " { color: #243b53; font-size: 26px; font-weight: 600; }"
         "QStatusBar#shellStatus { background: #ffffff; color: #52647b; border-top: 1px solid #dce4ed; }"));
 
-    connect(m_navigationScroll->verticalScrollBar(), &QScrollBar::rangeChanged,
-            this, [this] { updateNavigation(); });
+    auto* bar = navigationScroll->verticalScrollBar();
+    connect(bar, &QScrollBar::rangeChanged, this,
+            [this, previousMaximum = bar->maximum()](int, int maximum) mutable {
+        const int oldMaximum = previousMaximum;
+        previousMaximum = maximum;
+        if (maximum <= oldMaximum) return;
+        auto* current = m_navigation->checkedButton();
+        if (!current) return;
+        // Keep a previously visible selection reachable when the viewport shrinks.
+        // If the user scrolled it out of view, preserve their browsing position.
+        const int oldHeight = m_navigationScroll->widget()->height() - oldMaximum;
+        const int center = current->mapTo(m_navigationScroll->viewport(), current->rect().center()).y();
+        if (center >= 0 && center < oldHeight)
+            m_navigationScroll->ensureWidgetVisible(current, 0, 8);
+    });
     updateNavigation();
     selectPage(initialPage); // Unknown preferences safely fall back to overview.
 }
@@ -185,6 +198,7 @@ bool MainWindow::selectRoute(const QString& routeId)
     if (!target) return false;
     const QString previousPage = currentPageId();
     const bool changed = m_routeId != routeId;
+    if (!changed && previousPage == pageId) return true;
     m_routeId = routeId;
     // Composition in main connects this to the existing persistent project workspace.
     // Select the child before showing its parent, avoiding an unintended old tab's showEvent.
