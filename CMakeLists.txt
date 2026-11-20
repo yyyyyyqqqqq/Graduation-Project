@@ -351,7 +351,7 @@ if(BUILD_TESTING)
         add_qt_test(Phase05 Phase05Test ${test_case})
     endforeach()
     foreach(test_case IN ITEMS schema migration migrationFailures captureRaw atomicReplace resolution graphTraversal metricsSelf consistentSnapshot largeData
-            previewApply dependencyUi graphReuse staleResults projectIntegration largeUi workerLifetime manualFixtures)
+            previewApply dependencyUi graphReuse staleResults projectIntegration largeUi inspectionLayout largeViewport workerLifetime manualFixtures)
         add_qt_test(Phase06 Phase06Test ${test_case})
     endforeach()
     # Offline only. liveSmoke is deliberately invoked separately, never by CTest.

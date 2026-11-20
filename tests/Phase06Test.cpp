@@ -23,6 +23,9 @@
 #include <QPointer>
 #include <QPushButton>
 #include <QTableView>
+#include <QHeaderView>
+#include <QScrollBar>
+#include <QSplitter>
 #include <QTabWidget>
 #include <QTextBrowser>
 #include <QScopeGuard>
@@ -164,6 +167,8 @@ private slots:
     void staleResults();
     void projectIntegration();
     void largeUi();
+    void inspectionLayout();
+    void largeViewport();
     void workerLifetime();
     void manualFixtures();
 };
@@ -543,28 +548,117 @@ void Phase06Test::largeUi()
     SbomImportDialog apply(id,"synthetic large",c.path(),c.logger); apply.show();
     QSignalSpy parsed(&apply,&SbomImportDialog::importFinished),applied(&apply,&SbomImportDialog::applyFinished);
     apply.importFile(file); QTRY_COMPARE_WITH_TIMEOUT(parsed.count(),1,15000); QVERIFY(parsed.last()[0].toBool());
-    QElapsedTimer timer; timer.start(); apply.applyToProject(); const auto applyDispatch=timer.elapsed(); QVERIFY(applyDispatch<500);
+    QElapsedTimer timer; timer.start(); apply.applyToProject(); const auto applyDispatch=timer.elapsed(); qInfo()<<"applyDispatch ms="<<applyDispatch; QVERIFY(applyDispatch<500);
     bool applyEvent=false; QMetaObject::invokeMethod(&apply,[&]{applyEvent=applied.isEmpty();},Qt::QueuedConnection);
     QTRY_VERIFY(applyEvent); QTRY_COMPARE_WITH_TIMEOUT(applied.count(),1,20000); QVERIFY(applied.last()[0].toBool()); const auto applyMs=timer.elapsed();
     DependencyPage page(c.path()); page.resize(850,520); page.show(); QVERIFY(QTest::qWaitForWindowExposed(&page));
     QSignalSpy built(&page,&DependencyPage::analysisFinished),queried(&page,&DependencyPage::relationshipFinished);
-    timer.restart(); page.setProject(id); const auto dispatch=timer.elapsed(); QVERIFY(dispatch<500);
+    timer.restart(); page.setProject(id); const auto dispatch=timer.elapsed(); qInfo()<<"dispatch ms="<<dispatch; QVERIFY(dispatch<500);
     bool delivered=false; QMetaObject::invokeMethod(&page,[&]{delivered=built.isEmpty(); page.resize(800,500);},Qt::QueuedConnection);
     int wakeups=0; qint64 gap=0,previous=timer.elapsed();
     const auto connection=connect(QAbstractEventDispatcher::instance(),&QAbstractEventDispatcher::awake,&page,[&]{const auto now=timer.elapsed(); gap=qMax(gap,now-previous); previous=now; ++wakeups;});
+    const auto cleanup=qScopeGuard([&]{
+        disconnect(connection);
+        if(QTest::currentTestFailed()) qInfo()<<"dependency failure: wakeups="<<wakeups<<"maximum gap ms="<<gap<<"last awake ms="<<previous;
+    });
     QTRY_VERIFY(delivered); QTRY_COMPARE_WITH_TIMEOUT(built.count(),1,15000); QVERIFY(built.last()[0].toBool()); const auto analysisMs=timer.elapsed();
     auto* nodes=page.findChild<QTableView*>("dependencyComponents"); QCOMPARE(nodes->model()->rowCount(),100000);
     QCOMPARE(page.findChild<QTableView*>("dependencyEntries")->model()->rowCount(),100000);
     page.findChild<QComboBox*>("dependencyDirection")->setCurrentIndex(2);
-    timer.restart(); previous=0; nodes->setCurrentIndex(nodes->model()->index(0,0)); const auto queryDispatch=timer.elapsed(); QVERIFY(queryDispatch<500);
+    timer.restart(); previous=0; nodes->setCurrentIndex(nodes->model()->index(0,0)); const auto queryDispatch=timer.elapsed(); qInfo()<<"queryDispatch ms="<<queryDispatch; QVERIFY(queryDispatch<500);
     QTRY_COMPARE_WITH_TIMEOUT(queried.count(),1,10000); const auto queryMs=timer.elapsed();
     auto* results=page.findChild<QTableView*>("dependencyRelationships"); QCOMPARE(results->model()->rowCount(),99999);
     QCOMPARE(results->model()->data(results->model()->index(99998,3)).toInt(),99999);
-    disconnect(connection); QVERIFY(wakeups>1); QVERIFY2(gap<1000,"Dependency GUI event loop stalled");
+    disconnect(connection);
+    qInfo()<<"dependency awake count="<<wakeups<<"maximum gap ms="<<gap;
+    QVERIFY(wakeups>1); QVERIFY2(gap<1000,"Dependency GUI event loop stalled");
     qInfo()<<"100k GUI Apply dispatch/completion ms="<<applyDispatch<<applyMs<<"analysis dispatch/completion ms="<<dispatch<<analysisMs
         <<"query dispatch/completion ms="<<queryDispatch<<queryMs<<"wakeups="<<wakeups<<"max gap ms="<<gap;
     page.findChild<QTabWidget*>("dependencyTabs")->setCurrentIndex(2); results->scrollToBottom();
     QVERIFY(page.grab().save(QDir(QCoreApplication::applicationDirPath()).filePath("phase06-large.png")));
+}
+
+void Phase06Test::inspectionLayout()
+{
+    Context c; QVERIFY(c.open()); const auto id=c.project();
+    const QString longRef(650,u'x');
+    QVERIFY(c.current.replaceForProject(id,document({longRef,"B"},{{longRef,{"B"}},{"B",{}}})).ok());
+    DependencyPage page(c.path()); page.resize(750,500); page.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&page));
+    auto* summary=page.findChild<QTextBrowser*>("dependencySummary");
+    QVERIFY(!summary->toPlainText().contains("Declared Targets"));
+    QSignalSpy built(&page,&DependencyPage::analysisFinished), queried(&page,&DependencyPage::relationshipFinished);
+    page.setProject(id); QTRY_COMPARE(built.count(),1);
+    auto* tabs=page.findChild<QTabWidget*>("dependencyTabs"); tabs->setCurrentIndex(1);
+    auto* entries=page.findChild<QTableView*>("dependencyEntries");
+    auto* targets=page.findChild<QTableView*>("dependencyTargets");
+    auto* context=page.findChild<QLabel*>("dependencyTargetsHeading");
+    auto* model=entries->model();
+    QVERIFY(context->text().contains(QStringLiteral("请先选择")));
+    entries->setCurrentIndex(model->index(1,0));
+    QVERIFY(context->text().contains(QStringLiteral("目标 0"))); QCOMPARE(targets->model()->rowCount(),0);
+    entries->setCurrentIndex(model->index(0,0));
+    QCOMPARE(targets->model()->rowCount(),1);
+    QCOMPARE(model->index(0,1).data().toString(),longRef.left(512)+QStringLiteral("…"));
+    entries->setColumnWidth(1,250);
+    auto* raw=qobject_cast<QSplitter*>(tabs->currentWidget()); QVERIFY(raw);
+    for(const QSize size : {QSize(750,500),QSize(450,270),QSize(1200,690)}) {
+        page.resize(size); QTRY_COMPARE(page.size(),size);
+        raw->setSizes({250,300});
+        for(auto* table : {entries,targets}) {
+            QVERIFY(table->viewport()->height()>=2*table->verticalHeader()->defaultSectionSize());
+            QVERIFY(table->viewport()->width()>95);
+        }
+        QCOMPARE(entries->model(),model); QCOMPARE(entries->currentIndex().row(),0); QCOMPARE(entries->columnWidth(1),250);
+        tabs->setCurrentIndex(2);
+        for(const auto* name : {"dependencyComponents","dependencyRelationships"})
+            QVERIFY(page.findChild<QTableView*>(name)->viewport()->height()>=60);
+        tabs->setCurrentIndex(1);
+    }
+    tabs->setCurrentIndex(2);
+    auto* nodes=page.findChild<QTableView*>("dependencyComponents");
+    nodes->setCurrentIndex(nodes->model()->index(1,0));
+    auto* status=page.findChild<QLabel*>("dependencyRelationshipStatus");
+    QVERIFY(status->text().contains(QStringLiteral("正在查询")));
+    QTRY_COMPARE(queried.count(),1);
+    QVERIFY(status->text().contains(QStringLiteral("组件行 2"))); QVERIFY(status->text().contains(QStringLiteral("无可靠结果")));
+    QCOMPARE(built.count(),1);
+}
+
+void Phase06Test::largeViewport()
+{
+    Context c; QVERIFY(c.open()); const auto id=c.project();
+    QVERIFY(c.current.replaceForProject(id,largeDocument()).ok());
+    DependencyPage page(c.path()); page.resize(1000,600);
+    page.findChild<QTabWidget*>("dependencyTabs")->setCurrentIndex(2);
+    page.show(); QVERIFY(QTest::qWaitForWindowExposed(&page));
+    auto* nodes=page.findChild<QTableView*>("dependencyComponents");
+    auto* results=page.findChild<QTableView*>("dependencyRelationships");
+    QSignalSpy built(&page,&DependencyPage::analysisFinished),queried(&page,&DependencyPage::relationshipFinished);
+    page.setProject(id); QTRY_COMPARE_WITH_TIMEOUT(built.count(),1,15000);
+    QCOMPARE(nodes->model()->rowCount(),100000);
+    page.findChild<QComboBox*>("dependencyDirection")->setCurrentIndex(2);
+    QElapsedTimer elapsed;
+    qint64 installedAt=-1;
+    connect(&page,&DependencyPage::relationshipFinished,&page,[&]{ installedAt=elapsed.elapsed(); });
+    elapsed.start(); nodes->setCurrentIndex(nodes->model()->index(0,0));
+    QTRY_COMPARE_WITH_TIMEOUT(queried.count(),1,10000);
+    QCOMPARE(results->model()->rowCount(),99999);
+    auto first=results->model()->index(0,0);
+    QVERIFY(results->visualRect(first).intersects(results->viewport()->rect()));
+    results->viewport()->repaint();
+    const auto firstFrame=elapsed.elapsed()-installedAt;
+    elapsed.restart();
+    page.resize(760,500);
+    results->setFocus(); QTest::keyClick(results,Qt::Key_End,Qt::ControlModifier);
+    auto last=results->model()->index(99998,3);
+    results->scrollTo(last); results->viewport()->repaint();
+    const auto interaction=elapsed.elapsed();
+    qInfo()<<"visible 100k result first paint after installation ms="<<firstFrame<<"resize/scroll/select/repaint ms="<<interaction;
+    QVERIFY(firstFrame<1000); QVERIFY(interaction<1000);
+    QCOMPARE(results->currentIndex().row(),99998); QCOMPARE(last.data().toInt(),99999);
+    QVERIFY(results->visualRect(last).intersects(results->viewport()->rect()));
+    QCOMPARE(built.count(),1); QCOMPARE(queried.count(),1);
 }
 
 void Phase06Test::workerLifetime()

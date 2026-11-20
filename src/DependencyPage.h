@@ -10,6 +10,7 @@ class DependencyTableModel;
 class QTableView;
 class QComboBox;
 class QLabel;
+class QSplitter;
 class QPushButton;
 class QTextBrowser;
 
@@ -26,6 +27,7 @@ signals:
     void analysisFinished(bool success);
     void relationshipFinished();
 protected:
+    void resizeEvent(QResizeEvent* event) override;
     void showEvent(QShowEvent* event) override;
 private:
     struct AnalysisResult {
@@ -52,6 +54,8 @@ private:
     QTableView *m_entries, *m_targets, *m_components, *m_relationships;
     DependencyTableModel *m_entryModel, *m_targetModel, *m_componentModel, *m_relationshipModel;
     QComboBox* m_direction;
+    QSplitter *m_rawSplit, *m_relationSplit;
+    QLabel *m_targetHeading;
     QLabel *m_status, *m_relationshipStatus;
     QTextBrowser* m_summary;
     QPushButton* m_reload;

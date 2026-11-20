@@ -5,7 +5,7 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QPushButton>
-#include <QScrollArea>
+#include <QResizeEvent>
 #include <QShowEvent>
 #include <QSplitter>
 #include <QTableView>
@@ -125,17 +125,14 @@ DependencyPage::DependencyPage(QString databasePath,QWidget* parent)
     :QWidget(parent),m_databasePath(std::move(databasePath))
 {
     setObjectName(QStringLiteral("dependencyPage"));
-    auto* outer=new QVBoxLayout(this);
-    outer->setContentsMargins(0,0,0,0);
-    auto* scroll=new QScrollArea(this);
-    scroll->setWidgetResizable(true);
-    scroll->setFrameShape(QFrame::NoFrame);
-    outer->addWidget(scroll);
-    auto* content=new QWidget(scroll);
-    scroll->setWidget(content);
-    auto* layout=new QVBoxLayout(content);
-    layout->setContentsMargins(4,4,4,4);
+    auto* layout=new QVBoxLayout(this);
+    layout->setContentsMargins(0,0,0,0);
+    layout->setSpacing(5);
     auto* actions=new QHBoxLayout;
+    auto* title=label(QStringLiteral("dependencyTitle"),this);
+    title->setWordWrap(false);
+    title->setText(QStringLiteral("依赖关系"));
+    actions->addWidget(title);
     m_status=label(QStringLiteral("dependencyStatus"),this);
     actions->addWidget(m_status,1);
     m_reload=new QPushButton(QStringLiteral("重新分析 / Reload"),this);
@@ -144,9 +141,6 @@ DependencyPage::DependencyPage(QString databasePath,QWidget* parent)
     layout->addLayout(actions);
     auto* tabs=new QTabWidget(this);
     tabs->setObjectName(QStringLiteral("dependencyTabs"));
-    // At the application's minimum size, scroll the inspection area instead of
-    // squeezing two table viewports down to their headers.
-    connect(tabs,&QTabWidget::currentChanged,content,[content](int index){content->setMinimumHeight(index>0?360:0);});
     layout->addWidget(tabs,1);
     m_summary=new QTextBrowser(tabs);
     m_summary->setObjectName(QStringLiteral("dependencySummary"));
@@ -164,31 +158,74 @@ DependencyPage::DependencyPage(QString databasePath,QWidget* parent)
         view->setWordWrap(false);
         view->setMinimumSize(0,0);
         view->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Ignored);
-        view->horizontalHeader()->setDefaultSectionSize(200);
+        view->setShowGrid(false);
+        view->verticalHeader()->hide();
+        view->horizontalHeader()->setStretchLastSection(true);
+        view->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
         return view;
     };
-    auto* raw=new QSplitter(Qt::Vertical,tabs);
-    m_entries=table(raw,QStringLiteral("dependencyEntries"),DependencyTableModel::Kind::Entries,m_entryModel);
-    m_targets=table(raw,QStringLiteral("dependencyTargets"),DependencyTableModel::Kind::Targets,m_targetModel);
-    raw->addWidget(m_entries); raw->addWidget(m_targets);
-    raw->setChildrenCollapsible(false);
-    tabs->addTab(raw,QStringLiteral("原始声明（上方选择 Entry）"));
+    // A persistent pane keeps its selection, column widths and model as the splitter turns.
+    const auto pane=[&](QSplitter* parent, const QString& caption, const QString& name,
+                        DependencyTableModel::Kind kind, DependencyTableModel*& model, QLabel*& heading) {
+        auto* group=new QWidget(parent);
+        group->setMinimumSize(0,0);
+        auto* stack=new QVBoxLayout(group);
+        stack->setContentsMargins(2,2,2,2);
+        stack->setSpacing(3);
+        heading=label(name+QStringLiteral("Heading"),group);
+        heading->setProperty("paneHeading",true);
+        heading->setText(caption);
+        stack->addWidget(heading);
+        auto* view=table(group,name,kind,model);
+        stack->addWidget(view,1);
+        parent->addWidget(group);
+        return view;
+    };
+    m_rawSplit=new QSplitter(Qt::Vertical,tabs);
+    QLabel* entryHeading=nullptr;
+    m_entries=pane(m_rawSplit,QStringLiteral("原始声明"),QStringLiteral("dependencyEntries"),DependencyTableModel::Kind::Entries,m_entryModel,entryHeading);
+    m_targets=pane(m_rawSplit,{},QStringLiteral("dependencyTargets"),DependencyTableModel::Kind::Targets,m_targetModel,m_targetHeading);
+    tabs->addTab(m_rawSplit,QStringLiteral("原始声明"));
     auto* relations=new QWidget(tabs);
     auto* relationshipLayout=new QVBoxLayout(relations);
-    relationshipLayout->setContentsMargins(4,4,4,4);
+    relationshipLayout->setContentsMargins(2,2,2,2);
+    relationshipLayout->setSpacing(3);
     m_direction=new QComboBox(relations);
     m_direction->setObjectName(QStringLiteral("dependencyDirection"));
     m_direction->addItems({QStringLiteral("Direct Dependencies / 直接依赖"),QStringLiteral("Direct Dependents / 直接被依赖"),
         QStringLiteral("Transitive Dependencies / 全部可达依赖（含直接）"),QStringLiteral("Transitive Dependents / 全部可达被依赖（含直接）")});
-    relationshipLayout->addWidget(m_direction);
-    auto* split=new QSplitter(Qt::Vertical,relations);
-    m_components=table(split,QStringLiteral("dependencyComponents"),DependencyTableModel::Kind::Components,m_componentModel);
-    m_relationships=table(split,QStringLiteral("dependencyRelationships"),DependencyTableModel::Kind::Relationships,m_relationshipModel);
-    split->addWidget(m_components); split->addWidget(m_relationships); split->setChildrenCollapsible(false);
-    relationshipLayout->addWidget(split,1);
-    m_relationshipStatus=label(QStringLiteral("dependencyRelationshipStatus"),relations);
-    relationshipLayout->addWidget(m_relationshipStatus);
-    tabs->addTab(relations,QStringLiteral("组件关系（上方选择组件）"));
+    auto* queryBar=new QHBoxLayout;
+    queryBar->addWidget(new QLabel(QStringLiteral("查询方向"),relations));
+    queryBar->addWidget(m_direction,1);
+    relationshipLayout->addLayout(queryBar);
+    m_relationSplit=new QSplitter(Qt::Vertical,relations);
+    QLabel* componentHeading=nullptr;
+    m_components=pane(m_relationSplit,QStringLiteral("当前组件"),QStringLiteral("dependencyComponents"),DependencyTableModel::Kind::Components,m_componentModel,componentHeading);
+    m_relationships=pane(m_relationSplit,QStringLiteral("可靠关系"),QStringLiteral("dependencyRelationships"),DependencyTableModel::Kind::Relationships,m_relationshipModel,m_relationshipStatus);
+    m_relationshipStatus->setObjectName(QStringLiteral("dependencyRelationshipStatus"));
+    relationshipLayout->addWidget(m_relationSplit,1);
+    for(auto* split : {m_rawSplit,m_relationSplit}) {
+        split->setChildrenCollapsible(false);
+        split->setHandleWidth(6);
+        split->setSizes({400,450});
+    }
+    const auto widths=[](QTableView* view,std::initializer_list<int> sizes) {
+        int column=0;
+        for(int width:sizes) view->setColumnWidth(column++,width);
+    };
+    widths(m_entries,{72,180,162,100});
+    widths(m_targets,{72,180,160,150});
+    widths(m_components,{170,160,100});
+    widths(m_relationships,{160,145,86,104,105});
+    tabs->addTab(relations,QStringLiteral("组件关系"));
+    setStyleSheet(QStringLiteral(
+        "QLabel#dependencyTitle { color:#18344c; font-size:20px; font-weight:700; }"
+        "QLabel#dependencyStatus { color:#405d72; padding-left:6px; }"
+        "QLabel[paneHeading=true] { color:#244864; font-weight:600; padding:2px 4px; }"
+        "QWidget#dependencyPage QHeaderView::section { background:#edf2f7; color:#23435a; padding:3px; border:1px solid #d8e1e9; }"
+        "QWidget#dependencyPage QTableView { background:white; alternate-background-color:#f5f8fb; border:1px solid #d8e1e9; }"
+        "QWidget#dependencyPage QSplitter::handle { background:#d7e1eb; }"
+        "QWidget#dependencyPage QSplitter::handle:hover { background:#8baac3; }"));
     connect(m_reload,&QPushButton::clicked,this,&DependencyPage::reload);
     connect(m_entries->selectionModel(),&QItemSelectionModel::currentRowChanged,this,[this](const QModelIndex& i){ selectEntry(i.row()); });
     connect(m_components->selectionModel(),&QItemSelectionModel::currentRowChanged,this,[this]{ requestRelationship(); });
@@ -209,12 +246,24 @@ DependencyPage::DependencyPage(QString databasePath,QWidget* parent)
         m_querying=false;
         if(m_activeQuery==m_queryGeneration && m_graph) {
             m_relationshipModel->setRows(rows,m_components->currentIndex().row(),m_direction->currentIndex()>=2);
-            m_relationshipStatus->setText(QStringLiteral("可靠关系结果：%1；未解析声明不进入图，空结果不代表没有依赖。").arg(rows.size()));
+            m_relationshipStatus->setText(QStringLiteral("组件行 %1 · 可靠关系结果：%2%3")
+                .arg(m_components->currentIndex().row()+1).arg(rows.size())
+                .arg(rows.isEmpty()?QStringLiteral("（无可靠结果不代表没有依赖）"):QString()));
             emit relationshipFinished();
         }
         if(m_pendingQuery) startRelationship();
     });
     invalidate();
+}
+
+void DependencyPage::resizeEvent(QResizeEvent* event)
+{
+    QWidget::resizeEvent(event);
+    const auto orientation=width()>=950 || height()<365 ? Qt::Horizontal : Qt::Vertical;
+    if(m_rawSplit->orientation()!=orientation) {
+        m_rawSplit->setOrientation(orientation);
+        m_relationSplit->setOrientation(orientation);
+    }
 }
 
 void DependencyPage::invalidate()
@@ -224,6 +273,7 @@ void DependencyPage::invalidate()
     m_pendingAnalysis=false;
     m_pendingQuery=false;
     m_graph.reset();
+    m_targetHeading->setText(QStringLiteral("目标 · 请先选择原始声明"));
     for(auto* model:{m_entryModel,m_targetModel,m_componentModel,m_relationshipModel}) model->setGraph({});
     m_relationshipStatus->setText(QStringLiteral("选择当前组件查看可靠关系。"));
     m_summary->setPlainText(QStringLiteral("尚无当前分析结果。依赖分析只基于已应用的当前 SBOM。"));
@@ -282,11 +332,18 @@ void DependencyPage::installGraph(std::shared_ptr<const DependencyGraph> graph)
     }
     m_status->setText(QStringLiteral("Captured / 已捕获"));
     const auto& m=m_graph->metrics();
-    m_summary->setPlainText(QStringLiteral("%1\n\n原始声明 / Raw Metrics\nDependency Entries：%2\nDeclared Targets：%3\n"
-        "Missing Reference Occurrences：%4\nUnknown Reference Occurrences：%5\nAmbiguous Reference Occurrences：%6\nSelf-Dependency Occurrences：%7\n\n"
-        "派生可靠图 / Derived Graph Metrics\nResolved Unique Edges：%8\n\n"
-        "引用只按原始 bom-ref 精确解析；Missing / Unknown / Ambiguous 保留在原始声明中，不生成可靠图边。无法可靠解析不等于没有依赖。\n"
-        "Transitive 包含直接关系，按最短深度与首次发现排序，始终排除起点自身。超长字段仅在表格显示时省略。")
+    // All substitutions are fixed labels or integer graph metrics. Raw SBOM text stays in the models.
+    m_summary->setHtml(QStringLiteral(
+        "<style>h3{color:#234864;margin:8px 0 3px}p{margin:4px 0;color:#425867}"
+        "td{padding:3px 8px;color:#193c55;background:#edf3f8}</style>"
+        "<p>%1</p><h3>原始依赖声明</h3><table cellspacing='2'>"
+        "<tr><td>Dependency Entries：%2</td><td>Declared Targets：%3</td></tr>"
+        "<tr><td>Missing Reference Occurrences：%4</td><td>Unknown Reference Occurrences：%5</td></tr>"
+        "<tr><td>Ambiguous Reference Occurrences：%6</td><td>Self-Dependency Occurrences：%7</td></tr></table>"
+        "<h3>可靠依赖关系</h3><p><b>Resolved Unique Edges：%8</b></p>"
+        "<p>引用只按原始 bom-ref 精确解析。Missing / Unknown / Ambiguous 保留在原始声明中，不生成可靠图边。"
+        "无可靠结果不代表没有依赖。声明式依赖不等于运行时可达性。</p>"
+        "<p>Transitive 包含直接关系，按最短深度与首次发现排序，排除起点自身。超长字段仅在表格显示时省略。</p>")
         .arg(snapshot.entries.isEmpty()?QStringLiteral("当前已应用的 SBOM 未声明 dependency entries。"):QStringLiteral("当前已应用的 SBOM 依赖分析。"))
         .arg(m.entries).arg(m.targets).arg(m.missing).arg(m.unknown).arg(m.ambiguous).arg(m.selfOccurrences).arg(m.uniqueEdges));
     for(auto* model:{m_entryModel,m_targetModel,m_componentModel,m_relationshipModel}) model->setGraph(m_graph);
@@ -294,7 +351,11 @@ void DependencyPage::installGraph(std::shared_ptr<const DependencyGraph> graph)
 
 void DependencyPage::selectEntry(int row)
 {
-    m_targetModel->setEntry(m_graph && row>=0 && row<m_graph->snapshot().entries.size()?row:-1);
+    const bool selected=m_graph && row>=0 && row<m_graph->snapshot().entries.size();
+    m_targetModel->setEntry(selected?row:-1);
+    m_targetHeading->setText(selected
+        ?QStringLiteral("Entry #%1 · 目标 %2").arg(m_graph->snapshot().entries.at(row).sourceOrder+1).arg(m_targetModel->rowCount())
+        :QStringLiteral("目标 · 请先选择原始声明"));
 }
 
 void DependencyPage::requestRelationship()
