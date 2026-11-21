@@ -30,7 +30,7 @@
 #include <QFileDialog>
 #include <QSqlQuery>
 #include <QElapsedTimer>
-#include <QScrollArea>
+#include <QTabBar>
 #include <QScrollBar>
 #include <QLibraryInfo>
 #include <algorithm>
@@ -432,7 +432,14 @@ void Phase08Test::ui() {
     table->selectRow(4);QTRY_VERIFY(evidence->toPlainText().contains("wildcard"));QVERIFY(evidence->toPlainText().contains("\"name\": \"*\""));
     QVERIFY(widget.grab().save(QDir(QCoreApplication::applicationDirPath()).filePath("phase08-ui.png")));
     for(int i=0;i<3;++i){controller.query(QueryMode::CacheOnly);QTRY_VERIFY(!controller.busy());QCOMPARE(controller.applicability()->findings.size(),2);}
-    widget.resize(400,220);QCoreApplication::processEvents();auto* scroll=widget.findChild<QScrollArea*>();QVERIFY(scroll->verticalScrollBar()->maximum()>0);
+    widget.resize(400,220);QCoreApplication::processEvents();auto* tasks=widget.findChild<QTabBar*>("matchTasks");
+    QVERIFY(tasks->isVisible()); QTest::mouseClick(tasks,Qt::LeftButton,Qt::NoModifier,tasks->tabRect(2).center());
+    table->selectRow(0); QTRY_VERIFY(evidence->toPlainText().contains("Raw OSV JSON"));
+    QVERIFY(evidence->isVisible()); QVERIFY(!table->isVisible());
+    auto* query=widget.findChild<QPushButton*>("vulnerabilityQuery");
+    QVERIFY(widget.rect().contains(query->mapTo(&widget,query->rect().center())));
+    evidence->setFocus(); QTest::keyClick(evidence,Qt::Key_PageDown);
+    QTRY_VERIFY(evidence->verticalScrollBar()->value()>0);
     QVERIFY(widget.grab().save(QDir(QCoreApplication::applicationDirPath()).filePath("phase08-ui-small.png")));
     {
         PoolBlock block;

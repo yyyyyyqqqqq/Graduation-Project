@@ -575,12 +575,14 @@ void Phase09Test::ui(){
     VulnerabilityController owner(c.path(),c.cache(),c.logger,nullptr,nullptr,&net);VulnerabilityPage page(owner);page.resize(700,550);page.show();
     auto* load=page.findChild<QPushButton*>("riskLoad");QVERIFY(load);QVERIFY(!load->isEnabled());
     LOAD_OWNER(c,p,owner);auto* candidates=page.findChild<QTableView*>("candidateTable");candidates->setCurrentIndex(candidates->model()->index(0,0));QVERIFY(load->isEnabled());
-    auto* tabs=page.findChild<QTabWidget*>("evidenceTabs");QCOMPARE(tabs->tabText(0),QString("Finding Evidence"));QCOMPARE(tabs->tabText(1),QString("Risk Evidence"));tabs->setCurrentIndex(1);
+    auto* tabs=page.findChild<QTabWidget*>("evidenceTabs");QCOMPARE(tabs->tabText(0),QStringLiteral("漏洞匹配"));QCOMPARE(tabs->tabText(1),QStringLiteral("风险证据"));tabs->setCurrentIndex(1);
     QCOMPARE(EpssCache(risk.cacheRoot()).write({CVE,"1.0",now(),score()}),QueryError::None);QCOMPARE(KevCache(risk.cacheRoot()).write(*RiskEvidence::parseKev(json(catalog()),now())),QueryError::None);
     page.findChild<QPushButton*>("riskCacheOnly")->click();QTRY_VERIFY(!risk.busy());auto* text=page.findChild<QTextBrowser*>("riskEvidence");QVERIFY(text);
     const auto displayed=text->toPlainText();for(const auto& word:QStringList{"Profile Available","Implicit Home Database","SYNTHETIC-P09-1","Available","Listed","CISA Catalog Due Date","Reference Resolution","Quality: Unavailable"})QVERIFY2(displayed.contains(word),qPrintable(word));
     for(const auto& word:QStringList{"Risk Score","Risk Level","High Risk","Medium Risk","Low Risk","RiskAssessmentComplete","RiskEvidenceReady","Runtime Unreachable"})QVERIFY(!displayed.contains(word));
-    auto* scroll=page.findChild<QScrollArea*>();QVERIFY(scroll);scroll->ensureWidgetVisible(text);QCoreApplication::processEvents();
+    auto* views=page.findChild<QTabWidget*>("riskViews");views->setCurrentWidget(text);
+    QVERIFY(text->isVisible());QVERIFY(!candidates->isVisible());
+    QVERIFY(page.rect().contains(load->mapTo(&page,load->rect().center())));
     QDir out(QCoreApplication::applicationDirPath());QVERIFY(page.grab().save(out.filePath("phase09-small-ui.png")));
     page.resize(1200,900);QCoreApplication::processEvents();QVERIFY(page.grab().save(out.filePath("phase09-ui.png")));
     page.findChild<QPushButton*>("riskRefresh")->click();

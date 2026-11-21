@@ -23,7 +23,6 @@
 #include <QTableView>
 #include <QTabWidget>
 #include <QPushButton>
-#include <QScrollArea>
 #include <QScrollBar>
 #include <QLibraryInfo>
 #include <QElapsedTimer>
@@ -469,13 +468,15 @@ void Phase10Test::ui()
     for (const auto& forbidden : QStringList{"Risk Score:", "Risk Level:", "High Risk", "Medium Risk", "Assessment Confidence:", "EPSS Model Version"}) QVERIFY(!displayed.contains(forbidden));
     auto* raw = page.findChild<QTextBrowser*>("riskEvidence"); QVERIFY(raw->toPlainText().contains("CVSS:3.1/"));
     QVERIFY(raw->toPlainText().contains("Freshness below is at Profile Generation"));
-    auto* scroll = page.findChild<QScrollArea*>(); QVERIFY(scroll); QCoreApplication::processEvents(); QVERIFY(scroll->verticalScrollBar()->maximum() > 0);
-    QVERIFY(text->verticalScrollBar()->maximum() > 0);
-    scroll->ensureWidgetVisible(text); QCoreApplication::processEvents();
-    QVERIFY(scroll->verticalScrollBar()->value() > 0);
-    const QRect textViewport(text->mapTo(scroll->viewport(), QPoint(0, 0)), text->size());
-    QVERIFY(textViewport.intersects(scroll->viewport()->rect()));
-    text->verticalScrollBar()->setValue(text->verticalScrollBar()->maximum());
+    QCoreApplication::processEvents();
+    QVERIFY(text->isVisible());
+    QVERIFY(page.rect().contains(text->viewport()->mapTo(&page, text->viewport()->rect().center())));
+    auto* bar = text->verticalScrollBar();
+    QVERIFY(bar->maximum() > 0);
+    text->setFocus();
+    QTest::keyClick(text, Qt::Key_PageDown);
+    QTRY_VERIFY(bar->value() > 0);
+    bar->setValue(bar->maximum());
     QVERIFY(page.grab().save(QDir(QCoreApplication::applicationDirPath()).filePath("phase10-small-ui.png")));
     text->verticalScrollBar()->setValue(0); page.resize(1200, 900); QCoreApplication::processEvents();
     QVERIFY(page.grab().save(QDir(QCoreApplication::applicationDirPath()).filePath("phase10-ui.png")));

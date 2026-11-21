@@ -30,6 +30,7 @@
 #include <QMessageBox>
 #include <QScrollBar>
 #include <QScrollArea>
+#include <QAction>
 #include <QElapsedTimer>
 #include <QAbstractEventDispatcher>
 #include <QThreadPool>
@@ -375,7 +376,7 @@ void Phase07Test::ui() {
     Context c;QVERIFY(c.open());const auto id=c.project();QVERIFY(c.apply(id));FakeNetwork network;network.responses={{"{}"},{page({record()})},{"error",400},{"{}",200,QNetworkReply::NoError,true}};
     VulnerabilityController controller(c.database(),c.cache(),c.logger,nullptr,&network);VulnerabilityPage pageWidget(controller);pageWidget.resize(980,760);pageWidget.setProject(id);pageWidget.show();
     QVERIFY(QTest::qWaitForWindowExposed(&pageWidget));QTRY_VERIFY(controller.loaded());auto* table=pageWidget.findChild<QTableView*>("identityTable");table->selectRow(0);
-    auto* status=pageWidget.findChild<QLabel*>("vulnerabilityStatus");auto* clear=pageWidget.findChild<QPushButton*>("vulnerabilityClear");
+    auto* status=pageWidget.findChild<QLabel*>("vulnerabilityStatus");auto* clear=pageWidget.findChild<QAction*>("vulnerabilityClear");
     QVERIFY(status->text().contains("—"));QCOMPARE(network.requests.size(),0);
     pageWidget.findChild<QPushButton*>("vulnerabilityRefresh")->click();QTRY_VERIFY(pageWidget.findChild<QMessageBox*>());
     auto* dialog=pageWidget.findChild<QMessageBox*>();QVERIFY(dialog->text().contains(identity().name));QVERIFY(!clear->isEnabled());
@@ -385,9 +386,11 @@ void Phase07Test::ui() {
     auto* candidates=pageWidget.findChild<QTableView*>("candidateTable");candidates->selectRow(0);QTRY_VERIFY(pageWidget.findChild<QTextBrowser*>("candidateEvidence")->toPlainText().contains("SYNTHETIC-1"));
     QVERIFY(pageWidget.grab().save(QDir(QCoreApplication::applicationDirPath()).filePath("phase07-ui.png")));
     controller.query(QueryMode::Refresh);QTRY_VERIFY(!controller.busy());QVERIFY(status->text().contains("Failed"));QVERIFY(status->text().contains("Count：—"));QVERIFY(status->text().contains("RequestRejected"));
+    QVERIFY(status->text().contains(QStringLiteral("先前完整结果")));
+    QVERIFY(status->text().contains(QStringLiteral("完整记录 1 条")));
     controller.query(QueryMode::Refresh);QTRY_COMPARE(network.requests.size(),4);controller.cancel();QTRY_VERIFY(!controller.busy());QVERIFY(status->text().contains("Cancelled"));QVERIFY(clear->isEnabled());
     pageWidget.resize(400,220);QCoreApplication::processEvents();
-    auto* scroll=pageWidget.findChild<QScrollArea*>();QVERIFY(scroll);QVERIFY(scroll->verticalScrollBar()->maximum()>0);
+    auto* scroll=pageWidget.findChild<QScrollArea*>("matchStatusArea");QVERIFY(scroll);QVERIFY(scroll->verticalScrollBar()->maximum()>0);
     scroll->verticalScrollBar()->setValue(scroll->verticalScrollBar()->maximum());QCoreApplication::processEvents();
     QVERIFY(pageWidget.grab().save(QDir(QCoreApplication::applicationDirPath()).filePath("phase07-ui-small.png")));
 }

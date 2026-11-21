@@ -33,6 +33,7 @@
 #include <QTableView>
 #include <QHeaderView>
 #include <QTabWidget>
+#include <QTabBar>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QScreen>
@@ -146,7 +147,7 @@ private slots:
     void validationVocabulary(); void uiLifetime(); void markupSafety(); void structuralContract(); void vulnerabilityPresentation();
     void workspaceRoutes(); void workspaceContext(); void workspaceRisk();
     void workspaceLayout(); void workspaceEmpty();
-    void sidebarInput(); void riskReadingPosition();
+    void sidebarInput(); void riskReadingPosition(); void matchingPanes();
     void componentStates(); void componentLayout();
 };
 
@@ -674,7 +675,7 @@ void Phase12Test::vulnerabilityPresentation()
     riskViews->setCurrentWidget(snapshot); QCoreApplication::processEvents();
     QVERIFY(snapshot->isVisible()); QCOMPARE(snapshot->toPlainText(), snapshotText);
     riskViews->setCurrentWidget(view);
-    auto* scroll = page.findChild<QScrollArea*>(); scroll->ensureWidgetVisible(view); QCoreApplication::processEvents();
+    QVERIFY(view->isVisible()); QVERIFY(view->viewport()->height()>0);
     QVERIFY(page.grab().save(QCoreApplication::applicationDirPath()+"/phase12-result-ui.png"));
     owner.select(-1); QVERIFY(view->toPlainText().isEmpty()); QCOMPARE(net.requests, 3);
 }
@@ -828,9 +829,8 @@ void Phase12Test::workspaceRisk()
     }
     window.selectRoute("validation");
     window.resize(680,420); QCoreApplication::processEvents(); window.selectRoute("risk"); QCoreApplication::processEvents();
-    auto* scroll=page->findChild<VulnerabilityPage*>()->findChild<QScrollArea*>();
     auto* load=page->findChild<QPushButton*>("riskLoad");
-    QVERIFY(scroll->viewport()->rect().contains(load->mapTo(scroll->viewport(),load->rect().center())));
+    QVERIFY(load->isVisible()); QVERIFY(window.rect().contains(load->mapTo(&window,load->rect().center())));
     QVERIFY(window.grab().save(QCoreApplication::applicationDirPath()+"/ui02a-risk-small.png"));
     select(*page,c.b.id); QVERIFY(!risk.hasRequest()); QVERIFY(!risk.profile()); QVERIFY(!risk.assessment());
     QVERIFY(!page->captureFindingReport(0).context); QVERIFY(!page->findChild<QPushButton*>("exportFindingReport")->isEnabled());
@@ -1076,19 +1076,64 @@ void Phase12Test::riskReadingPosition()
     window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window)); select(*page,c.a.id);
     auto* entry = window.findChild<QPushButton*>("nav_risk");
     QTest::mouseClick(entry,Qt::LeftButton);
-    auto* scroll = page->findChild<VulnerabilityPage*>()->findChild<QScrollArea*>();
-    auto* bar = scroll->verticalScrollBar(); auto* anchor = page->findChild<QPushButton*>("riskLoad");
+    auto* reader = page->findChild<QTextBrowser*>("riskHumanPresentation");
+    QTRY_VERIFY(page->findChild<VulnerabilityController*>()->loaded());
+    // Long text exercises the reader viewport independently of network and business eligibility.
+    reader->setPlainText(QStringLiteral("Evidence line\n").repeated(160));
+    auto* bar = reader->verticalScrollBar();
+    auto* anchor = page->findChild<QPushButton*>("riskLoad");
     const auto anchorVisible = [&] {
-        return scroll->viewport()->rect().contains(anchor->mapTo(scroll->viewport(),anchor->rect().center()));
+        return anchor->isVisible() && window.rect().contains(anchor->mapTo(&window,anchor->rect().center()));
     };
-    QTRY_VERIFY(anchorVisible()); QVERIFY(bar->value()>0);
-    const auto point = bar->mapTo(&window,bar->rect().center());
-    QTest::wheelEvent(window.windowHandle(),point,QPoint(0,4800)); QCOMPARE(bar->value(),0);
+    QTRY_VERIFY(anchorVisible()); QVERIFY(reader->isVisible());
+    const auto point = reader->viewport()->mapTo(&window,reader->viewport()->rect().center());
+    QTRY_VERIFY(bar->maximum()>0);
+    QTest::wheelEvent(window.windowHandle(),point,QPoint(0,-480)); QTRY_VERIFY(bar->value()>0);
+    const int position = bar->value();
     QSignalSpy requests(&window,&MainWindow::workspaceRequested);
-    QTest::mouseClick(entry,Qt::LeftButton); QCOMPARE(requests.count(),0); QCOMPARE(bar->value(),0);
-    window.resize(1000,540); QCoreApplication::processEvents(); QCOMPARE(bar->value(),0);
+    QTest::mouseClick(entry,Qt::LeftButton); QCOMPARE(requests.count(),0); QCOMPARE(bar->value(),position);
+    window.resize(1000,540); QCoreApplication::processEvents(); QCOMPARE(bar->value(),position);
     window.selectRoute("settings"); window.resize(680,420); window.selectRoute("risk");
     QTRY_VERIFY(anchorVisible()); QCOMPARE(page->currentProjectId(),c.a.id); QCOMPARE(net.requests,0);
+}
+
+void Phase12Test::matchingPanes()
+{
+    Context c; QVERIFY(c.open()); FixtureNetwork net; SbomDocument doc;
+    doc.components={{"a","library","synthetic","1.0.0","pkg:npm/synthetic@1.0.0"}};
+    QVERIFY(c.components.replaceForProject(c.a.id,doc).ok());
+    auto* page=new ProjectPage(c.projects,c.components,c.logger,c.cache(),nullptr,&net);
+    MainWindow window(page,nullptr,"projects",new QWidget); wireWorkspace(window,*page);
+    window.show(); QVERIFY(QTest::qWaitForWindowExposed(&window)); select(*page,c.a.id);
+    window.selectRoute("vulnerabilities");
+    auto* owner=page->findChild<VulnerabilityController*>();
+    auto* identities=page->findChild<QTableView*>("identityTable");
+    auto* candidates=page->findChild<QTableView*>("candidateTable");
+    auto* selection=candidates->selectionModel(); auto* model=candidates->model();
+    auto* evidence=page->findChild<QTextBrowser*>("candidateEvidence");
+    auto* tasks=page->findChild<QTabBar*>("matchTasks");
+    auto* open=page->findChild<QPushButton*>("openFindingRisk");
+    auto* back=page->findChild<QPushButton*>("backToMatching");
+    QTRY_VERIFY(owner->loaded()); QVERIFY(!open->isEnabled());
+    QVERIFY(identities->isVisible() && candidates->isVisible() && !evidence->isVisible());
+    identities->selectRow(0);
+    connect(owner,&VulnerabilityController::consentRequested,owner,[owner]{owner->consent(true);});
+    owner->query(QueryMode::Refresh); QTRY_VERIFY(!owner->busy());
+    candidates->selectRow(0); QTRY_VERIFY(evidence->toPlainText().contains("Raw OSV JSON"));
+    QVERIFY(open->isEnabled()); window.resize(1500,900); QCoreApplication::processEvents();
+    QVERIFY(identities->isVisible() && candidates->isVisible() && evidence->isVisible());
+    window.resize(680,420); QCoreApplication::processEvents();
+    QTest::mouseClick(tasks,Qt::LeftButton,Qt::NoModifier,tasks->tabRect(2).center());
+    QVERIFY(evidence->isVisible() && !identities->isVisible() && !candidates->isVisible());
+    QTRY_COMPARE(window.childAt(open->mapTo(&window,open->rect().center())),open);
+    QTest::mouseClick(open,Qt::LeftButton); QCOMPARE(window.currentRouteId(),"risk");
+    QVERIFY(!owner->riskEvidence().profile());
+    QVERIFY(page->findChild<QLineEdit*>("riskFindingContext")->text().contains("SYNTHETIC-P12"));
+    QTest::mouseClick(back,Qt::LeftButton); QCOMPARE(window.currentRouteId(),"vulnerabilities");
+    QCOMPARE(candidates->selectionModel(),selection); QCOMPARE(candidates->model(),model);
+    QTRY_VERIFY(candidates->isVisible()); QTRY_COMPARE(window.focusWidget(),candidates); QCOMPARE(candidates->currentIndex().row(),0);
+    select(*page,c.b.id); QVERIFY(!open->isEnabled()); QVERIFY(evidence->toPlainText().isEmpty());
+    QCOMPARE(net.requests,1);
 }
 
 QTEST_MAIN(Phase12Test)
